@@ -30,8 +30,7 @@
   height: 100%;
 }
 @media screen and (min-width: 680px) {
-  .mootimetercontainer .mootimetercolpages,
-  .mootimetercontainer .mootimetercoledit,
+  .mootimetercontainer #mootimeter-col-left,
   .mootimetercontainer .mootimetercolcontent {
     min-height: 646px;
     max-height: 850px;
@@ -120,11 +119,24 @@
   transform: rotate(110deg);
 }
 
+.mootimetercontainer #mootimeter-col-left {
+  display: flex;
+  flex: 27.5rem 2 0;
+  overflow-y: auto;
+}
+@media screen and (max-width: 680px) {
+  .mootimetercontainer #mootimeter-col-left {
+    min-height: 646px;
+    max-height: 850px;
+    flex-direction: column;
+  }
+}
 .mootimetercontainer .mootimetercolpages {
   position: relative;
   background-color: #00091e;
   flex: 7.5rem 0 0;
   max-width: 100%;
+  height: 100vh;
   border-top-left-radius: 0.5rem;
   border-bottom-left-radius: 0.5rem;
 }
@@ -328,6 +340,7 @@
 .mootimetercontainer .mootimetercoledit {
   flex: 20rem 2 0;
   background-color: #303142;
+  height: 100vh;
   max-width: 100%;
   overflow-y: auto;
 }
