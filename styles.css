@@ -1,5 +1,7 @@
 .mootimetercontainer {
   max-width: 1400px;
+  max-height: 850px;
+  overflow: auto;
 }
 .mootimetercontainer *:focus {
   outline: none;
@@ -33,7 +35,7 @@
   .mootimetercontainer #mootimeter-col-left,
   .mootimetercontainer .mootimetercolcontent {
     min-height: 646px;
-    max-height: 850px;
+    /* max-height: 850px; */
   }
 }
 
@@ -127,7 +129,7 @@
 @media screen and (max-width: 680px) {
   .mootimetercontainer #mootimeter-col-left {
     min-height: 646px;
-    max-height: 850px;
+    /* max-height: 850px; */
     flex-direction: column;
   }
 }
@@ -136,7 +138,7 @@
   background-color: #00091e;
   flex: 7.5rem 0 0;
   max-width: 100%;
-  height: 100vh;
+  /*height: 100vh;*/
   border-top-left-radius: 0.5rem;
   border-bottom-left-radius: 0.5rem;
 }
@@ -340,7 +342,7 @@
 .mootimetercontainer .mootimetercoledit {
   flex: 20rem 2 0;
   background-color: #303142;
-  height: 100vh;
+  /* height: 100vh; */
   max-width: 100%;
   overflow-y: auto;
 }
