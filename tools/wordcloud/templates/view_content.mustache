@@ -1,29 +1,120 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mootimetertool_wordcloud/view_content
+
+    Wordcloud content view - Student answer submission interface.
+
+    Displays a wordcloud tool where students can submit text answers.
+    Shows previously submitted answers as pills with delete buttons.
+
+    Context variables:
+    @param bool withwrapper - Whether to display outer container wrapper
+    @param string containerclasses - Additional CSS classes for container
+    @param string error - Error message HTML (optional)
+    @param object toolname - Tool name badge configuration
+        @param string pill - Display text for badge
+        @param string additional_class - Additional CSS classes
+    @param string question - Question text (HTML)
+    @param string uniqid - Unique ID for DOM elements
+    @param array answers - Array of user's submitted answers
+        @param string pill - Answer text to display
+        @param string additional_class - Additional CSS classes
+        @param object deletebutton - Delete button configuration
+            @param string id - Button element ID
+            @param string iconid - Icon element ID
+            @param string dataset - Data attributes for AJAX call
+            @param string tooltip - Tooltip text (optional)
+    @param object input_answer - Input field configuration
+        @param string mtm-input-id - Input element ID
+        @param string mtm-input-name - Input field name
+        @param string mtm-button-id - Submit button ID reference
+        @param string dataset - Data attributes
+        @param bool autofocus - Whether to autofocus input
+        @param string additional_class - Additional CSS classes
+    @param object button_answer - Submit button configuration
+        @param string mtm-button-id - Button element ID
+        @param string mtm-button-text - Button label text
+}}
+
+{{! Outer wrapper - Optional container for animation classes }}
 {{#withwrapper}}
 <div class="mootimetercontainer {{{containerclasses}}}">
-  {{/withwrapper}}
+{{/withwrapper}}
 
-  <div class="mootimeter-colcontent-preview mootimeter-width-s" id="mtmt_wordcloud_overview_{{uniqid}}">
+<div class="mootimeter-colcontent-preview mootimeter-width-s" id="mtmt_wordcloud_overview_{{uniqid}}">
 
+    {{! Error message display }}
     {{{error}}}
 
+    {{! Header section with tool badge and question }}
     <div class="mootimeter-colcontent-preview-header" id="mtmt_tool-colct-header">
 
+      {{! Tool name badge }}
       {{#toolname}}
-      {{> mod_mootimeter/elements/snippet_pill}}
+      <span class="mootimeter-pill {{additional_class}}">
+        {{pill}}
+      </span>
       {{/toolname}}
 
+      {{! Question text display }}
       <h4 id="mtm_question_{{uniqid}}">{{{question}}}</h4>
 
     </div>
 
+    {{! Display existing user answers as pills with delete buttons }}
     <div id="mtmt_wordcloud_pills">
       {{#answers}}
-      {{> mod_mootimeter/elements/snippet_pill}}
+      <span class="mootimeter-pill {{additional_class}}">
+        {{pill}}
+        {{#deletebutton}}
+        <button
+            id="{{id}}_{{uniqid}}"
+            class="mootimeter-btn-icon-only-rounded"
+            {{#tooltip}} data-toggle="tooltip" data-placement="top" title="{{tooltip}}"{{/tooltip}}
+            {{#href}} data-href="{{{href}}}" {{/href}}
+            {{{dataset}}}
+            {{#iconid}}data-iconid = "{{iconid}}_{{uniqid}}"{{/iconid}}
+        >
+            <i {{#iconid}} id="{{iconid}}_{{uniqid}}" {{/iconid}} class="icon fa fa-trash fa-light" aria-hidden="true"></i>
+        </button>
+        {{#js}}
+        require(['mod_mootimeter/handle_button_clicked'], (module) => module.init("{{id}}_{{uniqid}}"));
+        {{/js}}
+        {{/deletebutton}}
+      </span>
       {{/answers}}
     </div>
 
+    {{! Answer input field }}
     {{#input_answer}}
-    {{> mod_mootimeter/elements/snippet_input}}
+    <input
+        id="{{mtm-input-id}}_{{uniqid}}"
+        type="text"
+        class="mootimeter-input mootimeterfullwidth {{additional_class}}"
+        {{#mtm-input-name}}name="{{mtm-input-name}}" {{/mtm-input-name}}
+        {{#mtm-input-value}}value="{{mtm-input-value}}"{{/mtm-input-value}}
+        {{#mtm-input-placeholder}}placeholder="{{mtm-input-placeholder}}"{{/mtm-input-placeholder}}
+        {{{dataset}}}
+        {{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+        {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+        {{#mtm-input-name}}data-name="{{mtm-input-name}}"{{/mtm-input-name}}
+        {{#autofocus}}autofocus{{/autofocus}}
+    />
     {{#js}}
     require(['mootimetertool_wordcloud/store_answer'], (module) => module.init(
       "{{mtm-input-id}}_{{uniqid}}",
@@ -32,12 +123,19 @@
     {{/js}}
     {{/input_answer}}
 
+    {{! Submit button }}
     {{#button_answer}}
-    {{> mod_mootimeter/elements/snippet_button_full}}
+    <button
+        id="{{mtm-button-id}}_{{uniqid}}"
+        class="mootimeter-btn mootimeter-btn-full"
+    >
+        {{mtm-button-text}}
+    </button>
     {{/button_answer}}
 
+</div>
 
-  </div>
-  {{#withwrapper}}
+{{! Close outer wrapper }}
+{{#withwrapper}}
 </div>
 {{/withwrapper}}

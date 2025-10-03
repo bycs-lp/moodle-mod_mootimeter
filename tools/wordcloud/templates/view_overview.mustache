@@ -1,3 +1,44 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mootimetertool_wordcloud/view_overview
+
+    Wordcloud answer overview table - Shows all student answers with edit/delete options.
+
+    Displays a table of all submitted wordcloud answers with inline editing
+    and delete functionality for teachers.
+
+    Context variables:
+    @param string uniqid - Unique ID for DOM elements
+    @param array answers - Array of answer records
+        @param int nbr - Row number (sequential)
+        @param string userfullname - Full name of user or 'Anonymous'
+        @param object answer - Moodle core/inplace_editable context
+        @param string datetime - Formatted submission date/time
+        @param array options - Array of action buttons (typically delete)
+            @param string id - Button element ID
+            @param string iconid - Icon element ID
+            @param string icon - FontAwesome icon class
+            @param string additional_class - Additional CSS classes
+            @param string dataset - Data attributes for AJAX
+            @param string tooltip - Tooltip text (optional)
+}}
+
+{{! Wordcloud answer overview table - Shows all student answers with edit/delete options }}
 <table class="table" id="mtmt_wordcloud_overview_{{uniqid}}">
     <thead>
         <tr>
@@ -15,13 +56,25 @@
             <td>{{userfullname}}</td>
             <td>
                 {{#answer}}
-                {{> core/inplace_editable}}
+                {{>core/inplace_editable}}
                 {{/answer}}
             </td>
             <td>{{datetime}}</td>
             <td>
                 {{#options}}
-                {{> mod_mootimeter/elements/snippet_button_icon_only_rounded_with_js}}
+                <button
+                    id="{{id}}_{{uniqid}}"
+                    class="mootimeter-btn-icon-only-rounded {{{additional_class}}}"
+                    {{#tooltip}} data-toggle="tooltip" data-placement="top" title="{{tooltip}}"{{/tooltip}}
+                    {{#href}} data-href="{{{href}}}" {{/href}}
+                    {{{dataset}}}
+                    {{#iconid}}data-iconid = "{{iconid}}_{{uniqid}}"{{/iconid}}
+                >
+                    <i {{#iconid}} id="{{iconid}}_{{uniqid}}" {{/iconid}} class="icon fa {{icon}} fa-light" aria-hidden="true"></i>
+                </button>
+                {{#js}}
+                require(['mod_mootimeter/handle_button_clicked'], (module) => module.init("{{id}}_{{uniqid}}"));
+                {{/js}}
                 {{/options}}
             </td>
         </tr>

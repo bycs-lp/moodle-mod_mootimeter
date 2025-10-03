@@ -1,42 +1,219 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mootimetertool_wordcloud/view_settings
+
+    Wordcloud tool settings - Teacher configuration interface.
+
+    Provides settings interface for wordcloud configuration including
+    question input, max inputs per user, and wordcloud-specific settings.
+
+    Context variables: See view_settings.mustache documentation.
+}}
+
+{{! Wordcloud tool settings - Teacher configuration interface }}
 <div class="mootimetersettings mootimeterfullwidth">
 
-    {{> mod_mootimeter/elements/snippet_settings_col_header}}
+    {{! Header with tool name and controls }}
+    <div class="mootimeter-header-wrapper">
+        <h4>{{toolname}}</h4>
+        <div class="row">
+            {{#page_visibility-eye}}
+            <div
+                class="mootimeter-page-dropdown col-xs-6"
+                id="{{id}}_{{uniqid}}"
+                {{{dataset}}}
+                {{#tooltip}} data-toggle="tooltip" data-placement="top" title="{{tooltip}}"{{/tooltip}}
+            >
+                <i id="{{iconid}}" class="icon fa {{icon}} fa-light mootimeter-page-dropbtn" aria-hidden="true"></i>
+            </div>
+            {{#js}}
+            require(['mod_mootimeter/toggle_state'], (module) => module.init(["{{id}}_{{uniqid}}", "{{iconid}}_{{uniqid}}",]));
+            {{/js}}
+            {{/page_visibility-eye}}
+            <div class="mootimeter-page-dropdown col-xs-6">
+                <i class="icon fa fa-gear fa-light mootimeter-page-dropbtn" aria-hidden="true"></i>
+                <div class="mootimeter-page-dropdown-content">
+                    <div
+                        id="btn-delete_page_{{uniqid}}"
+                        class="mootimeter-delete-page-btn"
+                        data-pageid="{{pageid}}"
+                    >
+                        {{#str}} delete_page, mod_mootimeter {{/str}}
+                    </div>
+                </div>
+                {{#js}}
+                require(['mod_mootimeter/delete_page'], (module) => module.init(["btn-delete_page_{{uniqid}}"]));
+                {{/js}}
+            </div>
+        </div>
+    </div>
 
+    {{! Question input section }}
     {{#question}}
-    {{> mod_mootimeter/elements/snippet_input}}
+    <input
+        id="{{mtm-input-id}}_{{uniqid}}"
+        type="text"
+        class="mootimeter-input mootimeterfullwidth {{additional_class}}"
+        {{#mtm-input-name}}name="{{mtm-input-name}}" {{/mtm-input-name}}
+        {{#mtm-input-value}}value="{{mtm-input-value}}"{{/mtm-input-value}}
+        {{#mtm-input-placeholder}}placeholder="{{mtm-input-placeholder}}"{{/mtm-input-placeholder}}
+        {{{dataset}}}
+        {{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+        {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+        {{#mtm-input-name}}data-name="{{mtm-input-name}}"{{/mtm-input-name}}
+        {{#autofocus}}autofocus{{/autofocus}}
+    />
+    {{#ajaxmethode}}
+    {{#js}}
+    require(['mod_mootimeter/handler_input'], (module) => module.init("{{mtm-input-id}}_{{uniqid}}"));
+    {{/js}}
+    {{/ajaxmethode}}
     {{#js}}
     require(['mod_mootimeter/reload_page_content'], (module) => module.init("{{mtm-input-id}}_{{uniqid}}"));
     {{/js}}
     {{/question}}
 
-    {{> mod_mootimeter/elements/snippet_divider}}
+    {{! Horizontal divider }}
+    <hr class="divider">
 
+    {{! Answer section header }}
     <p class="text-bold">{{#str}} heading_answer , mootimetertool_wordcloud{{/str}}</p>
 
+    {{! Maximum inputs per user setting }}
     {{#maxinputsperuser}}
-    {{> mod_mootimeter/elements/snippet_number_input}}
+    <div class="mootimeter-number-input">
+        <label>
+            <span class="mootimeter-number-input-wrapper">
+                <input
+                    type="number"
+                    {{#id}} id="{{id}}"{{/id}}
+                    {{#value}} value="{{value}}"{{/value}}
+                    {{#name}} name="{{name}}"{{/name}}
+                    class="{{additional_class}}"
+                    data-min="{{min}}"
+                >
+                <button
+                    class="mootimeter-btn-icon-only-transparent mootimeter-number-input-btn-up"
+                    aria-hidden="true"
+                    {{#id}} id="up_{{id}}"{{/id}}
+                    data-id="{{id}}"
+                    {{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+                    {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                    {{#name}}data-name="{{name}}"{{/name}}
+                >
+                    <i class="icon fa fa-sort-up fa-light" aria-hidden="true"></i>
+                </button>
+                <button
+                    class="mootimeter-btn-icon-only-transparent mootimeter-number-input-btn-down"
+                    aria-hidden="true"
+                    {{#id}} id="down_{{id}}"{{/id}}
+                    data-id="{{id}}"
+                    {{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+                    {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                    {{#name}}data-name="{{name}}"{{/name}}
+                >
+                    <i class="icon fa fa-sort-down fa-light" aria-hidden="true"></i>
+                </button>
+            </span>
+            {{title}}
+        </label>
+    </div>
+    {{#ajaxmethode}}
+    {{#js}}
+    require(['mod_mootimeter/handler_input_number'], (module) => module.init("{{id}}"));
+    {{/js}}
+    {{/ajaxmethode}}
     {{/maxinputsperuser}}
 
+    {{! Settings section }}
     {{#settings}}
 
-    {{> mod_mootimeter/elements/snippet_divider}}
+    {{! Horizontal divider }}
+    <hr class="divider">
 
     <p class="text-bold">{{#str}} settings {{/str}}</p>
 
+    {{! Allow duplicate answers checkbox }}
     {{#allowduplicateanswers}}
-    {{> mod_mootimeter/elements/snippet_checkbox_with_label}}
+    <div class="mootimeter-checkbox {{wrapper_cb_with_label_additional_class}}" {{#wrapper_cb_with_label_id}} id="{{wrapper_cb_with_label_id}}" {{/wrapper_cb_with_label_id}}>
+        <label>
+            <input type="checkbox"
+                id="{{cb_with_label_id}}_{{uniqid}}"
+                class="mootimeter-checkbox-switch {{cb_with_label_additional_class}}"
+                {{cb_with_label_checked}}
+                {{cb_with_label_disabled}}
+                {{cb_with_label_additional_attribut}}
+                {{cb_with_label_dataset}}
+                {{#cb_with_label_value}} value="{{cb_with_label_value}}" {{/cb_with_label_value}}
+                {{#cb_with_label_name}}name="{{cb_with_label_name}}"{{/cb_with_label_name}}
+                {{#cb_with_label_ajaxmethod}}data-ajaxmethode="{{cb_with_label_ajaxmethod}}"{{/cb_with_label_ajaxmethod}}
+                {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                {{#cb_with_label_name}}data-name="{{cb_with_label_name}}"{{/cb_with_label_name}}
+            />
+            <span class="checkbox-icon-wrapper">
+                <i class="icon fa fa-check fa-light checkbox-icon" aria-hidden="true"></i>
+            </span>
+            <span
+                id="text_{{cb_with_label_id}}_{{uniqid}}"
+            >
+                {{cb_with_label_text}}
+            </span>
+        </label>
+    </div>
+    {{#cb_with_label_ajaxmethod}}
+    {{#js}}
+    require(['mod_mootimeter/handler_input_checkbox_switch'], (module) => module.init("{{cb_with_label_id}}_{{uniqid}}"));
+    {{/js}}
+    {{/cb_with_label_ajaxmethod}}
     {{/allowduplicateanswers}}
 
-    {{#showonteacherpermission}}
-    {{> mod_mootimeter/elements/snippet_checkbox_with_label}}
-    {{/showonteacherpermission}}
-
-    {{#showresultlive}}
-    {{> mod_mootimeter/elements/snippet_checkbox_with_label}}
-    {{/showresultlive}}
-
+    {{! Anonymous mode checkbox }}
     {{#anonymousmode}}
-    {{> mod_mootimeter/elements/snippet_checkbox_with_label}}
+    <div class="mootimeter-checkbox {{wrapper_cb_with_label_additional_class}}" {{#wrapper_cb_with_label_id}} id="{{wrapper_cb_with_label_id}}" {{/wrapper_cb_with_label_id}}>
+        <label>
+            <input type="checkbox"
+                id="{{cb_with_label_id}}_{{uniqid}}"
+                class="mootimeter-checkbox-switch {{cb_with_label_additional_class}}"
+                {{cb_with_label_checked}}
+                {{cb_with_label_disabled}}
+                {{cb_with_label_additional_attribut}}
+                {{cb_with_label_dataset}}
+                {{#cb_with_label_value}} value="{{cb_with_label_value}}" {{/cb_with_label_value}}
+                {{#cb_with_label_name}}name="{{cb_with_label_name}}"{{/cb_with_label_name}}
+                {{#cb_with_label_ajaxmethod}}data-ajaxmethode="{{cb_with_label_ajaxmethod}}"{{/cb_with_label_ajaxmethod}}
+                {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                {{#cb_with_label_name}}data-name="{{cb_with_label_name}}"{{/cb_with_label_name}}
+            />
+            <span class="checkbox-icon-wrapper">
+                <i class="icon fa fa-check fa-light checkbox-icon" aria-hidden="true"></i>
+            </span>
+            <span
+                id="text_{{cb_with_label_id}}_{{uniqid}}"
+            >
+                {{cb_with_label_text}}
+            </span>
+        </label>
+    </div>
+    {{#cb_with_label_ajaxmethod}}
+    {{#js}}
+    require(['mod_mootimeter/handler_input_checkbox_switch'], (module) => module.init("{{cb_with_label_id}}_{{uniqid}}"));
+    {{/js}}
+    {{/cb_with_label_ajaxmethod}}
     {{/anonymousmode}}
 
     {{/settings}}
