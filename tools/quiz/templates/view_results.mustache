@@ -1,3 +1,39 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mootimetertool_quiz/view_results
+
+    Quiz results visualization template with Chart.js integration.
+
+    Displays quiz results as interactive charts (bar, pillar, pie).
+    Shows denial message to students when teacher permission is required.
+
+    Context variables:
+    @param bool teacherpermissiontoview - Whether user has permission to view results
+    @param string uniqid - Unique ID for DOM elements
+    @param string contentstring - Empty state message when no answers exist (optional)
+    @param int charttype - Visualization type (1=pillar, 2=bar, 3=pie)
+    @param string chartsettings - JSON string with Chart.js configuration
+    @param string labels - JSON array of answer option labels
+    @param string values - JSON array of answer counts
+    @param int pageid - Page ID for reference
+}}
+
+{{! No permission view - Students see this when teacherpermissiontoview is disabled }}
 {{^teacherpermissiontoview}}
     <div class="mootimeterfullwidth mootimeter-colcontent-preview mootimeter-width-xl mootimeter-vertical-align"
         id="mtmt_quiz_no_answer_wrapper_{{uniqid}}"
@@ -6,11 +42,14 @@
     </div>
 {{/teacherpermissiontoview}}
 
+{{! Results view - Teachers and authorized users see this }}
 {{#teacherpermissiontoview}}
+    {{! Empty state - Display when no answers exist yet }}
     {{#contentstring}}
-    {{> mod_mootimeter/view_page_empty_content}}
+    <h2>{{contentstring}}</h2>
     {{/contentstring}}
 
+    {{! Chart canvas - Chart.js renders visualization here }}
     <div class="mootimeterfullwidth mootimeter-colcontent-preview mootimeter-width-xl mootimeter-vertical-align"
         id="mtmt_quiz_results_wrapper">
         <canvas

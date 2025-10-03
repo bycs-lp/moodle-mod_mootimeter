@@ -1,46 +1,213 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mootimetertool_quiz/view_content
+
+    Quiz content view - Complete self-contained template.
+
+    Displays a quiz with answer options and submit button.
+    Supports single-choice (radio) and multiple-choice (checkbox).
+
+    Context: Student view - Display quiz for answering.
+
+    @param int pageid - Page ID from database
+    @param string uniqid - Unique ID for DOM elements (generated with PHP uniqid())
+    @param string question - Quiz question (HTML, already processed through format_text())
+    @param string toolname - Tool name for badge display (e.g. "Quiz")
+    @param bool withwrapper - Whether outer container wrapper should be displayed
+    @param string containerclasses - Additional CSS classes for outer container
+    @param string error - Error message to display (HTML, optional)
+    @param bool showanswercorrection - Whether correction mode is active (shows correct answers)
+
+    @param array answeroptions - Array of answer options:
+        @param int id - Unique option ID from database
+        @param string text - Answer text (HTML)
+        @param bool iscorrect - Whether this option is correct
+        @param bool ischecked - Whether this option was selected by user
+        @param bool isdisabled - Whether this option is disabled (in correction mode)
+        @param bool ismultiplechoice - true for checkbox display, false for radio display
+        @param string highlightclass - CSS class for highlighting (e.g. 'mootimeter-success')
+
+    @param object sendbutton - Submit button configuration (optional, only if not showanswercorrection):
+        @param string id - Button ID (e.g. 'mtmt_store_answer')
+        @param string text - Button label
+        @param int pageid - Page ID for AJAX calls
+        @param object context - Context information below button:
+            @param string text - Hint text (e.g. "Please select an answer")
+
+    Example context:
+    {
+        "pageid": 42,
+        "uniqid": "5f8a1b2c3d4e5",
+        "question": "<p>What is your favorite color?</p>",
+        "toolname": "Quiz",
+        "withwrapper": true,
+        "containerclasses": "mootimeter-animation-slide-in",
+        "answeroptions": [
+            {
+                "id": 101,
+                "text": "Red",
+                "iscorrect": true,
+                "ischecked": false,
+                "isdisabled": false,
+                "ismultiplechoice": false,
+                "highlightclass": ""
+            },
+            {
+                "id": 102,
+                "text": "Blue",
+                "iscorrect": false,
+                "ischecked": false,
+                "isdisabled": false,
+                "ismultiplechoice": false,
+                "highlightclass": ""
+            }
+        ],
+        "sendbutton": {
+            "id": "mtmt_store_answer",
+            "text": "Submit",
+            "pageid": 42,
+            "context": {
+                "text": "Please select an answer"
+            }
+        }
+    }
+}}
+
+{{! Outer wrapper - Optional container for animation classes }}
 {{#withwrapper}}
 <div class="mootimetercontainer {{{containerclasses}}}">
-  {{/withwrapper}}
-  <div class="mootimeter-colcontent-preview mootimeter-width-s" id="mtmt_quiz_overview_{{uniqid}}">
+{{/withwrapper}}
 
+<div class="mootimeter-colcontent-preview mootimeter-width-s" id="mtmt_quiz_overview_{{uniqid}}">
+
+    {{! Error message display }}
     {{{error}}}
 
+    {{! Header section with tool badge and question }}
     <div class="mootimeter-colcontent-preview-header" id="mtmt_tool-colct-header">
 
-      {{#toolname}}
-      {{> mod_mootimeter/elements/snippet_pill}}
-      {{/toolname}}
+        {{! Tool name badge (e.g. "Quiz" pill) }}
+        {{#toolname}}
+        <span class="mootimeter-pill {{additional_class}}">
+            {{pill}}
+        </span>
+        {{/toolname}}
 
-      <h4 id="mtm_question_{{uniqid}}">{{{question}}}</h4>
+        {{! Question text display }}
+        <h4 id="mtm_question_{{uniqid}}">{{{question}}}</h4>
 
     </div>
 
-    <div class="mootimeter-colcontent-preview-options">
-      {{#answeroptions}}
-      {{#cb}}
-      {{> mod_mootimeter/elements/snippet_checkbox_with_label}}
-      {{/cb}}
-      {{#rb}}
-      {{> mod_mootimeter/elements/snippet_radio_button}}
-      {{/rb}}
-      {{/answeroptions}}
+    {{! Answer options section }}
+    <div class="mootimeter-answeroptions" id="mtmt_answeroptions_wrapper_{{uniqid}}">
+        {{#answeroptions}}
+        <div class="mootimeter-answeroption {{highlightclass}}">
+            {{! Checkbox for multiple-choice questions }}
+            {{#ismultiplechoice}}
+            <div class="mootimeter-checkbox">
+                <label>
+                    <input
+                        type="checkbox"
+                        name="multipleanswers[]"
+                        value="{{id}}"
+                        id="answer_{{id}}_{{uniqid}}"
+                        data-pageid="{{pageid}}"
+                        {{#ischecked}}checked{{/ischecked}}
+                        {{#isdisabled}}disabled{{/isdisabled}}
+                    />
+                    <span class="checkbox-icon-wrapper">
+                        <i class="icon fa fa-check fa-light checkbox-icon" aria-hidden="true"></i>
+                    </span>
+                    <span class="mootimeter-answeroption-text">
+                        {{{text}}}
+                    </span>
+                    {{! Correct answer indicator (shown in correction mode) }}
+                    {{#showanswercorrection}}
+                        {{#iscorrect}}
+                        <span class="mootimeter-correct-indicator">
+                            <i class="icon fa fa-check-circle fa-light" aria-hidden="true"></i>
+                        </span>
+                        {{/iscorrect}}
+                    {{/showanswercorrection}}
+                </label>
+            </div>
+            {{/ismultiplechoice}}
+
+            {{! Radio button for single-choice questions }}
+            {{^ismultiplechoice}}
+            <div class="mootimeter-radio-btn">
+                <label>
+                    <input
+                        type="radio"
+                        name="multipleanswers[]"
+                        value="{{id}}"
+                        id="answer_{{id}}_{{uniqid}}"
+                        data-pageid="{{pageid}}"
+                        {{#ischecked}}checked{{/ischecked}}
+                        {{#isdisabled}}disabled{{/isdisabled}}
+                    />
+                    <span class="radio-btn-icon-wrapper">
+                        <i class="icon fa fa-check fa-light radio-btn-icon" aria-hidden="true"></i>
+                    </span>
+                    <span class="mootimeter-answeroption-text">
+                        {{{text}}}
+                    </span>
+                    {{! Correct answer indicator (shown in correction mode) }}
+                    {{#showanswercorrection}}
+                        {{#iscorrect}}
+                        <span class="mootimeter-correct-indicator">
+                            <i class="icon fa fa-check-circle fa-light" aria-hidden="true"></i>
+                        </span>
+                        {{/iscorrect}}
+                    {{/showanswercorrection}}
+                </label>
+            </div>
+            {{/ismultiplechoice}}
+        </div>
+        {{/answeroptions}}
     </div>
 
-    <div class="mootimeter-colcontent-preview-send">
-      {{#sendbutton}}
-      {{> mod_mootimeter/elements/snippet_button_full}}
-      {{^showanswercorrection}}
-      {{#js}}
-      require(['mootimetertool_quiz/store_answer'], (module) => module.init("{{mtm-button-id}}_{{uniqid}}"));
-      {{/js}}
-      {{/showanswercorrection}}
-      {{/sendbutton}}
+    {{! Submit button section (hidden in correction mode) }}
+    {{^showanswercorrection}}
+        {{#sendbutton}}
+        <button
+            id="{{id}}_{{uniqid}}"
+            class="mootimeter-btn mootimeter-btn-full"
+            data-pageid="{{pageid}}"
+        >
+            {{text}}
+        </button>
+        {{#js}}
+        require(['mootimetertool_quiz/store_answer'], (module) => module.init("{{id}}_{{uniqid}}"));
+        {{/js}}
 
-      {{#sendbutton_context}}
-      <small>{{text}}</small>
-      {{/sendbutton_context}}
-    </div>
-  </div>
-  {{#withwrapper}}
+        {{! Context hint below button }}
+        {{#context}}
+        <p class="mootimeter-context-text">
+            {{text}}
+        </p>
+        {{/context}}
+        {{/sendbutton}}
+    {{/showanswercorrection}}
+
+</div>
+
+{{! Close outer wrapper }}
+{{#withwrapper}}
 </div>
 {{/withwrapper}}

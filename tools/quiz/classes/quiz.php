@@ -426,85 +426,143 @@ class quiz extends \mod_mootimeter\toolhelper {
      * @return array
      * @deprecated
      */
+    /**
+     * Get all parameters for rendering the quiz content view.
+     *
+     * Creates a clean, well-structured parameter array for the view_content.mustache template.
+     * All parameters are fully documented in the template file itself.
+     *
+     * This method replaces the old snippet-based approach with a direct, inline template structure.
+     * No more cryptic parameter names like 'wrapper_cb_with_label_additional_class'.
+     *
+     * @param object $page Page object from database (must contain id and tool properties)
+     * @return array Template parameters matching view_content.mustache structure
+     * @throws moodle_exception If page data is invalid or instance cannot be found
+     */
     public function get_renderer_params(object $page) {
         global $USER;
 
-        // Parameter for initial wordcloud rendering.
-        $params['pageid'] = $page->id;
-        $instance = self::get_instance_by_pageid($page->id);
-        $cm = self::get_cm_by_instance($instance);
-
-        if (self::get_tool_config($page->id, 'showanswercorrection')) {
-            $params['showanswercorrection'] = true;
+        // Validate input.
+        if (!isset($page->id) || $page->id <= 0) {
+            throw new \moodle_exception('error');
         }
 
-        // Parameter for initializing Badges.
-        $params["toolname"] = ['pill' => get_string("pluginname", "mootimetertool_" . $page->tool)];
-        $params['template'] = "mootimetertool_quiz/view_content";
+        $instance = self::get_instance_by_pageid($page->id);
+        $cm = self::get_cm_by_instance($instance);
+        $context = \context_module::instance($cm->id);
 
+        // Base parameters.
+        $params = [
+            'pageid' => $page->id,
+            'uniqid' => uniqid(),
+            'question' => format_text(
+                self::get_tool_config($page, 'question'),
+                FORMAT_HTML,
+                ['context' => $context]
+            ),
+            'toolname' => get_string('pluginname', 'mootimetertool_' . $page->tool),
+            'showanswercorrection' => (bool) self::get_tool_config($page->id, 'showanswercorrection'),
+            'withwrapper' => true,
+            'containerclasses' => '',
+            'error' => '',
+            'template' => 'mootimetertool_quiz/view_content',
+        ];
+
+        // Get answer options and user answers.
         $answeroptions = $this->get_answer_options($page->id);
-
-        $useransweroptionsid = array_keys($this->get_user_answers(
+        $useranswers = $this->get_user_answers(
             $this->get_answer_table(),
             $page->id,
             $this->get_answer_column(),
             $USER->id
-        ));
+        );
+        $useranswerids = array_keys($useranswers);
 
-        $inputtype = 'cb';
-        if (intval(self::get_tool_config($page->id, 'maxanswersperuser', self::MAXANSWERSDEFAULT)) === 1) {
-            $inputtype = 'rb';
-        }
-        foreach ($answeroptions as $answeroption) {
-            $wrapperadditionalclass = (self::get_tool_config($page->id, 'showanswercorrection')) ? "mootimeter-highlighter" : '';
-            $wrapperadditionalclass .= (
-                self::get_tool_config($page->id, 'showanswercorrection') && $answeroption->optioniscorrect
-            ) ? " mootimeter-success" : '';
+        // Determine if multiple choice (checkbox) or single choice (radio).
+        $maxanswers = (int) self::get_tool_config($page->id, 'maxanswersperuser', self::MAXANSWERSDEFAULT);
+        $ismultiplechoice = ($maxanswers !== 1);
 
-            if (
-                empty($answeroption->optiontext)
-                && has_capability('mod/mootimeter:moderator', \context_module::instance($cm->id))
-            ) {
+        // Build clean answer options array with descriptive parameter names.
+        $params['answeroptions'] = [];
+        foreach ($answeroptions as $option) {
+            // Determine option text.
+            $optiontext = $option->optiontext;
+            if (empty($optiontext) && has_capability('mod/mootimeter:moderator', $context)) {
                 $optiontext = get_string('enter_answeroption', 'mootimetertool_quiz');
-            } else {
-                $optiontext = $answeroption->optiontext;
             }
 
-            $params['answeroptions'][$inputtype][] = [
-                'wrapper_' . $inputtype . '_with_label_id' => "wrapper_ao_" . $answeroption->id,
-                'wrapper_' . $inputtype . '_with_label_additional_class' => $wrapperadditionalclass,
-
-                $inputtype . '_with_label_id' => "ao_" . $answeroption->id,
-                $inputtype . '_with_label_text' => $optiontext,
+            // Build option data with clear, semantic parameter names.
+            $optiondata = [
+                'id' => $option->id,
+                'text' => $optiontext,
+                'iscorrect' => (bool) $option->optioniscorrect,
+                'ischecked' => in_array($option->id, $useranswerids),
+                'isdisabled' => $params['showanswercorrection'],
+                'ismultiplechoice' => $ismultiplechoice,
+                'highlightclass' => $this->get_option_highlight_class($option, $params['showanswercorrection']),
                 'pageid' => $page->id,
-                $inputtype . '_with_label_name' => 'multipleanswers[]',
-                $inputtype . '_with_label_value' => $answeroption->id,
-                $inputtype . '_with_label_additional_class' => 'mootimeter_settings_selector ' .
-                    'mootimeter-highlighter mootimeter-success',
-                $inputtype . '_with_label_checked' => (in_array($answeroption->id, $useransweroptionsid)) ? "checked" : '',
-                $inputtype . '_with_label_additional_attribut' => (self::get_tool_config($page->id, 'showanswercorrection')) ?
-                    "disabled" : '',
             ];
+
+            $params['answeroptions'][] = $optiondata;
         }
 
-        if (empty(self::get_tool_config($page->id, 'showanswercorrection'))) {
+        // Add submit button (only if not in correction mode).
+        if (!$params['showanswercorrection']) {
             $params['sendbutton'] = [
-                'mtm-button-id' => 'mtmt_store_answer',
-                'mtm-button-text' => get_string('submit_answer', 'mootimetertool_quiz'),
-                'mtm-button-dataset' => 'data-pageid="' . $page->id . '"',
+                'id' => 'mtmt_store_answer',
+                'text' => get_string('submit_answer', 'mootimetertool_quiz'),
+                'pageid' => $page->id,
             ];
 
-            if (intval(self::get_tool_config($page, 'maxanswersperuser')) == 1) {
-                $sendbuttoncontext = get_string('sendbutton_context_one_answers_possible', 'mootimetertool_quiz');
-            } else {
-                $sendbuttoncontext = get_string('sendbutton_context_more_answers_possible', 'mootimetertool_quiz');
-            }
+            // Add context text below button.
             $params['sendbutton_context'] = [
-                'text' => $sendbuttoncontext,
+                'text' => $this->get_submit_context_text($maxanswers),
             ];
         }
 
         return $params;
+    }
+
+    /**
+     * Get CSS highlight class for answer option in correction mode.
+     *
+     * Returns the appropriate CSS class to highlight correct/incorrect answers
+     * when the correction mode is active.
+     *
+     * @param stdClass $option Answer option object from database
+     * @param bool $showcorrection Whether correction mode is active
+     * @return string CSS class name (empty string if no highlighting needed)
+     */
+    protected function get_option_highlight_class(stdClass $option, bool $showcorrection): string {
+        if (!$showcorrection) {
+            return '';
+        }
+
+        // Add 'mootimeter-highlighter' base class.
+        $classes = 'mootimeter-highlighter';
+
+        // Add success class if option is correct.
+        if ($option->optioniscorrect) {
+            $classes .= ' mootimeter-success';
+        }
+
+        return $classes;
+    }
+
+    /**
+     * Get submit button context text based on max answers configuration.
+     *
+     * Returns a localized help text that informs the user how many answers
+     * they can select (single or multiple).
+     *
+     * @param int $maxanswers Maximum number of allowed answers
+     * @return string Localized context text
+     */
+    protected function get_submit_context_text(int $maxanswers): string {
+        if ($maxanswers == 1) {
+            return get_string('sendbutton_context_one_answers_possible', 'mootimetertool_quiz');
+        }
+        return get_string('sendbutton_context_more_answers_possible', 'mootimetertool_quiz');
     }
 
     /**

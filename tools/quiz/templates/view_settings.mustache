@@ -1,27 +1,348 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mootimetertool_quiz/view_settings
+
+    Quiz tool settings view template for teacher configuration.
+
+    This template provides the complete settings interface for quiz/poll configuration
+    including question input, answer options management, visualization type selection,
+    and various quiz settings. All HTML is inline without external snippet dependencies.
+
+    Classes required for JS:
+    * mootimeter_settings_selector - Input fields that trigger AJAX saves
+    * mtmt_visualization_selector - Visualization type selector buttons
+    * mootimeter-answer-options - Answer option input fields
+    * mtmt-remove-answeroption - Remove answer option buttons
+    * mootimeter-delete-page-btn - Delete page button
+
+    Data attributes required for JS:
+    * data-ajaxmethode - AJAX method name for save operations
+    * data-pageid - Page ID for all AJAX operations
+    * data-aoid - Answer option ID (for answer option operations)
+    * data-name - Field name for save operations
+    * data-visuid - Visualization type ID
+    * data-id - Element ID reference
+    * data-min - Minimum value for number inputs
+
+    Context variables required for this template:
+    @param string toolname - Name of the tool (quiz/poll)
+    @param object page_visibility-eye - Page visibility toggle configuration (optional)
+        @param string id - Toggle button ID
+        @param string dataset - Data attributes
+        @param string tooltip - Tooltip text
+        @param string iconid - Icon element ID
+        @param string icon - FontAwesome icon class
+    @param int pageid - Page ID
+    @param bool ispoll - True if this is a poll (hides correct answer marking)
+    @param object question - Question input configuration
+        @param string mtm-input-id - Unique input field ID
+        @param string mtm-input-value - Current question text
+        @param string mtm-input-placeholder - Placeholder text
+        @param string mtm-input-name - Input field name
+        @param string additional_class - Additional CSS classes
+        @param int pageid - Page ID
+        @param string ajaxmethode - AJAX method for saving
+    @param object notification_mark_correct_anser - Notification for marking correct answers (quiz only)
+        @param string notification_id - Notification element ID
+        @param string notification_type - Type (info/warning/danger)
+        @param string notification_icon - FontAwesome icon class
+        @param string notification_icon_rotation - Rotation class
+        @param string notification_text - Notification message
+    @param array answeroptions - Array of answer option configurations
+        @param int aoid - Answer option ID
+        @param bool ispoll - True if poll mode
+        @param string mtm-ao-wrapper-id - Wrapper div ID
+        @param string mtm-input-id - Input field ID
+        @param string mtm-input-name - Input field name
+        @param string mtm-input-value - Current answer text
+        @param string mtm-input-placeholder - Placeholder text
+        @param string ajaxmethode - AJAX save method
+        @param string additional_class - Additional CSS classes
+        @param string dataset - Data attributes string
+        @param string mtm-cb-without-label-id - Checkbox ID (quiz only)
+        @param string mtm-cb-without-label-name - Checkbox name (quiz only)
+        @param string mtm-cb-without-label-ajaxmethode - Checkbox save method (quiz only)
+        @param string mtm-cb-without-label-checked - 'checked' if correct (quiz only)
+        @param string mtm-cb-without-label-dataset - Checkbox data attributes (quiz only)
+        @param string button_icon_only_transparent_id - Delete button ID
+        @param string button_icon_only_transparent_dataset - Delete button data attributes
+        @param string button_icon_only_transparent_icon - Delete button icon
+        @param string button_icon_only_transparent_additionalclass - Delete button classes
+        @param string button_icon_only_transparent_ajaxmethod - Delete AJAX method
+    @param object addoption - Add answer option button configuration
+        @param string button_icon_only_transparent_icon - Button icon
+        @param string button-text - Button text
+        @param string button_icon_only_transparent_id - Button ID
+        @param string button_icon_only_transparent_dataset - Data attributes
+    @param array visualization - Array of visualization type options (3 items: pillar, bar, pie)
+        @param string mtm-button-icon-id - Button ID
+        @param string mtm-button-icon-additionalclass - Additional CSS classes
+        @param object mtm-button-icon-img - Image configuration
+            @param string path - Image path
+            @param string width - Image width
+        @param bool mtm-button-icon-active - True if currently selected
+        @param string mtm-button-icon-dataset - Data attributes
+    @param object maxanswers - Maximum answers per user configuration
+        @param string title - Label text
+        @param string additional_class - CSS classes
+        @param string id - Input field ID
+        @param string name - Input field name
+        @param string min - Minimum value
+        @param int pageid - Page ID
+        @param string ajaxmethode - AJAX save method
+        @param string value - Current value
+    @param object anonymousmode - Anonymous mode checkbox configuration
+        @param string cb_with_label_id - Checkbox ID
+        @param int pageid - Page ID
+        @param string cb_with_label_text - Label text with description
+        @param string cb_with_label_name - Checkbox name
+        @param string cb_with_label_additional_class - CSS classes
+        @param string cb_with_label_ajaxmethod - AJAX save method (omitted if disabled)
+        @param string cb_with_label_checked - 'checked' or 'checked disabled' string
+
+    Example context (json):
+    {
+        "toolname": "Quiz",
+        "page_visibility-eye": {
+            "id": "page_visibility_toggle",
+            "dataset": "data-state=\"visible\"",
+            "tooltip": "Toggle visibility",
+            "iconid": "visibility_icon",
+            "icon": "fa-eye"
+        },
+        "pageid": 42,
+        "ispoll": false,
+        "question": {
+            "mtm-input-id": "mtm_input_question",
+            "mtm-input-value": "What is your favorite color?",
+            "mtm-input-placeholder": "Enter question",
+            "mtm-input-name": "question",
+            "additional_class": "mootimeter_settings_selector",
+            "pageid": 42,
+            "ajaxmethode": "mod_mootimeter_store_setting"
+        },
+        "notification_mark_correct_anser": {
+            "notification_id": "mtmt_mark_correct_answer",
+            "notification_type": "info",
+            "notification_icon": "fa-share fa-flip-vertical",
+            "notification_icon_rotation": "mootimeter_rotate_110",
+            "notification_text": "Mark the correct answer(s) with the checkbox"
+        },
+        "answeroptions": [
+            {
+                "aoid": 123,
+                "ispoll": false,
+                "mtm-ao-wrapper-id": "ao_wrapper_123",
+                "mtm-input-id": "ao_text_123",
+                "mtm-input-name": "ao_text",
+                "mtm-input-value": "Red",
+                "mtm-input-placeholder": "Enter answer option",
+                "ajaxmethode": "mootimetertool_quiz_store_answeroption_text",
+                "additional_class": "mootimeter-answer-options mootimeter_settings_selector",
+                "dataset": "data-pageid=42 data-aoid=123",
+                "mtm-cb-without-label-id": "ao_iscorrect_123",
+                "mtm-cb-without-label-name": "ao_iscorrect",
+                "mtm-cb-without-label-ajaxmethode": "mootimetertool_quiz_store_answeroption_is_correct",
+                "mtm-cb-without-label-checked": "checked",
+                "mtm-cb-without-label-dataset": "data-pageid=42 data-aoid=123",
+                "button_icon_only_transparent_id": "ao_delete_123",
+                "button_icon_only_transparent_dataset": "data-pageid=42 data-aoid=123",
+                "button_icon_only_transparent_icon": "fa-close",
+                "button_icon_only_transparent_additionalclass": "mtmt-remove-answeroption",
+                "button_icon_only_transparent_ajaxmethod": "mootimetertool_quiz_remove_anseroption"
+            }
+        ],
+        "addoption": {
+            "button_icon_only_transparent_icon": "fa-plus",
+            "button-text": "Add answer option",
+            "button_icon_only_transparent_id": "add_answer_option",
+            "button_icon_only_transparent_dataset": "data-pageid=\"42\""
+        },
+        "visualization": [
+            {
+                "mtm-button-icon-id": "visualization_1",
+                "mtm-button-icon-additionalclass": "mtmt_visualization_selector",
+                "mtm-button-icon-img": {
+                    "path": "tools/quiz/pix/chart-pillar.svg",
+                    "width": "24px"
+                },
+                "mtm-button-icon-active": true,
+                "mtm-button-icon-dataset": "data-pageid=\"42\" data-visuid=1"
+            }
+        ],
+        "maxanswers": {
+            "title": "Maximum answers per user",
+            "additional_class": "mootimeter_settings_selector",
+            "id": "maxanswersperuser",
+            "name": "maxanswersperuser",
+            "min": "0",
+            "pageid": 42,
+            "ajaxmethode": "mod_mootimeter_store_setting",
+            "value": "1"
+        },
+        "anonymousmode": {
+            "cb_with_label_id": "anonymousmode",
+            "pageid": 42,
+            "cb_with_label_text": "Anonymous mode - Answers are not linked to users",
+            "cb_with_label_name": "anonymousmode",
+            "cb_with_label_additional_class": "mootimeter_settings_selector",
+            "cb_with_label_ajaxmethod": "mod_mootimeter_store_setting",
+            "cb_with_label_checked": ""
+        }
+    }
+}}
+
 <div class="mootimetersettings mootimeterfullwidth">
 
-    {{> mod_mootimeter/elements/snippet_settings_col_header}}
+    {{! Header with tool name and controls }}
+    <div class="mootimeter-header-wrapper">
+        <h4>{{toolname}}</h4>
+        <div class="row">
+            {{#page_visibility-eye}}
+            <div
+                class="mootimeter-page-dropdown col-xs-6"
+                id="{{id}}_{{uniqid}}"
+                {{{dataset}}}
+                {{#tooltip}} data-toggle="tooltip" data-placement="top" title="{{tooltip}}"{{/tooltip}}
+            >
+                <i id="{{iconid}}" class="icon fa {{icon}} fa-light mootimeter-page-dropbtn" aria-hidden="true"></i>
+            </div>
+            {{#js}}
+            require(['mod_mootimeter/toggle_state'], (module) => module.init(["{{id}}_{{uniqid}}", "{{iconid}}_{{uniqid}}",]));
+            {{/js}}
+            {{/page_visibility-eye}}
+            <div class="mootimeter-page-dropdown col-xs-6">
+                <i class="icon fa fa-gear fa-light mootimeter-page-dropbtn" aria-hidden="true"></i>
+                <div class="mootimeter-page-dropdown-content">
+                    <div
+                        id="btn-delete_page_{{uniqid}}"
+                        class="mootimeter-delete-page-btn"
+                        data-pageid="{{pageid}}"
+                    >
+                        {{#str}} delete_page, mod_mootimeter {{/str}}
+                    </div>
+                </div>
+                {{#js}}
+                require(['mod_mootimeter/delete_page'], (module) => module.init(["btn-delete_page_{{uniqid}}"]));
+                {{/js}}
+            </div>
+        </div>
+    </div>
 
+    {{! Question Input Section }}
     {{#question}}
-    {{> mod_mootimeter/elements/snippet_input}}
+    <input
+        id="{{mtm-input-id}}_{{uniqid}}"
+        type="text"
+        class="mootimeter-input mootimeterfullwidth {{additional_class}}"
+        {{#mtm-input-name}}name="{{mtm-input-name}}" {{/mtm-input-name}}
+        {{#mtm-input-value}}value="{{mtm-input-value}}"{{/mtm-input-value}}
+        {{#mtm-input-placeholder}}placeholder="{{mtm-input-placeholder}}"{{/mtm-input-placeholder}}
+        {{{dataset}}}
+        {{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+        {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+        {{#mtm-input-name}}data-name="{{mtm-input-name}}"{{/mtm-input-name}}
+        {{#autofocus}}autofocus{{/autofocus}}
+    />
+    {{#ajaxmethode}}
+    {{#js}}
+    require(['mod_mootimeter/handler_input'], (module) => module.init("{{mtm-input-id}}_{{uniqid}}"));
+    {{/js}}
+    {{/ajaxmethode}}
     {{#js}}
     require(['mod_mootimeter/reload_page_content'], (module) => module.init("{{mtm-input-id}}_{{uniqid}}"));
     {{/js}}
     {{/question}}
 
-    {{> mod_mootimeter/elements/snippet_divider}}
+    {{! Horizontal Divider }}
+    <hr class="divider">
 
+    {{! Answer Options Section Header }}
     <p class="text-bold">{{#str}} answeroptions , mootimetertool_quiz {{/str}}</p>
 
+    {{! Correct Answer Notification (Quiz only) }}
     {{^ispoll}}
         {{#notification_mark_correct_anser}}
-            {{> mod_mootimeter/elements/snippet_notification}}
+        <div {{#notification_id}} id="{{notification_id}}" {{/notification_id}} class="mootimeter-colcontent-preview-notification notification-{{notification_type}}">
+            <span class="{{notification_icon_rotation}}"><i class="icon fa {{notification_icon}} fa-light" aria-hidden="true"></i></span>
+            <p>
+                {{notification_text}}
+            </p>
+        </div>
         {{/notification_mark_correct_anser}}
     {{/ispoll}}
 
+    {{! Answer Options List }}
     <div class="input-with-checkbox-icon_wrapper" id="mtmt-quiz-ao-wrapper">
         {{#answeroptions}}
-        {{> mod_mootimeter/elements/snippet_input_with_checkbox-icon}}
+        <div class="input-with-checkbox-icon" {{#mtm-ao-wrapper-id}}id="{{mtm-ao-wrapper-id}}"{{/mtm-ao-wrapper-id}}>
+            {{^ispoll}}
+            <div class="mootimeter-checkbox">
+                <label>
+                    <input
+                        type="checkbox"
+                        id="{{mtm-cb-without-label-id}}_{{uniqid}}"
+                        class="mootimeter-checkbox-switch {{mtm-cb-without-label-classes}} {{additional_class}}"
+                        {{mtm-cb-without-label-checked}}
+                        {{#mtm-cb-without-label-name}}name="{{mtm-cb-without-label-name}}"{{/mtm-cb-without-label-name}}
+                        {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                        {{#mtm-cb-without-label-ajaxmethode}}data-ajaxmethode="{{mtm-cb-without-label-ajaxmethode}}"{{/mtm-cb-without-label-ajaxmethode}}
+                        {{#mtm-cb-without-label-name}}data-name="{{mtm-cb-without-label-name}}"{{/mtm-cb-without-label-name}}
+                        {{{mtm-cb-without-label-dataset}}}
+                    />
+                    <span class="checkbox-icon-wrapper">
+                        <i class="icon fa fa-check fa-light checkbox-icon" aria-hidden="true"></i>
+                    </span>
+                </label>
+            </div>
+            {{#mtm-cb-without-label-ajaxmethode}}
+            {{#js}}
+            require(['mod_mootimeter/handler_input_checkbox_switch'], (module) => module.init("{{mtm-cb-without-label-id}}_{{uniqid}}"));
+            {{/js}}
+            {{/mtm-cb-without-label-ajaxmethode}}
+            {{/ispoll}}
+            <input
+                id="{{mtm-input-id}}_{{uniqid}}"
+                type="text"
+                class="mootimeter-input mootimeterfullwidth {{additional_class}}"
+                {{#mtm-input-name}}name="{{mtm-input-name}}" {{/mtm-input-name}}
+                {{#mtm-input-value}}value="{{mtm-input-value}}"{{/mtm-input-value}}
+                {{#mtm-input-placeholder}}placeholder="{{mtm-input-placeholder}}"{{/mtm-input-placeholder}}
+                {{{dataset}}}
+                {{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+                {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                {{#mtm-input-name}}data-name="{{mtm-input-name}}"{{/mtm-input-name}}
+                {{#autofocus}}autofocus{{/autofocus}}
+            />
+            {{#ajaxmethode}}
+            {{#js}}
+            require(['mod_mootimeter/handler_input'], (module) => module.init("{{mtm-input-id}}_{{uniqid}}"));
+            {{/js}}
+            {{/ajaxmethode}}
+            <button
+                {{#button_icon_only_transparent_id}} id="{{button_icon_only_transparent_id}}_{{uniqid}}" {{/button_icon_only_transparent_id}}
+                class="mootimeter-btn-icon-only-transparent {{button_icon_only_transparent_additionalclass}}"
+                {{{button_icon_only_transparent_dataset}}}
+                {{#button_icon_only_transparent_ajaxmethod}}data-ajaxmethode="{{button_icon_only_transparent_ajaxmethod}}"{{/button_icon_only_transparent_ajaxmethod}}
+            >
+                <i class="icon fa {{button_icon_only_transparent_icon}} fa-light" aria-hidden="true"></i>
+            </button>
+        </div>
         {{#js}}
         require(['mootimetertool_quiz/remove_answer_option'], (module) => module.init("{{button_icon_only_transparent_id}}_{{uniqid}}"));
         require(['mod_mootimeter/reload_page_content'], (module) => module.init("{{mtm-input-id}}_{{uniqid}}"));
@@ -31,8 +352,19 @@
         {{/answeroptions}}
     </div>
 
+    {{! Add Answer Option Button }}
     {{#addoption}}
-    {{> mod_mootimeter/elements/snippet_button_icon_with_text}}
+    <div class="button-icon-with-text" {{#button_icon_only_transparent_id}} id="wrapper_{{button_icon_only_transparent_id}}_{{uniqid}}" {{/button_icon_only_transparent_id}}>
+        <button
+            {{#button_icon_only_transparent_id}} id="{{button_icon_only_transparent_id}}_{{uniqid}}" {{/button_icon_only_transparent_id}}
+            class="mootimeter-btn-icon-only-transparent {{button_icon_only_transparent_additionalclass}}"
+            {{{button_icon_only_transparent_dataset}}}
+            {{#button_icon_only_transparent_ajaxmethod}}data-ajaxmethode="{{button_icon_only_transparent_ajaxmethod}}"{{/button_icon_only_transparent_ajaxmethod}}
+        >
+            <i class="icon fa {{button_icon_only_transparent_icon}} fa-light" aria-hidden="true"></i>
+        </button>
+        <p>{{button-text}}</p>
+    </div>
     {{#js}}
     require(['mootimetertool_quiz/add_new_answer_option'], (module) => module.init("wrapper_add_answer_option_{{uniqid}}"));
     require(['mod_mootimeter/reload_page_content'], (module) => module.init("{{button_icon_only_transparent_id}}_{{uniqid}}"));
@@ -40,28 +372,123 @@
     {{/js}}
     {{/addoption}}
 
-    {{> mod_mootimeter/elements/snippet_divider}}
+    {{! Horizontal Divider }}
+    <hr class="divider">
 
+    {{! Visualization Section Header }}
     <p class="text-bold">{{#str}} visualization , mootimetertool_quiz {{/str}}</p>
 
+    {{! Visualization Type Selection }}
     <div class="mootimeter-visualization-options-wrapper">
         {{#visualization}}
-        {{> mod_mootimeter/elements/snippet_settings_visualization_option}}
+        <div class="mootimeter-settings-visualization-option">
+            <button
+                class="mootimeter-btn mootimeter-btn-icon {{mtm-button-icon-additionalclass}} {{#mtm-button-icon-active}} active {{/mtm-button-icon-active}}"
+                {{#mtm-button-icon-ajaxmethode}}data-ajaxmethode="{{mtm-button-icon-ajaxmethode}}"{{/mtm-button-icon-ajaxmethode}}
+                {{#mtm-button-icon-id}}id="{{mtm-button-icon-id}}_{{uniqid}}"{{/mtm-button-icon-id}}
+                {{{mtm-button-icon-dataset}}}
+                >
+                {{#mtm-button-icon-icon}}
+                    <i class="icon fa fa-chart-simple fa-light checkbox-icon" aria-hidden="true"></i>
+                {{/mtm-button-icon-icon}}
+                {{#mtm-button-icon-img}}
+                    <img
+                        src="{{{path}}}"
+                        {{#width}}width="{{width}}"{{/width}}
+                        class="m-1"
+                    />
+                {{/mtm-button-icon-img}}
+            </button>
+        </div>
         {{/visualization}}
         {{#js}}
         require(['mootimetertool_quiz/store_visualization'], (module) => module.init("{{uniqid}}"));
         {{/js}}
     </div>
 
-    {{> mod_mootimeter/elements/snippet_divider}}
+    {{! Horizontal Divider }}
+    <hr class="divider">
 
+    {{! Settings Section Header }}
     <p class="text-bold">{{#str}} settings {{/str}}</p>
 
+    {{! Maximum Answers Setting }}
     {{#maxanswers}}
-    {{> mod_mootimeter/elements/snippet_number_input}}
+    <div class="mootimeter-number-input">
+        <label>
+            <span class="mootimeter-number-input-wrapper">
+                <input
+                    type="number"
+                    {{#id}} id="{{id}}"{{/id}}
+                    {{#value}} value="{{value}}"{{/value}}
+                    {{#name}} name="{{name}}"{{/name}}
+                    class="{{additional_class}}"
+                    data-min="{{min}}"
+                >
+                <button
+                    class="mootimeter-btn-icon-only-transparent mootimeter-number-input-btn-up"
+                    aria-hidden="true"
+                    {{#id}} id="up_{{id}}"{{/id}}
+                    data-id="{{id}}"
+                    {{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+                    {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                    {{#name}}data-name="{{name}}"{{/name}}
+                >
+                    <i class="icon fa fa-sort-up fa-light" aria-hidden="true"></i>
+                </button>
+                <button
+                    class="mootimeter-btn-icon-only-transparent mootimeter-number-input-btn-down"
+                    aria-hidden="true"
+                    {{#id}} id="down_{{id}}"{{/id}}
+                    data-id="{{id}}"
+                    {{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+                    {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                    {{#name}}data-name="{{name}}"{{/name}}
+                >
+                    <i class="icon fa fa-sort-down fa-light" aria-hidden="true"></i>
+                </button>
+            </span>
+            {{title}}
+        </label>
+    </div>
+    {{#ajaxmethode}}
+    {{#js}}
+    require(['mod_mootimeter/handler_input_number'], (module) => module.init("{{id}}"));
+    {{/js}}
+    {{/ajaxmethode}}
     {{/maxanswers}}
 
+    {{! Anonymous Mode Setting }}
     {{#anonymousmode}}
-    {{> mod_mootimeter/elements/snippet_checkbox_with_label}}
+    <div class="mootimeter-checkbox {{wrapper_cb_with_label_additional_class}}" {{#wrapper_cb_with_label_id}} id="{{wrapper_cb_with_label_id}}" {{/wrapper_cb_with_label_id}}>
+        <label>
+            <input type="checkbox"
+                id="{{cb_with_label_id}}_{{uniqid}}"
+                class="mootimeter-checkbox-switch {{cb_with_label_additional_class}}"
+                {{cb_with_label_checked}}
+                {{cb_with_label_disabled}}
+                {{cb_with_label_additional_attribut}}
+                {{cb_with_label_dataset}}
+                {{#cb_with_label_value}} value="{{cb_with_label_value}}" {{/cb_with_label_value}}
+                {{#cb_with_label_name}}name="{{cb_with_label_name}}"{{/cb_with_label_name}}
+                {{#cb_with_label_ajaxmethod}}data-ajaxmethode="{{cb_with_label_ajaxmethod}}"{{/cb_with_label_ajaxmethod}}
+                {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                {{#cb_with_label_name}}data-name="{{cb_with_label_name}}"{{/cb_with_label_name}}
+            />
+            <span class="checkbox-icon-wrapper">
+                <i class="icon fa fa-check fa-light checkbox-icon" aria-hidden="true"></i>
+            </span>
+            <span
+                id="text_{{cb_with_label_id}}_{{uniqid}}"
+            >
+                {{cb_with_label_text}}
+            </span>
+        </label>
+    </div>
+    {{#cb_with_label_ajaxmethod}}
+    {{#js}}
+    require(['mod_mootimeter/handler_input_checkbox_switch'], (module) => module.init("{{cb_with_label_id}}_{{uniqid}}"));
+    {{/js}}
+    {{/cb_with_label_ajaxmethod}}
     {{/anonymousmode}}
 </div>
