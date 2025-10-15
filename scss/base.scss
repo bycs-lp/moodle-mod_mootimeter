@@ -38,6 +38,8 @@ $feedback-success-100: #d9f6e0;
 
 .mootimetercontainer {
   max-width: 1400px;
+  max-height: 850px;
+  overflow: auto;
 
   *:focus {
     outline: none;
@@ -73,14 +75,28 @@ $feedback-success-100: #d9f6e0;
   }
 
   .mootimetercolpages,
-  .mootimetercoledit,
   .mootimetercolcontent {
     @media screen and (min-width: 680px) {
       min-height: 646px;
-      max-height: 850px;
+      // max-height: 850px;
     }
   }
+
+  #mootimeter-col-left {
+    display: flex;
+    flex: 27.5rem 2 0;
+    overflow-y: auto;
+  }
 }
+
+@media screen and (max-width: 680px) {
+  .mootimetercontainer #mootimeter-col-left {
+    min-height: 646px;
+    max-height: 850px;
+    flex-direction: column;
+  }
+}
+
 
 .tooltip {
   z-index: 100000 !important;
