@@ -12,6 +12,7 @@
   max-width: unset;
   height: 100vh;
   overflow: auto;
+  background-color: #e8e8ea;
   z-index: 1051;
 }
 @media screen and (min-width: 680px) {
@@ -23,7 +24,7 @@
   }
 }
 .mootimetercontainer.fullscreen .mootimetercolcontent {
-  height: 100%;
+  min-height: 100%;
 }
 .mootimetercontainer.fullscreen .row:first-child {
   height: 100%;
@@ -54,18 +55,22 @@
 }
 
 @font-face {
-  font-display: swap;
-  font-family: "Atkinson Hyperlegible";
-  font-style: normal;
-  font-weight: 400;
-  src: url("/mod/mootimeter/fonts/atkinson-hyperlegible-v11-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+  .mootimetercontainer {
+    font-display: swap;
+    font-family: "Atkinson Hyperlegible";
+    font-style: normal;
+    font-weight: 400;
+    src: url("/mod/mootimeter/fonts/atkinson-hyperlegible-v11-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+  }
 }
 @font-face {
-  font-display: swap;
-  font-family: "Lexend";
-  font-style: normal;
-  font-weight: 400;
-  src: url("/mod/mootimeter/fonts/lexend-v18-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+  .mootimetercontainer {
+    font-display: swap;
+    font-family: "Lexend";
+    font-style: normal;
+    font-weight: 400;
+    src: url("/mod/mootimeter/fonts/lexend-v18-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+  }
 }
 .mootimetercontainer h1,
 .mootimetercontainer h2,
