@@ -78,7 +78,6 @@ $feedback-success-100: #d9f6e0;
   .mootimetercolcontent {
     @media screen and (min-width: 680px) {
       min-height: 646px;
-      // max-height: 850px;
     }
   }
 
@@ -96,7 +95,6 @@ $feedback-success-100: #d9f6e0;
     flex-direction: column;
   }
 }
-
 
 .tooltip {
   z-index: 100000 !important;

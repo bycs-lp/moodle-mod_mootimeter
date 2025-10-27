@@ -55,34 +55,30 @@
 }
 
 /** This is to hide the topbar on fullscreen mode. */
+#mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen {
+  /** Setting for theme_boost */
+}
 #mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen .navbar,
 #mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen bycs-topbar {
   display: none;
-}
-#mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen {
-  /** Setting for theme_boost */
 }
 #mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen #page {
   margin-top: 0;
 }
 
 @font-face {
-  .mootimetercontainer {
-    font-display: swap;
-    font-family: "Atkinson Hyperlegible";
-    font-style: normal;
-    font-weight: 400;
-    src: url("/mod/mootimeter/fonts/atkinson-hyperlegible-v11-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-  }
+  font-display: swap;
+  font-family: "Atkinson Hyperlegible";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/mod/mootimeter/fonts/atkinson-hyperlegible-v11-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
 }
 @font-face {
-  .mootimetercontainer {
-    font-display: swap;
-    font-family: "Lexend";
-    font-style: normal;
-    font-weight: 400;
-    src: url("/mod/mootimeter/fonts/lexend-v18-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-  }
+  font-display: swap;
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/mod/mootimeter/fonts/lexend-v18-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
 }
 .mootimetercontainer h1,
 .mootimetercontainer h2,
