@@ -37,7 +37,6 @@ use dml_exception;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class inplace_edit_answer extends \core\output\inplace_editable {
-
     /**
      * Constructor.
      *
@@ -55,22 +54,25 @@ class inplace_edit_answer extends \core\output\inplace_editable {
         $answeroptionstrings = \mootimetertool_quiz\quiz::extract_answer_option_strings($toolhelper->get_answer_options($page->id));
 
         $useransweroptionids = explode(';', $answer->optionid);
-        $useransweroptionstrings = implode(' | ',
-                array_map(fn($useransweroptionid) => $answeroptionstrings[$useransweroptionid], $useransweroptionids));
+        $useransweroptionstrings = implode(
+            ' | ',
+            array_map(fn($useransweroptionid) => $answeroptionstrings[$useransweroptionid], $useransweroptionids)
+        );
 
         $instance = $toolhelper::get_instance_by_pageid($page->id);
         $cm = $toolhelper::get_cm_by_instance($instance);
 
         parent::__construct(
-                'mootimeter',
-                'quiz_editanswerselect',
-                $page->id . "_" . $answer->id,
-                has_capability('mod/mootimeter:moderator', \context_module::instance($cm->id)),
-                $useransweroptionstrings,
-                json_encode($useransweroptionids),
+            'mootimeter',
+            'quiz_editanswerselect',
+            $page->id . "_" . $answer->id,
+            has_capability('mod/mootimeter:moderator', \context_module::instance($cm->id)),
+            $useransweroptionstrings,
+            json_encode($useransweroptionids),
         );
-        $this->set_type_autocomplete($answeroptionstrings,
-                [
+        $this->set_type_autocomplete(
+            $answeroptionstrings,
+            [
                         'multiple' => intval($toolhelper::get_tool_config($page->id, "maxanswersperuser")) !== 1,
                 ]
         );
@@ -90,7 +92,7 @@ class inplace_edit_answer extends \core\output\inplace_editable {
         $newvalue = clean_param($newvalue, PARAM_NOTAGS);
 
         // Extract pageid and answerid.
-        list($pageid, $answerid) = explode("_", $itemid);
+        [$pageid, $answerid] = explode("_", $itemid);
         $helper = new \mod_mootimeter\helper();
         $page = $helper->get_page($pageid);
         $classname = "\mootimetertool_" . $page->tool . "\\" . $page->tool;

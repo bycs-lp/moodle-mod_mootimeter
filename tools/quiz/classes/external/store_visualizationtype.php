@@ -76,17 +76,13 @@ class store_visualizationtype extends external_api {
         }
 
         try {
-
             $helper = new helper();
 
             $helper->set_tool_config($pageid, 'visualizationtype', $visuid);
 
             $return = ['code' => 200, 'string' => 'ok'];
-
         } catch (\Exception $e) {
-
             $return = ['code' => 500, 'string' => $e->getMessage()];
-
         }
         return $return;
     }

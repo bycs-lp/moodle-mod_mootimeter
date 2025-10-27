@@ -221,14 +221,14 @@ function mootimeter_trigger_event_course_module_viewed(object $moduleinstance, o
  */
 function mootimeter_inplace_editable($itemtype, $itemid, $newvalue) {
 
-    list($pageid, $answerid) = explode("_", $itemid);
+    [$pageid, $answerid] = explode("_", $itemid);
     $instance = \mod_mootimeter\helper::get_instance_by_pageid($pageid);
     $cm = \mod_mootimeter\helper::get_cm_by_instance($instance);
     $modulecontext = \context_module::instance($cm->id);
 
     \core_external\external_api::validate_context($modulecontext);
 
-    list($tool, $type) = explode("_", $itemtype);
+    [$tool, $type] = explode("_", $itemtype);
 
     $classname = "\mootimetertool_" . $tool . "\\" . $tool;
 

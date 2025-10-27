@@ -72,7 +72,6 @@ class delete_page extends external_api {
         self::validate_context(\context_module::instance($cm->id));
 
         try {
-
             $transaction = $DB->start_delegated_transaction();
 
             $mtmhelper = new helper();
@@ -87,7 +86,6 @@ class delete_page extends external_api {
 
             $return = ['code' => 200, 'string' => 'ok', 'cmid' => $cm->id];
         } catch (\Exception $e) {
-
             $transaction->rollback($e);
             $return = ['code' => 500, 'string' => $e->getMessage(), 'cmid' => $cm->id];
         }

@@ -41,7 +41,6 @@ use stdClass;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class quiz extends \mod_mootimeter\toolhelper {
-
     /**
      * @var string Answer cloum
      */
@@ -353,7 +352,6 @@ class quiz extends \mod_mootimeter\toolhelper {
         $cm = \mod_mootimeter\helper::get_cm_by_instance($instance);
 
         if (has_capability('mod/mootimeter:moderator', \context_module::instance($cm->id))) {
-
             $dataseticoncheck = [
                 'data-togglename = "showanswercorrection"',
                 'data-pageid = ' . $page->id,
@@ -401,7 +399,6 @@ class quiz extends \mod_mootimeter\toolhelper {
         }
 
         try {
-
             $transaction = $DB->start_delegated_transaction();
 
             $DB->delete_records($this->get_answer_option_table(), ['pageid' => $pageid, 'id' => $aoid]);
@@ -411,7 +408,6 @@ class quiz extends \mod_mootimeter\toolhelper {
 
             $return = ['code' => 200, 'string' => 'ok'];
         } catch (\Exception $e) {
-
             $transaction->rollback($e);
             $return = ['code' => 500, 'string' => $e->getMessage()];
         }
@@ -766,7 +762,7 @@ class quiz extends \mod_mootimeter\toolhelper {
             $page = $pageorid;
         }
 
-        list($labels, $values) = $this->get_quiz_results_chartjs($page);
+        [$labels, $values] = $this->get_quiz_results_chartjs($page);
 
         $visualizationtype = (self::get_tool_config($page->id, 'visualizationtype'))
             ? self::get_tool_config($page->id, 'visualizationtype')
@@ -871,7 +867,6 @@ class quiz extends \mod_mootimeter\toolhelper {
         $answers = $this->convert_answers_to_grouped_answers($answers);
 
         foreach ($answers as $answer) {
-
             $user = $this->get_user_by_id($answer->usermodified);
 
             $userfullname = '';

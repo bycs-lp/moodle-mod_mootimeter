@@ -72,7 +72,6 @@ class toggle_state extends external_api {
         self::validate_context(\context_module::instance($cm->id));
 
         try {
-
             $mtmhelper = new helper();
             $page = $mtmhelper->get_page($pageid);
             $newstate = $mtmhelper->toggle_state($page, $statename);
@@ -82,9 +81,7 @@ class toggle_state extends external_api {
             }
 
             $return = ['code' => 200, 'string' => 'ok', 'newstate' => $newstate];
-
         } catch (\Exception $e) {
-
             $return = ['code' => 500, 'string' => $e->getMessage(), 'newstate' => 0];
         }
         return $return;

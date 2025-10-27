@@ -101,7 +101,6 @@ class store_answeroption_text extends external_api {
 
             $return = ['code' => 200, 'string' => 'ok'];
         } catch (\Exception $e) {
-
             $return = ['code' => 500, 'string' => $e->getMessage()];
         }
         return $return;

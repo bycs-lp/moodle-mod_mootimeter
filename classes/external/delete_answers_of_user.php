@@ -76,7 +76,6 @@ class delete_answers_of_user extends external_api {
         self::validate_context(\context_module::instance($cm->id));
 
         try {
-
             $transaction = $DB->start_delegated_transaction();
             $mtmhelper = new helper();
 
@@ -95,7 +94,6 @@ class delete_answers_of_user extends external_api {
 
             $return = ['code' => 200, 'string' => 'ok', 'reload' => true];
         } catch (\Exception $e) {
-
             $transaction->rollback($e);
             $return = ['code' => 500, 'string' => $e->getMessage()];
         }
@@ -109,12 +107,12 @@ class delete_answers_of_user extends external_api {
      */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure(
-                [
+            [
                         'code' => new external_value(PARAM_INT, 'Return code of storage process.'),
                         'string' => new external_value(PARAM_TEXT, 'Return string of storage process.'),
                         'reload' => new external_value(PARAM_BOOL, 'Indicator to reload page.', VALUE_DEFAULT, false),
                 ],
-                'Delete page status.'
+            'Delete page status.'
         );
     }
 }

@@ -83,7 +83,6 @@ class get_mootimeterstate extends external_api {
         }
 
         try {
-
             $dataset = json_decode($dataset);
             $helper = new \mod_mootimeter\helper();
             $page = $helper->get_page($pageid);

@@ -87,7 +87,6 @@ class remove_answeroption extends external_api {
         }
 
         return $toolhelper->remove_answer_option($pageid, $aoid);
-
     }
 
     /**

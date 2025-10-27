@@ -43,7 +43,6 @@ use required_capability_exception;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class helper_test extends advanced_testcase {
-
     /** @var \stdClass The course used for testing */
     private $course;
     /** @var \stdClass The kanban used for testing */

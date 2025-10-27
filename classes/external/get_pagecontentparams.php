@@ -82,7 +82,6 @@ class get_pagecontentparams extends external_api {
 
             $return = ['code' => 200, 'string' => 'ok', 'pageparams' => $pageparams];
         } catch (\Exception $e) {
-
             $return = ['code' => 500, 'string' => $e->getMessage() . json_encode($e->getTrace()), 'pageparams' => ''];
         }
 

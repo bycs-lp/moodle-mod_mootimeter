@@ -41,7 +41,6 @@ use required_capability_exception;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class helper {
-
     /** @var int Webservice returning error code - OK */
     const ERRORCODE_OK = 200;
     /** @var int Webservice returning error code - Empty Answer */
@@ -420,7 +419,7 @@ class helper {
     public function get_page_content_params(int $cmid, int $pageid, bool $withwrapper = true, string $dataset = ""): array {
 
         $dataset = json_decode($dataset);
-        list($course, $cm) = get_course_and_cm_from_cmid($cmid);
+        [$course, $cm] = get_course_and_cm_from_cmid($cmid);
         $page = $this->get_page($pageid);
         $contentmenudefaultparams = ['sp' => [
             'r' => (empty($dataset->r)) ? 0 : clean_param($dataset->r, PARAM_INT),
@@ -443,7 +442,6 @@ class helper {
             // If no page is selected, no more templates (especially the contentmenu) is needed.
             return $params;
         } else if (empty($dataset->action)) {
-
             // Get params of the content section.
             if (!empty($contentmenudefaultparams['sp']['r'])) {
                 $paramscontent['pagecontent'] = $this->get_result_page_params($cm, $page);
@@ -591,7 +589,6 @@ class helper {
         $cm = self::get_cm_by_instance($instance);
 
         if (has_capability('mod/mootimeter:moderator', \context_module::instance($cm->id))) {
-
             // Set up icon to toggle "show on teacher permission".
             $dataseticoneye = [
                 'data-togglename = "showonteacherpermission"',
@@ -895,11 +892,13 @@ class helper {
         switch ($name) {
             case 'anonymousmode':
                 // If there is already any answer stored. Then the setting could not be changed.
-                if (!empty($this->get_answers(
-                    $this->get_tool_answer_table($page),
-                    $page->id,
-                    $this->get_tool_answer_column($page)
-                ))) {
+                if (
+                    !empty($this->get_answers(
+                        $this->get_tool_answer_table($page),
+                        $page->id,
+                        $this->get_tool_answer_column($page)
+                    ))
+                ) {
                     $value = $this->get_tool_config($page, 'anonymousmode');
                 }
                 return $value;
@@ -1025,7 +1024,7 @@ class helper {
         object|array $record,
         bool $updateexisting = false,
         string $answercolumn = 'answer',
-        bool $allowmultipleanswers =  false
+        bool $allowmultipleanswers = false
     ): array {
         global $DB, $USER;
 
@@ -1042,14 +1041,12 @@ class helper {
         $answerids = [];
 
         if ($allowmultipleanswers) {
-
             if ($updateexisting) {
                 $params = ['pageid' => $recordtemp->pageid, 'usermodified' => $USER->id];
                 $DB->delete_records($table, $params);
             }
 
             foreach ($record as $dataobject) {
-
                 // Add usermodified to dataobject.
                 $dataobject->usermodified = $USER->id;
 
@@ -1062,7 +1059,6 @@ class helper {
         }
 
         if (!$allowmultipleanswers) {
-
             // If it's an array with only one record in it. We can update the existing answer.
             if (is_array($record)) {
                 $dataobject = array_pop($record);
@@ -1305,7 +1301,7 @@ class helper {
      * @param string $identifier
      * @return void
      */
-    public function notify_data_changed(object $obj, string $identifier  = ''): void {
+    public function notify_data_changed(object $obj, string $identifier = ''): void {
 
         $cache = \cache::make('mod_mootimeter', 'lastupdated');
         $cachekey = 'lastupdate_' . $identifier . '_' . $obj->id;
@@ -1319,7 +1315,7 @@ class helper {
      * @param string $identifier
      * @return int
      */
-    public function get_data_changed(object $obj, string $identifier  = ''): int {
+    public function get_data_changed(object $obj, string $identifier = ''): int {
         $cache = \cache::make('mod_mootimeter', 'lastupdated');
         $cachekey = 'lastupdate_' . $identifier . '_' . $obj->id;
         if (empty($cachevalue = $cache->get($cachekey))) {

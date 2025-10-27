@@ -39,7 +39,6 @@ use core_privacy\local\request\contextlist;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 interface mootimetertool_provider extends \core_privacy\local\request\plugin\subplugin_provider {
-
     /**
      * Retrieves the contextids associated with the provided userid for this subplugin.
      * NOTE if your subplugin must have an entry in the mootimetertool table to work, then this
@@ -83,5 +82,4 @@ interface mootimetertool_provider extends \core_privacy\local\request\plugin\sub
      * @param mootimeter_plugin_request_data $requestdata Information to use to delete user data for this mootimetertool.
      */
     public static function delete_answers_for_user(mootimeter_plugin_request_data $requestdata);
-
 }

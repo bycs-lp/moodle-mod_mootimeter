@@ -73,13 +73,11 @@ class get_state extends external_api {
         require_capability('mod/mootimeter:view', $cmcontext);
 
         try {
-
             $mtmhelper = new helper();
             $state = $mtmhelper->get_tool_config($pageid, $statename);
 
             $return = ['code' => 200, 'string' => 'ok', 'state' => (int)$state];
         } catch (\Exception $e) {
-
             $return = ['code' => 500, 'string' => $e->getMessage(), 'state' => 0];
         }
         return $return;

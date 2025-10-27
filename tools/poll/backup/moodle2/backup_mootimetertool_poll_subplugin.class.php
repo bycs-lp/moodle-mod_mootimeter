@@ -22,7 +22,6 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_mootimetertool_poll_subplugin extends backup_subplugin {
-
     /**
      * Returns the nested structure of this content type
      * @return \backup_subplugin_element

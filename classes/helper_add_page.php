@@ -39,7 +39,6 @@ use dml_exception;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class helper_add_page extends \mod_mootimeter\helper {
-
     /**
      * Get the view_content snippet for new_page.
      *

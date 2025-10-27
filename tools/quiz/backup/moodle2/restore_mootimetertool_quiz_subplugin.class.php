@@ -22,7 +22,6 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_mootimetertool_quiz_subplugin extends restore_subplugin {
-
     /**
      * Returns the paths to be handled by the subplugin at mootimeter level
      * @return array
