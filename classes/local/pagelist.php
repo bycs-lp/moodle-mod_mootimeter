@@ -40,7 +40,6 @@ use moodle_exception;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class pagelist {
-
     /** @var int Permutate direction up */
     const PERMUTATE_UP = 1;
     /** @var int Permutate direction down */

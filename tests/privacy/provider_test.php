@@ -43,7 +43,6 @@ use mod_mootimeter\helper;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class provider_test extends provider_testcase {
-
     /** @var array The courses used for testing */
     private $courses = [];
     /** @var array The mootimeters used for testing [1=>['instance' => object, 'pages' => [page1, page2]], 2=>[...] ...]*/

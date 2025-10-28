@@ -41,10 +41,9 @@ use mod_mootimeter\privacy\mootimeter_plugin_request_data;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
-    \core_privacy\local\metadata\provider,
     \mod_mootimeter\privacy\mootimetertool_provider,
-    \mod_mootimeter\privacy\mootimetertool_user_provider {
-
+    \mod_mootimeter\privacy\mootimetertool_user_provider,
+    \core_privacy\local\metadata\provider {
     /**
      * Provides meta data that is stored about a user with mod_assign
      *
@@ -120,7 +119,6 @@ class provider implements
                   JOIN {mootimetertool_wordcloud_answers} mtmta ON mtmta.pageid = mtmp.id
                   WHERE ctx.id = :contextid AND ctx.contextlevel = :contextlevel";
         $userlist->add_from_sql('userid', $sql, $params);
-
     }
 
     /**
@@ -151,7 +149,6 @@ class provider implements
             writer::with_context($exportdata->get_context())->export_data($currentpath, (object)$answer);
             $i++;
         }
-
     }
 
     /**

@@ -40,7 +40,6 @@ use pix_icon;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class wordcloud extends \mod_mootimeter\toolhelper {
-
     /**
      * @var string Answer cloum
      */
@@ -128,7 +127,6 @@ class wordcloud extends \mod_mootimeter\toolhelper {
         $renderer = $PAGE->get_renderer('core');
 
         foreach ($answers as $answer) {
-
             $user = $this->get_user_by_id($answer->usermodified);
 
             $userfullname = "";

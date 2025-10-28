@@ -82,13 +82,13 @@ class get_answers extends external_api {
      */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure(
-                [
+            [
                         'values' => new external_value(PARAM_TEXT, 'Answer options count'),
                         'labels' => new external_value(PARAM_TEXT, 'Answer options text'),
                         'chartsettings' => new external_value(PARAM_TEXT, 'chartsettings'),
                         'question' => new external_value(PARAM_TEXT, 'Question text'),
                 ],
-                'Information to redraw quiz'
+            'Information to redraw quiz'
         );
     }
 }

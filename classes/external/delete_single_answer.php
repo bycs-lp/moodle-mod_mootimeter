@@ -94,7 +94,6 @@ class delete_single_answer extends external_api {
 
             $return = ['code' => 200, 'string' => 'ok', 'reload' => true];
         } catch (\Exception $e) {
-
             $transaction->rollback($e);
             $return = ['code' => 500, 'string' => $e->getMessage()];
         }

@@ -41,7 +41,6 @@ use stdClass;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class toolhelper extends helper {
-
     /**
      * Get the tools answer column.
      * @return string
@@ -150,9 +149,15 @@ abstract class toolhelper extends helper {
      */
     public function reset_course_form_definition(\MoodleQuickForm $mform): void {
         $shortclassname = preg_replace('/.*\\\\/', '', get_class($this));
-        $mform->addElement('checkbox', 'reset_mootimetertool_' . $shortclassname . '_answers',
-            get_string('resetuserdata', 'mod_mootimeter',
-                get_string('pluginname', 'mootimetertool_' . $shortclassname)));
+        $mform->addElement(
+            'checkbox',
+            'reset_mootimetertool_' . $shortclassname . '_answers',
+            get_string(
+                'resetuserdata',
+                'mod_mootimeter',
+                get_string('pluginname', 'mootimetertool_' . $shortclassname)
+            )
+        );
     }
 
     /**
@@ -187,11 +192,13 @@ abstract class toolhelper extends helper {
         return [
             [
                 'component' => get_string('pluginname', 'mootimetertool_' . $shortclassname),
-                'item' => get_string('resetuserdata', 'mod_mootimeter',
-                    get_string('pluginname', 'mootimetertool_' . $shortclassname)),
+                'item' => get_string(
+                    'resetuserdata',
+                    'mod_mootimeter',
+                    get_string('pluginname', 'mootimetertool_' . $shortclassname)
+                ),
                 'error' => false,
             ],
         ];
     }
-
 }

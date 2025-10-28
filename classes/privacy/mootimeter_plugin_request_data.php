@@ -36,7 +36,6 @@ namespace mod_mootimeter\privacy;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mootimeter_plugin_request_data {
-
     /** @var object The page that we are dealing with. */
     protected $page;
 

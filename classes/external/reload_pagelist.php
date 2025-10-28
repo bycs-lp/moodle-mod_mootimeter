@@ -83,7 +83,6 @@ class reload_pagelist extends external_api {
 
             $return = ['code' => 200, 'string' => 'ok', 'pagelist' => $pageslistparams];
         } catch (\Exception $e) {
-
             $return = ['code' => 500, 'string' => $e->getMessage(), 'pagelist' => ''];
         }
 

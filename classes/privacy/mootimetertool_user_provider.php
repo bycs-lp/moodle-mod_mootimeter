@@ -37,10 +37,8 @@ namespace mod_mootimeter\privacy;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 interface mootimetertool_user_provider extends
-        \core_privacy\local\request\plugin\subplugin_provider,
-        \core_privacy\local\request\shared_userlist_provider {
-
-
+    \core_privacy\local\request\shared_userlist_provider,
+    \core_privacy\local\request\plugin\subplugin_provider {
     /**
      * If you have tables that contain userids please fill in this method.
      *

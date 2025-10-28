@@ -37,7 +37,6 @@ use dml_exception;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class inplace_edit_answer extends \core\output\inplace_editable {
-
     /**
      * Constructor.
      *
@@ -78,7 +77,7 @@ class inplace_edit_answer extends \core\output\inplace_editable {
 
         $helper = new \mod_mootimeter\helper();
 
-        list($pageid, $answerid) = explode("_", $itemid);
+        [$pageid, $answerid] = explode("_", $itemid);
 
         $answertable = $helper->get_tool_answer_table($pageid);
         $answercol = $helper->get_tool_answer_column($pageid);
@@ -94,6 +93,5 @@ class inplace_edit_answer extends \core\output\inplace_editable {
         // Finally return itself.
         $tmpl = new self($helper->get_page($pageid), $answerrecord);
         return $tmpl;
-
     }
 }

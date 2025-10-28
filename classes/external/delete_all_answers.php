@@ -76,7 +76,6 @@ class delete_all_answers extends external_api {
         self::validate_context(\context_module::instance($cm->id));
 
         try {
-
             $transaction = $DB->start_delegated_transaction();
             $mtmhelper = new helper();
 
@@ -93,7 +92,6 @@ class delete_all_answers extends external_api {
 
             $return = ['code' => 200, 'string' => 'ok'];
         } catch (\Exception $e) {
-
             $transaction->rollback($e);
             $return = ['code' => 500, 'string' => $e->getMessage()];
         }

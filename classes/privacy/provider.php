@@ -45,11 +45,10 @@ use dml_exception;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
+    \core_privacy\local\request\core_userlist_provider,
     \core_privacy\local\metadata\provider,
     \core_privacy\local\request\plugin\provider,
-    \core_privacy\local\request\user_preference_provider,
-    \core_privacy\local\request\core_userlist_provider {
-
+    \core_privacy\local\request\user_preference_provider {
     /** Interface for all mootimeter tool sub-plugins. */
     const MOOTIMETERTOOL_INTERFACE = 'mod_mootimeter\privacy\mootimetertool_provider';
 
@@ -154,7 +153,6 @@ class provider implements
         $helper = new \mod_mootimeter\helper();
         $toolpages = $helper->get_all_tools_of_instance($mootimeterinstance);
         foreach ($toolpages as $tool => $pages) {
-
             foreach ($pages as $page) {
                 $subpath = array_merge($path, [get_string('privacy:pagepath', 'mod_mootimeter', $page->id)]);
                 $params = new mootimeter_plugin_request_data($context, $page, $user, $subpath);

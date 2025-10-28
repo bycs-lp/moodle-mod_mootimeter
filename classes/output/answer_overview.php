@@ -41,7 +41,6 @@ use stdClass;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class answer_overview implements renderable, templatable {
-
     /**
      * @var object course module
      */

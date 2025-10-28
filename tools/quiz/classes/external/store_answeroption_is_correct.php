@@ -92,7 +92,6 @@ class store_answeroption_is_correct extends external_api {
 
             $return = ['code' => 200, 'string' => 'ok'];
         } catch (\Exception $e) {
-
             $return = ['code' => 500, 'string' => $e->getMessage()];
         }
         return $return;

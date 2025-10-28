@@ -23,9 +23,6 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mootimetertool_quiz_generator extends testing_module_generator {
-
     /** @var Toolname */
     const MTMT_TOOLNAME = 'quiz';
-
-
 }

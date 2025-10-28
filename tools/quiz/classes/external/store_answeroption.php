@@ -97,7 +97,6 @@ class store_answeroption extends external_api {
             $quiz->store_answer_option($record);
             $return = ['code' => 200, 'string' => 'ok'];
         } catch (\Exception $e) {
-
             $return = ['code' => 500, 'string' => $e->getMessage()];
         }
         return $return;
@@ -110,11 +109,11 @@ class store_answeroption extends external_api {
      */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure(
-                [
+            [
                         'code' => new external_value(PARAM_INT, 'Return code of storage process.'),
                         'string' => new external_value(PARAM_TEXT, 'Return string of storage process.'),
                 ],
-                'Response of storing the answer option details'
+            'Response of storing the answer option details'
         );
     }
 }

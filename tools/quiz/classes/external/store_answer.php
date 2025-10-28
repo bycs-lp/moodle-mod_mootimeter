@@ -74,7 +74,6 @@ class store_answer extends external_api {
         require_capability('mod/mootimeter:view', $cmcontext);
 
         try {
-
             $aoids = json_decode($aoids);
 
             $helper = new helper();
@@ -95,7 +94,6 @@ class store_answer extends external_api {
 
             $return = ['code' => 200, 'string' => 'ok'];
         } catch (\Exception $e) {
-
             $return = ['code' => 500, 'string' => $e->getMessage()];
         }
         return $return;

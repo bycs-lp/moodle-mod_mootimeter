@@ -23,7 +23,6 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_mootimeter_generator extends testing_module_generator {
-
     /** @var Mootimeter default tool */
     const MTMT_DEFAULT_TOOLNAME_WORDCLOUD = 'wordcloud';
 

@@ -1,22 +1,24 @@
-<div class="container-fluid mootimetercontainer isNotNewPage {{{containerclasses}}}"  id="mootimeter-main-container">
-  <div class="row">
-    <div class="mootimetercol mootimetercolpages" id="mootimeter-pages-col">
-      <ul id="mootimeter-pages-list" class="">
-        {{> mod_mootimeter/elements/snippet_loadingplaceholder}}
-      </ul>
+<div class="container-fluid mootimetercontainer isNotNewPage {{{containerclasses}}}" id="mootimeter-main-container">
+    <div class="row">
+        <div id="mootimeter-col-left">
+            <div class="mootimetercol mootimetercolpages" id="mootimeter-pages-col">
+                <ul id="mootimeter-pages-list" class="">
+                    {{> mod_mootimeter/elements/snippet_loadingplaceholder}}
+                </ul>
+            </div>
+            <div class="mootimetercol mootimetercoledit" id="mootimeter-col-settings"></div>
+        </div>
+        <div class="mootimetercol mootimetercolcontent">
+            <div class="mootimeter-content-menu" id="mootimeter-pagecontentmenu"></div>
+            <div class="mootimeter-content-wrapper" id="mootimeter-pagecontent">
+                {{> mod_mootimeter/elements/snippet_loadingplaceholder}}
+            </div>
+        </div>
     </div>
-    <div class="mootimetercol mootimetercoledit" id="mootimeter-col-settings"></div>
-    <div class="mootimetercol mootimetercolcontent">
-      <div class="mootimeter-content-menu" id="mootimeter-pagecontentmenu"></div>
-      <div class="mootimeter-content-wrapper" id="mootimeter-pagecontent">
-        {{> mod_mootimeter/elements/snippet_loadingplaceholder}}
-      </div>
-    </div>
-  </div>
 </div>
 
 {{> mod_mootimeter/elements/snippet_mootimeter_state}}
 
 {{#js}}
-require(['mod_mootimeter/reload_pagelist'], (module) => module.init("{{refreshinterval}}"));
+    require(['mod_mootimeter/reload_pagelist'], (module) => module.init("{{refreshinterval}}"));
 {{/js}}

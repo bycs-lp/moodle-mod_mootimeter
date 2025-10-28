@@ -90,15 +90,11 @@ class store_setting extends external_api {
         }
 
         try {
-
             $helper = new helper();
             $helper->set_tool_config($pageid, $inputname, $inputvalue);
             $return = ['code' => 200, 'string' => 'ok'];
-
         } catch (\Exception $e) {
-
             $return = ['code' => 500, 'string' => $e->getMessage()];
-
         }
 
         return $return;

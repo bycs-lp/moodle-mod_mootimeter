@@ -27,7 +27,6 @@ require_once($CFG->dirroot . '/mod/mootimeter/backup/moodle2/backup_mootimeter_s
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_mootimeter_activity_task extends backup_activity_task {
-
     /**
      * No specific settings for this activity
      */
