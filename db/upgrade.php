@@ -33,20 +33,13 @@ function xmldb_mootimeter_upgrade(int $oldversion): bool {
     global $DB;
     $dbman = $DB->get_manager();
 
-    if ($oldversion < 2025110200) {
+    if ($oldversion < 2025110900) {
         // Add missing foreign key to mootimeter_tool_settings.pageid.
         $table = new xmldb_table('mootimeter_tool_settings');
-        $key = new xmldb_key('fk_page', XMLDB_KEY_FOREIGN, ['pageid'], 'mootimeter_pages', ['id']);
+        $key = new xmldb_key('pages-id', XMLDB_KEY_FOREIGN, ['pageid'], 'mootimeter_pages', ['id']);
         $dbman->add_key($table, $key);
 
-        // Add missing index to mootimeter_tool_settings.pageid for postgresql consistency.
-        $index = new xmldb_index('pageid_idx', XMLDB_INDEX_NOTUNIQUE, ['pageid']);
-        if (!$dbman->index_exists($table, $index)) {
-            $dbman->add_index($table, $index);
-        }
-
-        upgrade_mod_savepoint(true, 2025110200, 'mootimeter');
+        upgrade_mod_savepoint(true, 2025110900, 'mootimeter');
     }
-
     return true;
 }
