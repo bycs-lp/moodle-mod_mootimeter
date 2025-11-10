@@ -97,16 +97,9 @@ const getAnswers = async (id) => {
  * @param {HTMLElement} container
  */
 function redrawwordcloud(container) {
-    let mtmtcanvas = container;
-    let answers = JSON.parse(mtmtcanvas.dataset.answers);
+    let answers = JSON.parse(container.dataset.answers);
 
-    WordCloud(mtmtcanvas, {
-        list: answers,
-        weightFactor: 24,
-        color: '#f98012',
-        fontFamily: 'OpenSans',
-        classes: 'filter_mathjaxloader_equation',
-    });
+    WordCloud(container, {list: answers, weightFactor: 24, color: '#f98012', fontFamily: 'OpenSans'});
 }
 
 /**
@@ -125,16 +118,16 @@ function ensureObserver(container) {
             observerRegistry.delete(container.id);
             return;
         }
-        let hasAddedNodes = false;
         for (const mutation of mutations) {
             if (mutation.addedNodes.length > 0) {
-                hasAddedNodes = true;
-                break;
+                for (const node of mutation.addedNodes) {
+                    if (node.tagName === 'SPAN') {
+                        node.classList.add('filter_mathjaxloader_equation');
+                    }
+                }
             }
         }
-        if (hasAddedNodes) {
-            notifyFilterContentUpdated([container]);
-        }
+        notifyFilterContentUpdated([container]);
     });
 
     observer.observe(container, {childList: true});
