@@ -36,7 +36,7 @@ function xmldb_mootimeter_upgrade(int $oldversion): bool {
     if ($oldversion < 2025110900) {
         // Add missing foreign key to mootimeter_tool_settings.pageid.
         $table = new xmldb_table('mootimeter_tool_settings');
-        $key = new xmldb_key('pageid-id', XMLDB_KEY_FOREIGN, ['pageid'], 'mootimeter_pages', ['id']);
+        $key = new xmldb_key('pageid', XMLDB_KEY_FOREIGN, ['pageid'], 'mootimeter_pages', ['id']);
         $dbman->add_key($table, $key);
 
         upgrade_mod_savepoint(true, 2025110900, 'mootimeter');
