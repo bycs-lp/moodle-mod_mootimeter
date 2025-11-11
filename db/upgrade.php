@@ -15,19 +15,31 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Upgrade steps for mod_mootimeter.
  *
  * @package     mod_mootimeter
- * @copyright   2023, ISB Bayern
- * @author      Peter Mayer <peter.mayer@isb.bayern.de>
+ * @copyright   2025 ISB Bayern
+ * @author      Thomas Schönlein
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+/**
+ * Execute mod_mootimeter upgrade steps.
+ *
+ * @param int $oldversion The version we are upgrading from.
+ * @return bool
+ */
+function xmldb_mootimeter_upgrade(int $oldversion): bool {
+    global $DB;
+    $dbman = $DB->get_manager();
 
-$plugin->component = 'mod_mootimeter';
-$plugin->release = '0.3.2';
-$plugin->version = 2025110900;
-$plugin->requires = 2022112800;
-$plugin->maturity = MATURITY_ALPHA;
-$plugin->supported = [403, 405]; // A range of branch numbers of supported moodle versions.
+    if ($oldversion < 2025110900) {
+        // Add missing foreign key to mootimeter_tool_settings.pageid.
+        $table = new xmldb_table('mootimeter_tool_settings');
+        $key = new xmldb_key('pageid', XMLDB_KEY_FOREIGN, ['pageid'], 'mootimeter_pages', ['id']);
+        $dbman->add_key($table, $key);
+
+        upgrade_mod_savepoint(true, 2025110900, 'mootimeter');
+    }
+    return true;
+}
