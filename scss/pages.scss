@@ -86,6 +86,11 @@
           img {
             filter: invert(45%) sepia(68%) saturate(1342%) hue-rotate(349deg) brightness(91%) contrast(93%);
           }
+          .mootimeter_page_visibility {
+            .icon {
+              color: $lernplatform-300;
+            }
+          }
         }
 
         &.pageunvisible {
@@ -97,6 +102,11 @@
             rgba(255, 255, 255, 0) calc(50% + 0.8px),
             rgba(255, 255, 255, 0) 100%
           );
+          .mootimeter_page_visibility {
+            .icon {
+              color: $grey-300;
+            }
+          }
 
           img {
             opacity: 0.5;
@@ -111,6 +121,28 @@
               rgba(255, 255, 255, 0) calc(50% + 1.5px),
               rgba(255, 255, 255, 0) 100%
             );
+            .mootimeter_page_visibility {
+              .icon {
+                color: rgba(#dc6534, 0.5);
+              }
+            }
+          }
+        }
+
+        .mootimeter_page_visibility {
+          position: absolute;
+          right: 0.4375rem;
+          top: 0.25rem;
+          cursor: pointer;
+          color: $white-standard;
+          font-size: 0.875rem;
+
+          &:hover {
+            color: $lernplatform-200;
+          }
+
+          .icon {
+            margin: 0;
           }
         }
 

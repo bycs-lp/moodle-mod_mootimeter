@@ -98,6 +98,7 @@ $string['tooltip_content_menu_teacherpermission_disabled'] = 'Click to hide the 
 $string['tooltip_delete_all_answers'] = 'Delete all answers';
 $string['tooltip_disable_page'] = 'Click to disable this page for participants.';
 $string['tooltip_enable_page'] = 'Click to enable this page for participants.';
+$string['page_hidden_for_participants'] = 'Hidden for participants';
 $string['tooltip_fullscreen_compress'] = 'Leave fullscreen mode';
 $string['tooltip_fullscreen_expand'] = 'Expand to fullscreen';
 $string['tooltip_show_question_page'] = 'Show question page.';

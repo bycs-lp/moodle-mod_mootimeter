@@ -7,6 +7,15 @@
     {{#tooltip}} data-toggle="tooltip" data-placement="right" title="{{tooltip}}"{{/tooltip}}
     >
     {{#isediting}}
+    {{#page_visibility-eye}}
+    <span
+        class="mootimeter_page_visibility"
+        id="{{id}}"
+        {{{dataset}}}
+    >
+        <i id="{{iconid}}" class="icon fa {{icon}} fa-light" aria-hidden="true"></i>
+    </span>
+    {{/page_visibility-eye}}
     <span
         class="mootimeter_page_move mootimeter_page_move_sortablehandle_{{uniqid}}"
         tabindex="0"
@@ -24,4 +33,9 @@
 
 {{#js}}
     require(['mod_mootimeter/reload_page'], (module) => module.init(["{{id}}_{{uniqid}}"]));
+    {{#isediting}}
+    {{#page_visibility-eye}}
+    require(['mod_mootimeter/toggle_state'], (module) => module.init(["{{id}}", "{{iconid}}"]));
+    {{/page_visibility-eye}}
+    {{/isediting}}
 {{/js}}

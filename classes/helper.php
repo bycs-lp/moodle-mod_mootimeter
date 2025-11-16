@@ -765,9 +765,11 @@ class helper {
         // Now configure the page_visible toggle.
         $pagevisibleiconclass = 'fa-eye';
         $tooltip = get_string('tooltip_enable_page', 'mod_mootimeter');
+        $pageinvisible = false;
         if (empty($page->visible)) {
             $pagevisibleiconclass = 'fa-eye-slash';
             $tooltip = get_string('tooltip_disable_page', 'mod_mootimeter');
+            $pageinvisible = true;
         }
 
         $dataseticonvisibility = [
@@ -784,6 +786,7 @@ class helper {
             'dataset' => implode(" ", $dataseticonvisibility),
             'tooltip' => $tooltip,
         ];
+        $defaultparams['pageinvisible'] = $pageinvisible;
 
         return $toolhelper->get_col_settings_tool_params($page, $defaultparams);
     }

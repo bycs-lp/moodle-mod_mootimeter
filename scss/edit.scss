@@ -171,9 +171,29 @@
   }
 }
 
+.mootimeter-page-hidden-notice {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: rgba(220, 101, 52, 0.1);
+  border-left: 0.25rem solid $lernplatform-300;
+  color: $lernplatform-300;
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
+
+  i {
+    margin-right: 0.5rem;
+  }
+}
+
 .dark {
   .mootimeter-page-dropdown-content div {
     background-color: $grey-500;
     color: $white-standard;
+  }
+
+  .mootimeter-page-hidden-notice {
+    background-color: rgba(220, 101, 52, 0.2);
+    color: $lernplatform-200;
+    border-left-color: $lernplatform-200;
   }
 }

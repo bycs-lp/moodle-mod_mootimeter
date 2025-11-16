@@ -1,21 +1,8 @@
 <div class="mootimeter-header-wrapper">
     <h4>{{toolname}}</h4>
     <div class="row">
-        {{#page_visibility-eye}}
-        <div
-            class="mootimeter-page-dropdown col-xs-6"
-            id="{{id}}_{{uniqid}}"
-            {{{dataset}}}
-            {{#tooltip}} data-toggle="tooltip" data-placement="top" title="{{tooltip}}"{{/tooltip}}
-        >
-            <i id="{{iconid}}" class="icon fa {{icon}} fa-light mootimeter-page-dropbtn" aria-hidden="true"></i>
-        </div>
-        {{#js}}
-        require(['mod_mootimeter/toggle_state'], (module) => module.init(["{{id}}_{{uniqid}}", "{{iconid}}_{{uniqid}}",]));
-        {{/js}}
-        {{/page_visibility-eye}}
-        <div class="mootimeter-page-dropdown col-xs-6">
-            <i class="icon fa fa-gear fa-light mootimeter-page-dropbtn" aria-hidden="true"></i>
+        <div class="mootimeter-page-dropdown col-xs-12">
+            <i class="icon fa fa-ellipsis-v fa-light mootimeter-page-dropbtn" aria-hidden="true"></i>
             <div class="mootimeter-page-dropdown-content">
                 <div
                     id="btn-delete_page_{{uniqid}}"
@@ -31,3 +18,8 @@
         </div>
     </div>
 </div>
+{{#pageinvisible}}
+<div class="mootimeter-page-hidden-notice">
+    <i class="fa fa-eye-slash"></i> {{#str}} page_hidden_for_participants, mod_mootimeter {{/str}}
+</div>
+{{/pageinvisible}}
