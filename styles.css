@@ -67,18 +67,22 @@
 }
 
 @font-face {
-  font-display: swap;
-  font-family: "Atkinson Hyperlegible";
-  font-style: normal;
-  font-weight: 400;
-  src: url("/mod/mootimeter/fonts/atkinson-hyperlegible-v11-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+  .mootimetercontainer {
+    font-display: swap;
+    font-family: "Atkinson Hyperlegible";
+    font-style: normal;
+    font-weight: 400;
+    src: url("/mod/mootimeter/fonts/atkinson-hyperlegible-v11-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+  }
 }
 @font-face {
-  font-display: swap;
-  font-family: "Lexend";
-  font-style: normal;
-  font-weight: 400;
-  src: url("/mod/mootimeter/fonts/lexend-v18-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+  .mootimetercontainer {
+    font-display: swap;
+    font-family: "Lexend";
+    font-style: normal;
+    font-weight: 400;
+    src: url("/mod/mootimeter/fonts/lexend-v18-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+  }
 }
 .mootimetercontainer h1,
 .mootimetercontainer h2,
@@ -193,7 +197,7 @@
   background-color: #303142;
   color: #fff;
   margin-bottom: 1rem;
-  border: 0.0625rem #60616d solid;
+  border: 0.125rem #60616d solid;
   min-height: 3.75rem;
   justify-content: center;
   position: relative;
@@ -205,8 +209,17 @@
 .mootimetercontainer .mootimetercolpages ul li.active {
   border-color: #dc6534;
 }
+.mootimetercontainer .mootimetercolpages ul li.active img {
+  filter: invert(45%) sepia(68%) saturate(1342%) hue-rotate(349deg) brightness(91%) contrast(93%);
+}
 .mootimetercontainer .mootimetercolpages ul li.pageunvisible {
   background: linear-gradient(to top left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) calc(50% - 0.8px), rgb(255, 255, 255) 50%, rgba(255, 255, 255, 0) calc(50% + 0.8px), rgba(255, 255, 255, 0) 100%);
+}
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible img {
+  opacity: 0.5;
+}
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible.active {
+  background: linear-gradient(to top left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) calc(50% - 1.5px), #dc6534 50%, rgba(255, 255, 255, 0) calc(50% + 1.5px), rgba(255, 255, 255, 0) 100%);
 }
 .mootimetercontainer .mootimetercolpages ul li .mootimeter_page_move {
   position: absolute;
@@ -231,10 +244,15 @@
   color: #60616d;
 }
 .mootimetercontainer .mootimetercolpages ul .mootimeter_addpage {
-  background-color: #d33f01;
-  border: 0.0625rem #d33f01 solid;
+  background: none;
+  border: 0.125rem #60616d solid;
+  border-radius: 0.25rem;
   width: 100%;
   z-index: 1;
+  transition: background-color 0.3s ease;
+}
+.mootimetercontainer .mootimetercolpages ul .mootimeter_addpage:hover {
+  background-color: #d33f01;
 }
 @media screen and (max-width: 680px) {
   .mootimetercontainer .mootimetercolpages {
