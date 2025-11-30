@@ -83,32 +83,58 @@ const getAnswers = async (pageid, id) => {
     nodecanvas.setAttribute('data-values', response.values);
     nodecanvas.setAttribute('data-chartsettings', response.chartsettings);
 
-    // (Re-)Draw the chart.
-    var config = {
-        type: JSON.parse(response.chartsettings).charttype,
-        data: {
-            labels: JSON.parse(response.labels),
-            datasets: [{
-                label: response.question,
-                data: JSON.parse(response.values),
-                backgroundColor: JSON.parse(response.chartsettings).backgroundColor,
-                borderRadius: JSON.parse(response.chartsettings).borderRadius,
-                pointStyle: JSON.parse(response.chartsettings).pointStyle,
-                pointRadius: JSON.parse(response.chartsettings).pointRadius,
-                pointHoverRadius: JSON.parse(response.chartsettings).pointHoverRadius,
-            }],
-        },
-        options: JSON.parse(response.chartsettings).options
-    };
+    // Parse settings once to avoid repeated JSON.parse calls.
+    const chartsettings = JSON.parse(response.chartsettings);
+    const labels = JSON.parse(response.labels);
+    const values = JSON.parse(response.values);
 
-    let chartStatus = ChartJS.getChart(id); // <canvas> id
+    // Get or create chart.
+    let chartStatus = ChartJS.getChart(id);
+
     if (chartStatus != undefined) {
-        chartStatus.destroy();
+        // Update existing chart instead of destroying and recreating.
+        chartStatus.data.labels = labels;
+        chartStatus.data.datasets[0].label = response.question;
+        chartStatus.data.datasets[0].data = values;
+        chartStatus.data.datasets[0].backgroundColor = chartsettings.backgroundColor;
+        chartStatus.data.datasets[0].borderRadius = chartsettings.borderRadius;
+        chartStatus.data.datasets[0].pointStyle = chartsettings.pointStyle;
+        chartStatus.data.datasets[0].pointRadius = chartsettings.pointRadius;
+        chartStatus.data.datasets[0].pointHoverRadius = chartsettings.pointHoverRadius;
+
+        // Check if chart type changed (rare case).
+        if (chartStatus.config.type !== chartsettings.charttype) {
+            chartStatus.destroy();
+            chartStatus = null; // Will be recreated below.
+        } else {
+            // Update without animation for instant response.
+            chartStatus.update('none');
+        }
     }
 
-    new ChartJS(document.getElementById(id), config);
-    ChartJS.defaults.font.size = 25;
-    ChartJS.defaults.stepSize = 1;
+    if (!chartStatus) {
+        // Create new chart only if it doesn't exist.
+        var config = {
+            type: chartsettings.charttype,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: response.question,
+                    data: values,
+                    backgroundColor: chartsettings.backgroundColor,
+                    borderRadius: chartsettings.borderRadius,
+                    pointStyle: chartsettings.pointStyle,
+                    pointRadius: chartsettings.pointRadius,
+                    pointHoverRadius: chartsettings.pointHoverRadius,
+                }],
+            },
+            options: chartsettings.options
+        };
+
+        new ChartJS(document.getElementById(id), config);
+        ChartJS.defaults.font.size = 25;
+        ChartJS.defaults.stepSize = 1;
+    }
 
     // Set quizlastupdated.
     mtmstate.setAttribute('data-quizlastupdated', mtmstate.dataset.contentchangedat);
