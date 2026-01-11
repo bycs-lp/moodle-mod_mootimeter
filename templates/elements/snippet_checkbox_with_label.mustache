@@ -1,5 +1,10 @@
 <div class="mootimeter-checkbox {{wrapper_cb_with_label_additional_class}}" {{#wrapper_cb_with_label_id}} id="{{wrapper_cb_with_label_id}}" {{/wrapper_cb_with_label_id}}>
   <label>
+    <span
+      id="text_{{cb_with_label_id}}_{{uniqid}}"
+    >
+      {{cb_with_label_text}}
+    </span>
     <span class="mootimeter-field-wrapper mootimeter-checkbox-field-wrapper">
       <input type="checkbox"
         id="{{cb_with_label_id}}_{{uniqid}}"
@@ -18,11 +23,6 @@
       <span class="checkbox-icon-wrapper">
         <i class="icon fa fa-check fa-light checkbox-icon" aria-hidden="true"></i>
       </span>
-    </span>
-    <span
-      id="text_{{cb_with_label_id}}_{{uniqid}}"
-    >
-      {{cb_with_label_text}}
     </span>
   </label>
 </div>
