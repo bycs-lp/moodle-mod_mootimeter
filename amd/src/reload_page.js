@@ -71,6 +71,9 @@ export const execReloadPage = async(pageid, cmid, dataset) => {
         return;
     }
 
+    // Lock page reload during transition to prevent race conditions.
+    mtmstate.setAttribute('data-lockpagereload', '1');
+
     if (!dataset) {
         dataset = getGetParams();
     } else {
@@ -135,6 +138,9 @@ export const execReloadPage = async(pageid, cmid, dataset) => {
             // Set URL parameter - pageid.
             setGetParam('pageid', pageparmas.pageid);
         }
+
+        // Unlock page reload after transition is complete.
+        mtmstate.setAttribute('data-lockpagereload', '');
     }
 };
 
