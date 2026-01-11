@@ -1,14 +1,14 @@
 .mootimeter-checkbox {
   label {
     display: flex;
-    align-items: center;
+    align-items: start;
     cursor: pointer;
     margin: 0;
 
     .checkbox-icon-wrapper {
       @include flex-center-all;
       position: relative;
-      border: 0.0938rem solid $lernplatform-400;
+      border: 0.0938rem solid $grey-300;
       border-radius: 0.125rem;
       width: 1.25rem !important;
       height: 1.25rem;
@@ -19,6 +19,11 @@
         margin: 0;
         width: 1rem;
         height: 1rem;
+      }
+    }
+    &:hover {
+      .checkbox-icon-wrapper {
+        border-color: $lernplatform-400;
       }
     }
 

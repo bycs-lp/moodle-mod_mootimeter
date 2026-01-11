@@ -85,6 +85,8 @@ $feedback-success-100: #d9f6e0;
     display: flex;
     flex: 27.5rem 2 0;
     overflow-y: auto;
+    padding-left: 0;
+    padding-right: 0;
 
     // When edit column is empty/hidden, reduce flex-basis to allow content column to grow
     &:has(.mootimetercoledit:empty) {

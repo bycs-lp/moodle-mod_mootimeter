@@ -41,6 +41,11 @@
   display: flex;
   flex: 27.5rem 2 0;
   overflow-y: auto;
+  padding-left: 0;
+  padding-right: 0;
+}
+.mootimetercontainer #mootimeter-col-left:has(.mootimetercoledit:empty) {
+  flex: 7.5rem 0 0;
 }
 
 @media screen and (max-width: 680px) {
@@ -481,7 +486,7 @@
   margin-right: 0;
 }
 .mootimeter-header-wrapper .mootimeter-page-dropbtn {
-  padding: 16px;
+  text-align: right;
 }
 .mootimeter-header-wrapper .mootimeter-page-dropdown {
   position: relative;
@@ -813,6 +818,15 @@
   opacity: 0.5;
 }
 
+.mootimeter-field-wrapper {
+  display: inline-block;
+  width: 4.5rem;
+}
+
+.mootimeter-field-wrapper:has(input) {
+  padding-top: 5px;
+}
+
 .input-with-checkbox-icon_wrapper {
   display: flex;
   flex-direction: column;
@@ -845,7 +859,7 @@
 
 .mootimeter-checkbox label {
   display: flex;
-  align-items: center;
+  align-items: start;
   cursor: pointer;
   margin: 0;
 }
@@ -854,7 +868,7 @@
   justify-content: center;
   align-items: center;
   position: relative;
-  border: 0.0938rem solid #d33f01;
+  border: 0.0938rem solid #60616d;
   border-radius: 0.125rem;
   width: 1.25rem !important;
   height: 1.25rem;
@@ -866,6 +880,9 @@
   margin: 0;
   width: 1rem;
   height: 1rem;
+}
+.mootimeter-checkbox label:hover .checkbox-icon-wrapper {
+  border-color: #d33f01;
 }
 .mootimeter-checkbox label input[type=checkbox] {
   display: none;
@@ -1104,8 +1121,8 @@
 .mootimeter-number-input label {
   display: flex;
   width: 100%;
-  gap: 0.5rem;
-  align-items: center;
+  gap: 1rem;
+  align-items: start;
 }
 .mootimeter-number-input.light-background {
   color: #00091e;
@@ -1351,9 +1368,9 @@
 }
 
 .button-icon-with-text {
-  display: flex !important;
-  justify-content: center;
+  display: flex;
   align-items: center;
+  justify-content: start;
   gap: 0.5rem;
   cursor: pointer;
 }
@@ -1365,7 +1382,10 @@
   text-align: center;
 }
 .button-icon-with-text:hover {
-  background-color: #a4a5ac;
+  color: #dc6534;
+}
+.button-icon-with-text:hover .icon {
+  color: #dc6534;
 }
 
 .mootimeter-highlighter {
