@@ -660,6 +660,18 @@
   text-align: center;
   gap: 1.25rem;
 }
+.mootimetercontainer .mootimetercolcontent .mootimeter-checkbox label {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+.mootimetercontainer .mootimetercolcontent .mootimeter-checkbox label .checkbox-icon-wrapper {
+  margin-left: 0;
+  margin-right: 0.625rem;
+}
+.mootimetercontainer .mootimetercolcontent .mootimeter-number-input label {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
 .mootimetercontainer.isNewPage .mootimetercolcontent {
   flex: 0 0 0;
 }

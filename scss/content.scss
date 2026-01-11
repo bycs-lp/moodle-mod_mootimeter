@@ -123,6 +123,22 @@
       text-align: center;
       gap: 1.25rem;
     }
+
+    // Change order of checkbox label and icon for slides
+    .mootimeter-checkbox label {
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+
+      .checkbox-icon-wrapper {
+        margin-left: 0;
+        margin-right: 0.625rem;
+      }
+    }
+
+    .mootimeter-number-input label {
+      flex-direction: row-reverse;
+      justify-content: flex-end;
+    }
   }
 
   &.isNewPage {
