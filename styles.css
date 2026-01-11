@@ -1044,6 +1044,36 @@
   border-color: #fff;
 }
 
+.mootimeter-textarea {
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.875rem;
+  border: 0.0625rem solid #60616d;
+  background-color: unset;
+  color: #fff;
+  width: 100%;
+  resize: vertical;
+  min-height: 4rem;
+}
+.mootimeter-textarea:focus {
+  border-color: #fff;
+}
+.mootimeter-textarea.light-background {
+  color: #00091e;
+  border-color: #00091e;
+}
+
+.mootimeter-content-wrapper .mootimeter-textarea {
+  color: #00091e;
+  border-color: #00091e;
+}
+.mootimeter-content-wrapper .mootimeter-textarea:focus {
+  border-color: #00091e;
+}
+
+.contrast .mootimeter-textarea {
+  border-color: #fff;
+}
+
 .input-with-inner-icon {
   position: relative;
 }

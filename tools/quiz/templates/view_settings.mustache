@@ -3,7 +3,7 @@
     {{> mod_mootimeter/elements/snippet_settings_col_header}}
 
     {{#question}}
-    {{> mod_mootimeter/elements/snippet_input}}
+    {{> mod_mootimeter/elements/snippet_textarea}}
     {{#js}}
     require(['mod_mootimeter/reload_page_content'], (module) => module.init("{{mtm-input-id}}_{{uniqid}}"));
     {{/js}}

@@ -1,0 +1,18 @@
+<textarea
+	id="{{mtm-input-id}}_{{uniqid}}"
+	class="mootimeter-textarea mootimeterfullwidth {{additional_class}}"
+	{{#mtm-input-name}}name="{{mtm-input-name}}"{{/mtm-input-name}}
+	{{#mtm-input-placeholder}}placeholder="{{mtm-input-placeholder}}"{{/mtm-input-placeholder}}
+	{{{dataset}}}
+	{{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+	{{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+	{{#mtm-input-name}}data-name="{{mtm-input-name}}"{{/mtm-input-name}}
+	{{#autofocus}}autofocus{{/autofocus}}
+	{{#rows}}rows="{{rows}}"{{/rows}}
+>{{mtm-input-value}}</textarea>
+
+{{#ajaxmethode}}
+{{#js}}
+require(['mod_mootimeter/handler_input'], (module) => module.init("{{mtm-input-id}}_{{uniqid}}"));
+{{/js}}
+{{/ajaxmethode}}
