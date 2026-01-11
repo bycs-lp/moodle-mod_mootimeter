@@ -45,7 +45,7 @@
   padding-right: 0;
 }
 .mootimetercontainer #mootimeter-col-left:has(.mootimetercoledit:empty) {
-  flex: 7.5rem 0 0;
+  flex: 10rem 0 0;
 }
 
 @media screen and (max-width: 680px) {
@@ -208,6 +208,9 @@
   position: relative;
   min-width: 127px;
 }
+.mootimetercontainer .mootimetercolpages ul li img {
+  filter: brightness(0) saturate(100%) invert(71%) sepia(6%) saturate(275%) hue-rotate(194deg) brightness(92%) contrast(88%);
+}
 .mootimetercontainer .mootimetercolpages ul li:hover {
   border-color: #e99f80;
 }
@@ -217,30 +220,30 @@
 .mootimetercontainer .mootimetercolpages ul li.active img {
   filter: invert(45%) sepia(68%) saturate(1342%) hue-rotate(349deg) brightness(91%) contrast(93%);
 }
-.mootimetercontainer .mootimetercolpages ul li.active .mootimeter_page_visibility .icon {
-  color: #dc6534;
-}
 .mootimetercontainer .mootimetercolpages ul li.pageunvisible {
   background: linear-gradient(to top left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) calc(50% - 0.8px), rgb(255, 255, 255) 50%, rgba(255, 255, 255, 0) calc(50% + 0.8px), rgba(255, 255, 255, 0) 100%);
 }
-.mootimetercontainer .mootimetercolpages ul li.pageunvisible .mootimeter_page_visibility .icon {
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible .mootimeter_pages_count,
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible .mootimeter_page_move,
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible .mootimeter_page_delete,
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible .mootimeter_page_visibility {
   color: #60616d;
 }
 .mootimetercontainer .mootimetercolpages ul li.pageunvisible img {
-  opacity: 0.5;
+  filter: invert(40%) sepia(6%) saturate(495%) hue-rotate(202deg) brightness(94%) contrast(87%);
 }
 .mootimetercontainer .mootimetercolpages ul li.pageunvisible.active {
   background: linear-gradient(to top left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) calc(50% - 1.5px), #dc6534 50%, rgba(255, 255, 255, 0) calc(50% + 1.5px), rgba(255, 255, 255, 0) 100%);
 }
-.mootimetercontainer .mootimetercolpages ul li.pageunvisible.active .mootimeter_page_visibility .icon {
-  color: rgba(220, 101, 52, 0.5);
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible.active img {
+  filter: invert(45%) sepia(68%) saturate(1342%) hue-rotate(349deg) brightness(91%) contrast(93%);
 }
 .mootimetercontainer .mootimetercolpages ul li .mootimeter_page_visibility {
   position: absolute;
   right: 0.4375rem;
   top: 0.25rem;
   cursor: pointer;
-  color: #fff;
+  color: #a4a5ac;
   font-size: 0.875rem;
 }
 .mootimetercontainer .mootimetercolpages ul li .mootimeter_page_visibility:hover {
@@ -251,14 +254,28 @@
 }
 .mootimetercontainer .mootimetercolpages ul li .mootimeter_page_move {
   position: absolute;
-  right: 0.4375rem;
+  left: 0.4375rem;
   bottom: 0.25rem;
   font-family: Atkinson Hyperlegible;
   font-size: 0.75rem;
   font-style: normal;
   font-weight: 400;
   line-height: 1rem;
-  color: #60616d;
+  color: #a4a5ac;
+}
+.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_delete {
+  position: absolute;
+  right: 0.4375rem;
+  bottom: 0.25rem;
+  cursor: pointer;
+  color: #a4a5ac;
+  font-size: 0.875rem;
+}
+.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_delete:hover {
+  color: #e99f80;
+}
+.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_delete .icon {
+  margin: 0;
 }
 .mootimetercontainer .mootimetercolpages ul li .mootimeter_pages_count {
   position: absolute;
@@ -269,7 +286,7 @@
   font-style: normal;
   font-weight: 400;
   line-height: 1rem;
-  color: #60616d;
+  color: #a4a5ac;
 }
 .mootimetercontainer .mootimetercolpages ul .mootimeter_addpage {
   background: none;

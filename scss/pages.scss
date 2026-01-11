@@ -76,6 +76,11 @@
         position: relative;
         min-width: 127px;
 
+        img {
+          // Filter for grey-200 (#a4a5ac) - corrected to match icon color
+          filter: brightness(0) saturate(100%) invert(71%) sepia(6%) saturate(275%) hue-rotate(194deg) brightness(92%) contrast(88%);
+        }
+
         &:hover {
           border-color: $lernplatform-200;
         }
@@ -84,12 +89,8 @@
           border-color: $lernplatform-300;
 
           img {
+            // Orange filter for active state
             filter: invert(45%) sepia(68%) saturate(1342%) hue-rotate(349deg) brightness(91%) contrast(93%);
-          }
-          .mootimeter_page_visibility {
-            .icon {
-              color: $lernplatform-300;
-            }
           }
         }
 
@@ -102,14 +103,17 @@
             rgba(255, 255, 255, 0) calc(50% + 0.8px),
             rgba(255, 255, 255, 0) 100%
           );
+
+          .mootimeter_pages_count,
+          .mootimeter_page_move,
+          .mootimeter_page_delete,
           .mootimeter_page_visibility {
-            .icon {
-              color: $grey-300;
-            }
+            color: $grey-300;
           }
 
           img {
-            opacity: 0.5;
+            // Filter for grey-300 (#60616d)
+            filter: invert(40%) sepia(6%) saturate(495%) hue-rotate(202deg) brightness(94%) contrast(87%);
           }
 
           &.active {
@@ -121,10 +125,10 @@
               rgba(255, 255, 255, 0) calc(50% + 1.5px),
               rgba(255, 255, 255, 0) 100%
             );
-            .mootimeter_page_visibility {
-              .icon {
-                color: rgba(#dc6534, 0.5);
-              }
+
+            img {
+              // Orange filter for active + invisible state
+              filter: invert(45%) sepia(68%) saturate(1342%) hue-rotate(349deg) brightness(91%) contrast(93%);
             }
           }
         }
@@ -134,7 +138,7 @@
           right: 0.4375rem;
           top: 0.25rem;
           cursor: pointer;
-          color: $white-standard;
+          color: $grey-200;
           font-size: 0.875rem;
 
           &:hover {
@@ -148,14 +152,31 @@
 
         .mootimeter_page_move {
           position: absolute;
-          right: 0.4375rem;
+          left: 0.4375rem;
           bottom: 0.25rem;
           font-family: Atkinson Hyperlegible;
           font-size: 0.75rem;
           font-style: normal;
           font-weight: 400;
           line-height: 1rem;
-          color: $grey-300;
+          color: $grey-200;
+        }
+
+        .mootimeter_page_delete {
+          position: absolute;
+          right: 0.4375rem;
+          bottom: 0.25rem;
+          cursor: pointer;
+          color: $grey-200;
+          font-size: 0.875rem;
+
+          &:hover {
+            color: $lernplatform-200;
+          }
+
+          .icon {
+            margin: 0;
+          }
         }
 
         .mootimeter_pages_count {
@@ -167,7 +188,7 @@
           font-style: normal;
           font-weight: 400;
           line-height: 1rem;
-          color: $grey-300;
+          color: $grey-200;
         }
       }
 

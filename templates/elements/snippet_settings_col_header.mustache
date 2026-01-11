@@ -1,22 +1,5 @@
 <div class="mootimeter-header-wrapper">
     <h4>{{toolname}}</h4>
-    <div class="row">
-        <div class="mootimeter-page-dropdown col-xs-12">
-            <i class="icon fa fa-ellipsis-v fa-light mootimeter-page-dropbtn" aria-hidden="true"></i>
-            <div class="mootimeter-page-dropdown-content">
-                <div
-                    id="btn-delete_page_{{uniqid}}"
-                    class="mootimeter-delete-page-btn"
-                    data-pageid="{{pageid}}"
-                >
-                    {{#str}} delete_page, mod_mootimeter {{/str}}
-                </div>
-            </div>
-            {{#js}}
-            require(['mod_mootimeter/delete_page'], (module) => module.init(["btn-delete_page_{{uniqid}}"]));
-            {{/js}}
-        </div>
-    </div>
 </div>
 {{#pageinvisible}}
 <div class="mootimeter-page-hidden-notice">

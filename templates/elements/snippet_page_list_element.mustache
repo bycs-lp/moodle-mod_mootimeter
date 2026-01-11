@@ -26,6 +26,18 @@
     >
         <i class="fa fa-arrows"></i>
     </span>
+    <span
+        class="mootimeter_page_delete"
+        id="mootimeter_page_delete_{{pageid}}_{{uniqid}}"
+        tabindex="0"
+        role="button"
+        data-action="deletepage"
+        data-pageid="{{pageid}}"
+        data-cmid="{{cmid}}"
+        title="{{#str}} delete {{/str}}"
+    >
+        <i class="icon fa fa-trash fa-light" aria-hidden="true"></i>
+    </span>
     {{/isediting}}
     <span class="mootimeter_pages_count">{{pagenumber}}</span>
     <img src="{{{ toolicon }}}" width="{{width}}" class="m-1" />
@@ -37,5 +49,6 @@
     {{#page_visibility-eye}}
     require(['mod_mootimeter/toggle_state'], (module) => module.init(["{{id}}", "{{iconid}}"]));
     {{/page_visibility-eye}}
+    require(['mod_mootimeter/delete_page'], (module) => module.init(["mootimeter_page_delete_{{pageid}}_{{uniqid}}"]));
     {{/isediting}}
 {{/js}}
