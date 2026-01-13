@@ -244,10 +244,12 @@ class helper {
      * Get mootimeter page object.
      *
      * @param int $pageid
+     * @param bool $checkvisible - if true, only visible pages are returned,
+     *                             when the user has no moderator capability
      * @return mixed
      * @throws dml_exception
      */
-    public function get_page(int $pageid): bool|object {
+    public function get_page(int $pageid, bool $checkvisible = true): bool|object {
         global $DB;
 
         if (empty($pageid)) {
@@ -256,7 +258,15 @@ class helper {
 
         $params = ['id' => $pageid];
 
-        if (empty(has_capability('mod/mootimeter:moderator', \context_module::instance(self::get_cm_by_pageid($pageid)->id)))) {
+        // If the user has no moderator capability, only visible pages are returned.
+        // We need to skip this check, if the methode is called during module deletion.
+        if (
+            $checkvisible &&
+            empty(has_capability(
+                'mod/mootimeter:moderator',
+                \context_module::instance(self::get_cm_by_pageid($pageid)->id)
+            ))
+        ) {
             $params['visible'] = self::PAGE_VISIBLE;
         }
 
@@ -917,7 +927,7 @@ class helper {
         global $DB;
 
         if (!is_object($pageorid)) {
-            $page = $this->get_page($pageorid);
+            $page = $this->get_page($pageorid, false);
         } else {
             $page = $pageorid;
         }
@@ -925,10 +935,6 @@ class helper {
         $instance = self::get_instance_by_pageid($page->id);
         $cm = self::get_cm_by_instance($instance);
         $context = \context_module::instance($cm->id);
-
-        if (!has_capability('mod/mootimeter:moderator', $context)) {
-            throw new \required_capability_exception($context, 'mod/mootimeter:moderator', 'nopermission', 'mod_mootimeter');
-        }
 
         $classname = "\mootimetertool_" . $page->tool . "\\" . $page->tool;
 
