@@ -1,5 +1,8 @@
 import { call as fetchMany } from 'core/ajax';
 import WordCloud from 'mootimetertool_wordcloud/wordcloud2';
+import {notifyFilterContentUpdated} from 'core_filters/events';
+
+const observerRegistry = new Map();
 
 export const init = (id) => {
 
@@ -78,19 +81,55 @@ const getAnswers = async (id) => {
     mtmstate.setAttribute('data-wclastupdated', mtmstate.dataset.contentchangedat);
 
     // Redraw wordcloud.
-    document.getElementById(id).setAttribute('data-answers', JSON.stringify(response.answerlist));
-    redrawwordcloud(id);
+    const container = document.getElementById(id);
+    if (!container) {
+        return;
+    }
+    container.setAttribute('data-answers', JSON.stringify(response.answerlist));
+    ensureObserver(container);
+    redrawwordcloud(container);
 
     return;
 };
 
 /**
  * Redraw the wordcloud.
- * @param {string} id
+ * @param {HTMLElement} container
  */
-function redrawwordcloud(id) {
-    let mtmtcanvas = document.getElementById(id);
-    let answers = JSON.parse(mtmtcanvas.dataset.answers);
+function redrawwordcloud(container) {
+    let answers = JSON.parse(container.dataset.answers);
 
-    WordCloud(mtmtcanvas, { list: answers, weightFactor: 24, color: '#f98012', fontFamily: 'OpenSans' });
+    WordCloud(container, {list: answers, weightFactor: 24, color: '#f98012', fontFamily: 'OpenSans'});
+}
+
+/**
+ * Ensure MathJax is triggered when the wordcloud mutates.
+ *
+ * @param {HTMLElement} container
+ */
+function ensureObserver(container) {
+    if (!container || observerRegistry.has(container.id)) {
+        return;
+    }
+
+    const observer = new MutationObserver((mutations) => {
+        if (!document.body.contains(container)) {
+            observer.disconnect();
+            observerRegistry.delete(container.id);
+            return;
+        }
+        for (const mutation of mutations) {
+            if (mutation.addedNodes.length > 0) {
+                for (const node of mutation.addedNodes) {
+                    if (node.tagName === 'SPAN') {
+                        node.classList.add('filter_mathjaxloader_equation');
+                    }
+                }
+            }
+        }
+        notifyFilterContentUpdated([container]);
+    });
+
+    observer.observe(container, {childList: true});
+    observerRegistry.set(container.id, observer);
 }
