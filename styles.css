@@ -1,6 +1,5 @@
 .mootimetercontainer {
-  max-width: 1400px;
-  max-height: 850px;
+  max-height: 1080px;
   overflow: auto;
 }
 .mootimetercontainer *:focus {
