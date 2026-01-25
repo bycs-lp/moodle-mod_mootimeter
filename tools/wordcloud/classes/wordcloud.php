@@ -445,7 +445,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
             'id' => 'mtmt_restart',
             'iconid' => 'mtmt_restart_iconid',
             'dataset' => implode(" ", $dataseticonrestart),
-            'button-text' => get_string('action_delete_answers', 'mootimetertool_wordcloud'),
+            'button-text' => get_string('action_reset_answers', 'mootimetertool_wordcloud'),
         ];
 
         // Answer actions: Show answer overview button (toggle between overview and question view).
@@ -453,7 +453,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
         if ($isoverviewactive) {
             // Currently showing overview -> button should go back to question.
             $params['icon-answer-overview'] = [
-                'icon' => 'fa-pencil-square-o',
+                'icon' => 'fa-clipboard-question',
                 'id' => 'mtmt_show_answer_overview',
                 'button-text' => get_string('action_back_to_question', 'mootimetertool_wordcloud'),
                 'dataset' => "data-action='showquestionpage' data-pageid='" . $page->id . "' data-cmid='" . $cm->id . "'",
@@ -461,7 +461,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
         } else {
             // Currently showing question -> button should show overview.
             $params['icon-answer-overview'] = [
-                'icon' => 'fa-table',
+                'icon' => 'fa-clipboard-list',
                 'id' => 'mtmt_show_answer_overview',
                 'button-text' => get_string('action_answer_overview', 'mootimetertool_wordcloud'),
                 'dataset' => "data-action='showansweroverview' data-pageid='" . $page->id . "' data-cmid='" . $cm->id . "'",

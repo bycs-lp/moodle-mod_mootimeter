@@ -86,8 +86,8 @@
 
     .mootimeter-content-menu {
       position: absolute;
-      top: 1.25rem;
-      background: #00091e;
+      bottom: 10.5rem;
+      background: $grey-400;
       padding: 0.5rem 1.25rem;
       border-radius: 3.125rem;
       display: flex;
@@ -96,6 +96,15 @@
 
       &:empty {
         display: none;
+      }
+
+      .mootimeter-btn-icon-only-rounded {
+        width: 2.75rem;
+        height: 2.75rem;
+
+        .icon {
+          font-size: 1.25rem;
+        }
       }
 
       @media screen and (max-width: 425px) {

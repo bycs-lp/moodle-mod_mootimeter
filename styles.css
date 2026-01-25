@@ -718,8 +718,8 @@
 }
 .mootimetercontainer .mootimetercolcontent .mootimeter-content-menu {
   position: absolute;
-  top: 1.25rem;
-  background: #00091e;
+  bottom: 10.5rem;
+  background: #303142;
   padding: 0.5rem 1.25rem;
   border-radius: 3.125rem;
   display: flex;
@@ -728,6 +728,13 @@
 }
 .mootimetercontainer .mootimetercolcontent .mootimeter-content-menu:empty {
   display: none;
+}
+.mootimetercontainer .mootimetercolcontent .mootimeter-content-menu .mootimeter-btn-icon-only-rounded {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+.mootimetercontainer .mootimetercolcontent .mootimeter-content-menu .mootimeter-btn-icon-only-rounded .icon {
+  font-size: 1.25rem;
 }
 @media screen and (max-width: 425px) {
   .mootimetercontainer .mootimetercolcontent .mootimeter-content-menu {
