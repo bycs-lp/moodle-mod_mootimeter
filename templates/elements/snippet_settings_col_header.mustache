@@ -1,8 +1,8 @@
 <div class="mootimeter-header-wrapper">
     <h4>{{toolname}}</h4>
+    {{#pageinvisible}}
+    <span class="mootimeter-hidden-badge">
+        <i class="fa fa-eye-slash"></i> {{#str}} hidden, mod_mootimeter {{/str}}
+    </span>
+    {{/pageinvisible}}
 </div>
-{{#pageinvisible}}
-<div class="mootimeter-page-hidden-notice">
-    <i class="fa fa-eye-slash"></i> {{#str}} page_hidden_for_participants, mod_mootimeter {{/str}}
-</div>
-{{/pageinvisible}}

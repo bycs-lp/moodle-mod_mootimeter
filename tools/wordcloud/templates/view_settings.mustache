@@ -17,17 +17,23 @@
     {{> mod_mootimeter/elements/snippet_number_input}}
     {{/maxinputsperuser}}
 
-    <p class="text-small text-muted mt-3">{{#str}} actions , mootimetertool_wordcloud {{/str}}</p>
-    <div class="mootimeter-answer-actions-wrapper">
+    <div class="mootimeter-actions-list">
+        {{#icon-eye}}
+        {{> mod_mootimeter/elements/snippet_button_action}}
+        {{#js}}
+        require(['mod_mootimeter/toggle_state'], (module) => module.init(["{{id}}_{{uniqid}}"]));
+        {{/js}}
+        {{/icon-eye}}
+
         {{#icon-answer-overview}}
-        {{> mod_mootimeter/elements/snippet_button_icon_only_rounded}}
+        {{> mod_mootimeter/elements/snippet_button_action}}
         {{#js}}
         require(['mod_mootimeter/reload_page'], (module) => module.init(["{{id}}_{{uniqid}}"]));
         {{/js}}
         {{/icon-answer-overview}}
 
         {{#icon-restart}}
-        {{> mod_mootimeter/elements/snippet_button_icon_only_rounded}}
+        {{> mod_mootimeter/elements/snippet_button_action}}
         {{#js}}
         require(['mod_mootimeter/handle_button_clicked'], (module) => module.init(["{{id}}_{{uniqid}}"]));
         {{/js}}

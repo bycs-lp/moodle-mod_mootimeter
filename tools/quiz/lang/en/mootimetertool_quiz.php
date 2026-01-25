@@ -27,7 +27,12 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['add_question_option'] = "Add answer option";
-$string['answeroptions'] = "Answer options";
+$string['answeroptions'] = "Answers";
+$string['action_show_results'] = 'Show results to students';
+$string['action_hide_results'] = 'Hide results from students';
+$string['action_answer_overview'] = 'Show answer overview';
+$string['action_back_to_question'] = 'Back to question';
+$string['action_delete_answers'] = 'Delete all answers';
 $string['answers_max_number'] = 'Max. answers per user (0: unlimited)';
 $string['atleastoneanswer'] = 'You need to select at least one answer';
 $string['enter_answeroption'] = 'Please enter an answer option.';

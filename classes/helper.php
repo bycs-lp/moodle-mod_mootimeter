@@ -588,27 +588,6 @@ class helper {
         $instance = self::get_instance_by_pageid($page->id);
         $cm = self::get_cm_by_instance($instance);
 
-        if (has_capability('mod/mootimeter:moderator', \context_module::instance($cm->id))) {
-            // Set up icon to toggle "show on teacher permission".
-            $dataseticoneye = [
-                'data-togglename = "showonteacherpermission"',
-                'data-pageid = "' . $page->id . '"',
-            ];
-            $params['icon-eye'] = [
-                'icon' => 'fa-eye',
-                'id' => 'toggleteacherpermission',
-                'iconid' => 'toggleteacherpermissionid',
-                'dataset' => implode(" ", $dataseticoneye),
-            ];
-            if (!empty(self::get_tool_config($page->id, 'showonteacherpermission'))) {
-                $params['icon-eye']['tooltip'] = get_string('tooltip_content_menu_teacherpermission_disabled', 'mod_mootimeter');
-            } else {
-                $params['icon-eye']['icon'] = "fa-eye-slash";
-                $params['icon-eye']['tooltip'] = get_string('tooltip_content_menu_teacherpermission', 'mod_mootimeter');
-            }
-
-        }
-
         $params['icon-showresults'] = [
             'icon' => 'fa-bar-chart',
             'id' => 'showresults',

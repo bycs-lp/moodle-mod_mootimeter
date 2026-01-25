@@ -61,12 +61,12 @@
       color: $white-standard;
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1rem;
 
       form {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1rem;
       }
 
       .mootimetersettings-head {
@@ -77,8 +77,66 @@
 
       .mootimeter-visualization-options-wrapper {
         display: flex;
+        gap: 0.25rem;
+
+        .mootimeter-btn-icon {
+          background-color: transparent;
+          border: none;
+          opacity: 0.5;
+          transition: opacity 0.2s ease;
+
+          &:hover {
+            opacity: 0.8;
+          }
+
+          &.active {
+            opacity: 1;
+            border: 2px solid $lernplatform-300;
+            border-radius: 0.25rem;
+          }
+        }
+      }
+
+      .mootimeter-diagram-type-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         gap: 0.5rem;
-        flex-wrap: wrap;
+
+        .mootimeter-diagram-type-label {
+          margin-bottom: 0;
+          color: $white-standard;
+          font-size: 0.875rem;
+        }
+      }
+
+      .mootimeter-actions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .mootimeter-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background-color: transparent;
+        border: 1px solid $grey-300;
+        border-radius: 0.25rem;
+        color: $white-standard;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        i {
+          width: 1rem;
+          text-align: center;
+        }
       }
 
       .mootimeter-answer-actions-wrapper {
@@ -177,18 +235,21 @@
   }
 }
 
-.mootimeter-page-hidden-notice {
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
+.mootimeter-hidden-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
   background-color: rgba(220, 101, 52, 0.1);
-  border-left: 0.25rem solid $lernplatform-300;
   color: $lernplatform-300;
-  font-size: 0.875rem;
   border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
 
-  i {
-    margin-right: 0.5rem;
-  }
+.mootimeter-sublabel {
+  font-size: 0.75rem;
+  color: $grey-300;
+  margin-bottom: 0.25rem;
 }
 
 .dark {
@@ -197,9 +258,12 @@
     color: $white-standard;
   }
 
-  .mootimeter-page-hidden-notice {
+  .mootimeter-hidden-badge {
     background-color: rgba(220, 101, 52, 0.2);
     color: $lernplatform-200;
-    border-left-color: $lernplatform-200;
+  }
+
+  .mootimeter-sublabel {
+    color: $grey-300;
   }
 }

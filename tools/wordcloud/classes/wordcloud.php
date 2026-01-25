@@ -414,6 +414,24 @@ class wordcloud extends \mod_mootimeter\toolhelper {
             unset($params['settings']['anonymousmode']['cb_with_label_ajaxmethod']);
         }
 
+        // Toggle teacher permission button (show/hide results to students).
+        $dataseticoneye = [
+            'data-togglename = "showonteacherpermission"',
+            'data-pageid = "' . $page->id . '"',
+        ];
+        $params['icon-eye'] = [
+            'icon' => 'fa-eye',
+            'id' => 'toggleteacherpermission',
+            'iconid' => 'toggleteacherpermissionid',
+            'dataset' => implode(" ", $dataseticoneye),
+        ];
+        if (!empty(self::get_tool_config($page->id, 'showonteacherpermission'))) {
+            $params['icon-eye']['button-text'] = get_string('action_hide_results', 'mootimetertool_wordcloud');
+        } else {
+            $params['icon-eye']['icon'] = "fa-eye-slash";
+            $params['icon-eye']['button-text'] = get_string('action_show_results', 'mootimetertool_wordcloud');
+        }
+
         // Answer actions: Delete all answers button.
         $dataseticonrestart = [
             'data-ajaxmethode = "mod_mootimeter_delete_all_answers"',
@@ -427,7 +445,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
             'id' => 'mtmt_restart',
             'iconid' => 'mtmt_restart_iconid',
             'dataset' => implode(" ", $dataseticonrestart),
-            'tooltip' => get_string('tooltip_delete_all_answers', 'mod_mootimeter'),
+            'button-text' => get_string('action_delete_answers', 'mootimetertool_wordcloud'),
         ];
 
         // Answer actions: Show answer overview button (toggle between overview and question view).
@@ -437,7 +455,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
             $params['icon-answer-overview'] = [
                 'icon' => 'fa-pencil-square-o',
                 'id' => 'mtmt_show_answer_overview',
-                'tooltip' => get_string('back_to_question', 'mod_mootimeter'),
+                'button-text' => get_string('action_back_to_question', 'mootimetertool_wordcloud'),
                 'dataset' => "data-action='showquestionpage' data-pageid='" . $page->id . "' data-cmid='" . $cm->id . "'",
             ];
         } else {
@@ -445,7 +463,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
             $params['icon-answer-overview'] = [
                 'icon' => 'fa-table',
                 'id' => 'mtmt_show_answer_overview',
-                'tooltip' => get_string('show_answer_overview', 'mod_mootimeter'),
+                'button-text' => get_string('action_answer_overview', 'mootimetertool_wordcloud'),
                 'dataset' => "data-action='showansweroverview' data-pageid='" . $page->id . "' data-cmid='" . $cm->id . "'",
             ];
         }
