@@ -54,4 +54,6 @@ $string['submit_answer'] = 'Submit answer';
 $string['tool_description_short'] = "Live quiz with correct answers";
 $string['tooltip_content_menu_answercorrection'] = 'Click to show students if answer is correct';
 $string['tooltip_content_menu_answercorrection_disabled'] = 'Click to do not show students if answer is correct';
-$string['visualization'] = 'Visualization';
+$string['visualization'] = 'Answers';
+$string['diagram_type'] = 'Diagram type';
+$string['actions'] = 'Actions';

@@ -487,7 +487,7 @@ class helper {
         $paramscontentmenu = $this->get_content_menu_params($page, $contentmenudefaultparams);
 
         // Get params of the settings column.
-        $paramscolsettings = $this->get_col_settings_params($page);
+        $paramscolsettings = $this->get_col_settings_params($page, $contentmenudefaultparams['sp']);
 
         // Merge all params and return them.
         return array_merge($paramscontent, $paramscontentmenu, $paramscolsettings);
@@ -607,35 +607,6 @@ class helper {
                 $params['icon-eye']['tooltip'] = get_string('tooltip_content_menu_teacherpermission', 'mod_mootimeter');
             }
 
-            // Reset Question.
-            $dataseticonrestart = [
-                'data-ajaxmethode = "mod_mootimeter_delete_all_answers"',
-                'data-pageid = "' . $page->id . '"',
-                'data-confirmationtitlestr = "' . get_string('delete_all_answers_dialog_title', 'mod_mootimeter') . '"',
-                'data-confirmationquestionstr = "' . get_string('delete_all_answers_dialog_question', 'mod_mootimeter') . '"',
-                'data-confirmationtype = "DELETE_CANCEL"',
-            ];
-            $params['icon-restart'] = [
-                'icon' => 'fa-trash',
-                'id' => 'mtmt_restart',
-                'iconid' => 'mtmt_restart_iconid',
-                'dataset' => implode(" ", $dataseticonrestart),
-                'tooltip' => get_string('tooltip_delete_all_answers', 'mod_mootimeter'),
-            ];
-
-            // Redirect to Answers Overview View.
-            $params['icon-answer-overview'] = [
-                'icon' => 'fa-table',
-                'id' => 'mtmt_show_answer_overview',
-                'tooltip' => get_string('show_answer_overview', 'mod_mootimeter'),
-                'dataset' => "data-action='showansweroverview' data-pageid='" . $page->id . "' data-cmid='" . $cm->id . "'",
-            ];
-            if (!empty($params['sp']['o']) && $params['sp']['o'] == 1) {
-                $params['icon-answer-overview']['icon'] = 'fa-pencil-square-o';
-                $params['icon-answer-overview']['tooltip'] = get_string('tooltip_show_question_page', 'mod_mootimeter');
-                $params['icon-answer-overview']['dataset'] = "data-action='showquestionpage' data-pageid='"
-                    . $page->id . "' data-cmid='" . $cm->id . "'";
-            }
         }
 
         $params['icon-showresults'] = [
@@ -742,9 +713,10 @@ class helper {
      * Get the html snippet of the settings column.
      *
      * @param object $page
+     * @param array $sp Subpage parameters (r=results, o=overview, f=fullscreen)
      * @return mixed
      */
-    public function get_col_settings_params(object $page): array {
+    public function get_col_settings_params(object $page, array $sp = []): array {
 
         $classname = "\mootimetertool_" . $page->tool . "\\" . $page->tool;
 
@@ -760,6 +732,7 @@ class helper {
         $defaultparams = [
             'toolname' => get_string("pluginname", "mootimetertool_" . $page->tool),
             'pageid' => $page->id,
+            'sp' => $sp,
         ];
 
         // Now configure the page_visible toggle.

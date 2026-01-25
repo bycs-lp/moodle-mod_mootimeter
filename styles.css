@@ -477,6 +477,11 @@
   gap: 0.5rem;
   flex-wrap: wrap;
 }
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-answer-actions-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
 
 .dark .mootimetercoledit {
   background-color: #e8e8ea;

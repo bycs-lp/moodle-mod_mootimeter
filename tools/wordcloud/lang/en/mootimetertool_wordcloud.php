@@ -43,3 +43,4 @@ $string['showresultteacherpermission'] = 'Show results on teacher permission';
 $string['submit'] = 'Submit';
 $string['tool_description_short'] = "Collect words or statements live";
 $string['type_answer'] = 'Insert a word or statement and hit Enter.';
+$string['actions'] = 'Actions';

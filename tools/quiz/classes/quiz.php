@@ -644,6 +644,44 @@ class quiz extends \mod_mootimeter\toolhelper {
             ],
         ];
 
+        // Answer actions: Delete all answers button.
+        $dataseticonrestart = [
+            'data-ajaxmethode = "mod_mootimeter_delete_all_answers"',
+            'data-pageid = "' . $page->id . '"',
+            'data-confirmationtitlestr = "' . get_string('delete_all_answers_dialog_title', 'mod_mootimeter') . '"',
+            'data-confirmationquestionstr = "' . get_string('delete_all_answers_dialog_question', 'mod_mootimeter') . '"',
+            'data-confirmationtype = "DELETE_CANCEL"',
+        ];
+        $params['icon-restart'] = [
+            'icon' => 'fa-trash',
+            'id' => 'mtmt_restart',
+            'iconid' => 'mtmt_restart_iconid',
+            'dataset' => implode(" ", $dataseticonrestart),
+            'tooltip' => get_string('tooltip_delete_all_answers', 'mod_mootimeter'),
+        ];
+
+        // Answer actions: Show answer overview button (toggle between overview and question view).
+        $instance = self::get_instance_by_pageid($page->id);
+        $cm = self::get_cm_by_instance($instance);
+        $isoverviewactive = !empty($params['sp']['o']);
+        if ($isoverviewactive) {
+            // Currently showing overview -> button should go back to question.
+            $params['icon-answer-overview'] = [
+                'icon' => 'fa-pencil-square-o',
+                'id' => 'mtmt_show_answer_overview',
+                'tooltip' => get_string('back_to_question', 'mod_mootimeter'),
+                'dataset' => "data-action='showquestionpage' data-pageid='" . $page->id . "' data-cmid='" . $cm->id . "'",
+            ];
+        } else {
+            // Currently showing question -> button should show overview.
+            $params['icon-answer-overview'] = [
+                'icon' => 'fa-table',
+                'id' => 'mtmt_show_answer_overview',
+                'tooltip' => get_string('show_answer_overview', 'mod_mootimeter'),
+                'dataset' => "data-action='showansweroverview' data-pageid='" . $page->id . "' data-cmid='" . $cm->id . "'",
+            ];
+        }
+
         $maxanswers = self::get_tool_config($page->id, "maxanswersperuser", self::MAXANSWERSDEFAULT);
         if (!is_number($maxanswers)) {
             $maxanswers = intval($maxanswers);

@@ -44,6 +44,7 @@
 
     <p class="text-bold">{{#str}} visualization , mootimetertool_quiz {{/str}}</p>
 
+    <p class="text-small text-muted">{{#str}} diagram_type , mootimetertool_quiz {{/str}}</p>
     <div class="mootimeter-visualization-options-wrapper">
         {{#visualization}}
         {{> mod_mootimeter/elements/snippet_settings_visualization_option}}
@@ -51,6 +52,23 @@
         {{#js}}
         require(['mootimetertool_quiz/store_visualization'], (module) => module.init("{{uniqid}}"));
         {{/js}}
+    </div>
+
+    <p class="text-small text-muted mt-3">{{#str}} actions , mootimetertool_quiz {{/str}}</p>
+    <div class="mootimeter-answer-actions-wrapper">
+        {{#icon-answer-overview}}
+        {{> mod_mootimeter/elements/snippet_button_icon_only_rounded}}
+        {{#js}}
+        require(['mod_mootimeter/reload_page'], (module) => module.init(["{{id}}_{{uniqid}}"]));
+        {{/js}}
+        {{/icon-answer-overview}}
+
+        {{#icon-restart}}
+        {{> mod_mootimeter/elements/snippet_button_icon_only_rounded}}
+        {{#js}}
+        require(['mod_mootimeter/handle_button_clicked'], (module) => module.init(["{{id}}_{{uniqid}}"]));
+        {{/js}}
+        {{/icon-restart}}
     </div>
 
     {{> mod_mootimeter/elements/snippet_divider}}
