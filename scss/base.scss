@@ -80,6 +80,12 @@ $feedback-success-100: #d9f6e0;
     }
   }
 
+  // Fix: Remove Bootstrap grid gutter to prevent white stripe between columns
+  .mootimetercolcontent {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   #mootimeter-col-left {
     display: flex;
     flex: 27.5rem 2 0;
@@ -87,9 +93,18 @@ $feedback-success-100: #d9f6e0;
     padding-left: 0;
     padding-right: 0;
 
-    // When edit column is empty/hidden, reduce flex-basis to fit thumbnails
+    // When edit column is empty/hidden, reduce width and fill background
+    // to prevent white stripe between pages and content
     &:has(.mootimetercoledit:empty) {
       flex: 10rem 0 0;
+      background-color: $grey-500;
+      border-top-left-radius: 0.5rem;
+      border-bottom-left-radius: 0.5rem;
+
+      // Pages column fills the full width
+      .mootimetercolpages {
+        flex: 1 1 100%;
+      }
     }
   }
 }

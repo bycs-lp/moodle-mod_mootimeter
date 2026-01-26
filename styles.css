@@ -36,6 +36,10 @@
     min-height: 646px;
   }
 }
+.mootimetercontainer .mootimetercolcontent {
+  padding-left: 0;
+  padding-right: 0;
+}
 .mootimetercontainer #mootimeter-col-left {
   display: flex;
   flex: 27.5rem 2 0;
@@ -45,6 +49,12 @@
 }
 .mootimetercontainer #mootimeter-col-left:has(.mootimetercoledit:empty) {
   flex: 10rem 0 0;
+  background-color: #00091e;
+  border-top-left-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+}
+.mootimetercontainer #mootimeter-col-left:has(.mootimetercoledit:empty) .mootimetercolpages {
+  flex: 1 1 100%;
 }
 
 @media screen and (max-width: 680px) {
