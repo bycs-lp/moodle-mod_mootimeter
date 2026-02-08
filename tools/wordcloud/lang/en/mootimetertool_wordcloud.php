@@ -26,6 +26,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['action_answer_overview'] = 'View all answers';
+$string['action_back_to_question'] = 'Back to question';
+$string['action_hide_results'] = 'Hide results from students';
+$string['action_reset_answers'] = 'Reset answers';
+$string['action_show_results'] = 'Show results to students';
 $string['allowduplicateanswers'] = 'Allow students to submit the same answer multiple times';
 $string['answers_max_number'] = 'Max. answers per user (0: unlimited)';
 $string['error_empty_answers'] = 'Empty answers are not allowed';
@@ -43,8 +48,3 @@ $string['showresultteacherpermission'] = 'Show results on teacher permission';
 $string['submit'] = 'Submit';
 $string['tool_description_short'] = "Collect words or statements live";
 $string['type_answer'] = 'Insert a word or statement and hit Enter.';
-$string['action_show_results'] = 'Show results to students';
-$string['action_hide_results'] = 'Hide results from students';
-$string['action_answer_overview'] = 'View all answers';
-$string['action_back_to_question'] = 'Back to question';
-$string['action_reset_answers'] = 'Reset answers';

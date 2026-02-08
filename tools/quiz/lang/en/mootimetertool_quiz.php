@@ -26,15 +26,17 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['add_question_option'] = "Add answer option";
-$string['answeroptions'] = "Answers";
-$string['action_show_results'] = 'Show results to students';
-$string['action_hide_results'] = 'Hide results from students';
 $string['action_answer_overview'] = 'View all answers';
 $string['action_back_to_question'] = 'Back to question';
+$string['action_hide_results'] = 'Hide results from students';
 $string['action_reset_answers'] = 'Reset answers';
+$string['action_show_results'] = 'Show results to students';
+$string['actions'] = 'Actions';
+$string['add_question_option'] = "Add answer option";
+$string['answeroptions'] = "Answers";
 $string['answers_max_number'] = 'Max. answers per user (0: unlimited)';
 $string['atleastoneanswer'] = 'You need to select at least one answer';
+$string['diagram_type'] = 'Diagram type';
 $string['enter_answeroption'] = 'Please enter an answer option.';
 $string['error_to_many_answers'] = 'You have selected to many answers. You only can select {$a} options.';
 $string['mark_correct_answer'] = 'Please mark the correct answer (optional)';
@@ -60,5 +62,3 @@ $string['tool_description_short'] = "Live quiz with correct answers";
 $string['tooltip_content_menu_answercorrection'] = 'Click to show students if answer is correct';
 $string['tooltip_content_menu_answercorrection_disabled'] = 'Click to do not show students if answer is correct';
 $string['visualization'] = 'Answers';
-$string['diagram_type'] = 'Diagram type';
-$string['actions'] = 'Actions';
