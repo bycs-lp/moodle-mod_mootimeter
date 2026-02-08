@@ -1,6 +1,43 @@
 import ChartJS from 'mootimetertool_quiz/chart.umd';
 import {call as fetchMany} from 'core/ajax';
 
+/**
+ * MBS-10584:Wrap a long text label into multiple lines by splitting at word boundaries.
+ * @param {string} text
+ * @param {number} maxWidth
+ * @returns {string|string[]}
+ */
+function wrapLabel(text, maxWidth) {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+    for (const word of words) {
+        if ((currentLine + ' ' + word).trim().length > maxWidth) {
+            lines.push(currentLine.trim());
+            currentLine = word;
+        } else {
+            currentLine = (currentLine + ' ' + word).trim();
+        }
+    }
+    if (currentLine) {
+        lines.push(currentLine.trim());
+    }
+    return lines.length > 1 ? lines : text;
+}
+
+/**
+ * MBS-10584: Truncate a label to a maximum length, appending an ellipsis if needed.
+ * @param {string} text
+ * @param {number} maxLength
+ * @returns {string}
+ */
+function truncateLabel(text, maxLength) {
+    if (text.length <= maxLength) {
+        return text;
+    }
+    return text.substring(0, maxLength - 1) + '…';
+}
+
 export const init = (id) => {
 
     if (!document.getElementById(id)) {
@@ -101,14 +138,38 @@ const getAnswers = async (pageid, id) => {
         options: JSON.parse(response.chartsettings).options
     };
 
+    // MBS-10584: Wrap long Y-axis labels for horizontal bar charts to prevent text cutoff.
+    if (config.options?.indexAxis === 'y') {
+        config.data.labels = config.data.labels.map(label => {
+            const wrapped = wrapLabel(label, 50);
+            if (Array.isArray(wrapped) && wrapped.length > 3) {
+                const truncated = wrapped.slice(0, 3);
+                truncated[2] = truncated[2] + '…';
+                return truncated;
+            }
+            return wrapped;
+        });
+    }
+
+    // Truncate legend labels for pie charts.
+    if (config.type === 'pie') {
+        config.data.labels = config.data.labels.map(label => truncateLabel(label, 50));
+    }
+
+    // Wrap title text for all charts with a title plugin.
+    if (config.options?.plugins?.title?.text) {
+        config.options.plugins.title.text = wrapLabel(config.options.plugins.title.text, 60);
+    }
+
     let chartStatus = ChartJS.getChart(id); // <canvas> id
     if (chartStatus != undefined) {
         chartStatus.destroy();
     }
 
-    new ChartJS(document.getElementById(id), config);
-    ChartJS.defaults.font.size = 25;
+    ChartJS.defaults.font.size = 16;
     ChartJS.defaults.stepSize = 1;
+
+    new ChartJS(document.getElementById(id), config);
 
     // Set quizlastupdated.
     mtmstate.setAttribute('data-quizlastupdated', mtmstate.dataset.contentchangedat);
