@@ -138,6 +138,9 @@ const getAnswers = async (pageid, id) => {
         options: JSON.parse(response.chartsettings).options
     };
 
+    // MBS-10584: Save original labels for tooltip display before truncating/wrapping.
+    const originalLabels = config.data.labels.slice();
+
     // MBS-10584: Wrap long Y-axis labels for horizontal bar charts to prevent text cutoff.
     if (config.options?.indexAxis === 'y') {
         config.data.labels = config.data.labels.map(label => {
@@ -160,6 +163,23 @@ const getAnswers = async (pageid, id) => {
     if (config.options?.plugins?.title?.text) {
         config.options.plugins.title.text = wrapLabel(config.options.plugins.title.text, 60);
     }
+
+    // MBS-10584: Show full original text in tooltips instead of truncated/wrapped labels.
+    if (!config.options.plugins) {
+        config.options.plugins = {};
+    }
+    config.options.plugins.tooltip = {
+        callbacks: {
+            title: function(tooltipItems) {
+                // Wrap long original label into multiple lines for the tooltip.
+                return wrapLabel(originalLabels[tooltipItems[0].dataIndex], 60);
+            },
+            label: function(tooltipItem) {
+                // Wrap long question text into multiple lines for the tooltip body.
+                return wrapLabel(tooltipItem.dataset.label + ': ' + tooltipItem.formattedValue, 60);
+            },
+        },
+    };
 
     let chartStatus = ChartJS.getChart(id); // <canvas> id
     if (chartStatus != undefined) {
