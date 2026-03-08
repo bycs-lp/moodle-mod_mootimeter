@@ -26,11 +26,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['action_answer_overview'] = 'View all answers';
-$string['action_back_to_question'] = 'Back to question';
-$string['action_hide_results'] = 'Hide results from students';
-$string['action_reset_answers'] = 'Reset answers';
-$string['action_show_results'] = 'Show results to students';
 $string['actions'] = 'Actions';
 $string['add_question_option'] = "Add answer option";
 $string['answeroptions'] = "Answers";

@@ -644,59 +644,8 @@ class quiz extends \mod_mootimeter\toolhelper {
             ],
         ];
 
-        // Toggle teacher permission button (show/hide results to students).
-        $dataseticoneye = [
-            'data-togglename = "showonteacherpermission"',
-            'data-pageid = "' . $page->id . '"',
-        ];
-        $params['icon-eye'] = [
-            'icon' => 'fa-eye',
-            'id' => 'toggleteacherpermission',
-            'iconid' => 'toggleteacherpermissionid',
-            'dataset' => implode(" ", $dataseticoneye),
-        ];
-        if (!empty(self::get_tool_config($page->id, 'showonteacherpermission'))) {
-            $params['icon-eye']['button-text'] = get_string('action_hide_results', 'mootimetertool_quiz');
-        } else {
-            $params['icon-eye']['icon'] = "fa-eye-slash";
-            $params['icon-eye']['button-text'] = get_string('action_show_results', 'mootimetertool_quiz');
-        }
-
-        // Answer actions: Delete all answers button.
-        $dataseticonrestart = [
-            'data-ajaxmethode = "mod_mootimeter_delete_all_answers"',
-            'data-pageid = "' . $page->id . '"',
-            'data-confirmationtitlestr = "' . get_string('delete_all_answers_dialog_title', 'mod_mootimeter') . '"',
-            'data-confirmationquestionstr = "' . get_string('delete_all_answers_dialog_question', 'mod_mootimeter') . '"',
-            'data-confirmationtype = "DELETE_CANCEL"',
-        ];
-        $params['icon-restart'] = [
-            'icon' => 'fa-trash',
-            'id' => 'mtmt_restart',
-            'iconid' => 'mtmt_restart_iconid',
-            'dataset' => implode(" ", $dataseticonrestart),
-            'button-text' => get_string('action_reset_answers', 'mootimetertool_quiz'),
-        ];
-
-        // Answer actions: Show answer overview button (toggle between overview and question view).
-        $isoverviewactive = !empty($params['sp']['o']);
-        if ($isoverviewactive) {
-            // Currently showing overview -> button should go back to question.
-            $params['icon-answer-overview'] = [
-                'icon' => 'fa-clipboard-question',
-                'id' => 'mtmt_show_answer_overview',
-                'button-text' => get_string('action_back_to_question', 'mootimetertool_quiz'),
-                'dataset' => "data-action='showquestionpage' data-pageid='" . $page->id . "' data-cmid='" . $cm->id . "'",
-            ];
-        } else {
-            // Currently showing question -> button should show overview.
-            $params['icon-answer-overview'] = [
-                'icon' => 'fa-clipboard-list',
-                'id' => 'mtmt_show_answer_overview',
-                'button-text' => get_string('action_answer_overview', 'mootimetertool_quiz'),
-                'dataset' => "data-action='showansweroverview' data-pageid='" . $page->id . "' data-cmid='" . $cm->id . "'",
-            ];
-        }
+        // Moderator action buttons (eye toggle, restart, answer overview).
+        $params = $this->get_moderator_action_params($page, $params);
 
         $maxanswers = self::get_tool_config($page->id, "maxanswersperuser", self::MAXANSWERSDEFAULT);
         if (!is_number($maxanswers)) {

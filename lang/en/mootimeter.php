@@ -26,6 +26,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['action_answer_overview'] = 'View all answers';
+$string['action_back_to_question'] = 'Back to question';
+$string['action_hide_results'] = 'Hide results from students';
+$string['action_reset_answers'] = 'Reset answers';
+$string['action_show_results'] = 'Show results to students';
 $string['addpage'] = 'Add page';
 $string['anonymous_name'] = 'Anonymous';
 $string['anonymousmode'] = 'If checked, teachers can not view voters names.';
