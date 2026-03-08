@@ -353,13 +353,13 @@ class quiz extends \mod_mootimeter\toolhelper {
 
         if (has_capability('mod/mootimeter:moderator', \context_module::instance($cm->id))) {
             $dataseticoncheck = [
-                'data-togglename = "showanswercorrection"',
-                'data-pageid = ' . $page->id,
+                'data-togglename="showanswercorrection"',
+                'data-pageid="' . $page->id . '"',
                 // To configure the response handling.
-                'data-iconenabled = "fa-check-square-o"',
-                'data-icondisabled = "fa-square-o"',
-                'data-tooltipenabled = "' . get_string('tooltip_content_menu_answercorrection', 'mootimetertool_quiz') . '"',
-                'data-tooltipdisabled = "' .
+                'data-iconenabled="fa-check-square-o"',
+                'data-icondisabled="fa-square-o"',
+                'data-tooltipenabled="' . get_string('tooltip_content_menu_answercorrection', 'mootimetertool_quiz') . '"',
+                'data-tooltipdisabled="' .
                     get_string('tooltip_content_menu_answercorrection_disabled', 'mootimetertool_quiz') . '"',
             ];
             $params['icon-check'] = [
@@ -881,7 +881,7 @@ class quiz extends \mod_mootimeter\toolhelper {
 
             // Add delte button to answer.
             $dataseticonrestart = [
-                'data-ajaxmethode = "mod_mootimeter_delete_answers_of_user"',
+                'data-ajaxmethode="mod_mootimeter_delete_answers_of_user"',
                 'data-pageid="' . $page->id . '"',
                 'data-answerid="' . $answer->id . '"',
                 'data-userid="' . $answer->usermodified . '"',

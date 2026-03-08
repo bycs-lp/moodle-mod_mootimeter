@@ -138,7 +138,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
 
             // Add delete button to answer.
             $dataseticontrash = [
-                'data-ajaxmethode = "mod_mootimeter_delete_single_answer"',
+                'data-ajaxmethode="mod_mootimeter_delete_single_answer"',
                 'data-pageid="' . $page->id . '"',
                 'data-answerid="' . $answer->id . '"',
                 'data-confirmationtitlestr="' . get_string('delete_single_answer_dialog_title', 'mod_mootimeter') . '"',
@@ -306,7 +306,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
 
             // Add delete button to answer.
             $dataseticontrash = [
-                'data-ajaxmethode = "mod_mootimeter_delete_single_answer"',
+                'data-ajaxmethode="mod_mootimeter_delete_single_answer"',
                 'data-pageid="' . $page->id . '"',
                 'data-answerid="' . $element->id . '"',
                 'data-confirmationtitlestr="' . get_string('delete_single_answer_dialog_title', 'mod_mootimeter') . '"',
