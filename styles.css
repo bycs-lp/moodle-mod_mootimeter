@@ -1,6 +1,6 @@
 .mootimetercontainer {
-  max-width: 1400px;
-  max-height: 850px;
+  max-width: 1920px;
+  max-height: 1080px;
   overflow: auto;
 }
 .mootimetercontainer *:focus {
@@ -37,10 +37,25 @@
     min-height: 646px;
   }
 }
+.mootimetercontainer .mootimetercolcontent {
+  padding-left: 0;
+  padding-right: 0;
+}
 .mootimetercontainer #mootimeter-col-left {
   display: flex;
   flex: 27.5rem 2 0;
   overflow-y: auto;
+  padding-left: 0;
+  padding-right: 0;
+}
+.mootimetercontainer #mootimeter-col-left:has(.mootimetercoledit:empty) {
+  flex: 10rem 0 0;
+  background-color: #00091e;
+  border-top-left-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+}
+.mootimetercontainer #mootimeter-col-left:has(.mootimetercoledit:empty) .mootimetercolpages {
+  flex: 1 1 100%;
 }
 
 @media screen and (max-width: 680px) {
@@ -186,18 +201,21 @@
   padding: 0 1.0625rem 2.5rem 1.0625rem;
 }
 .mootimetercontainer .mootimetercolpages ul {
-  padding: 2.5rem 1.0625rem 0 1.0625rem;
+  padding: 1.25rem 1.0625rem 0 1.0625rem;
 }
 .mootimetercontainer .mootimetercolpages ul li {
   border-radius: 0.25rem;
   background-color: #303142;
   color: #fff;
   margin-bottom: 1rem;
-  border: 0.0625rem #60616d solid;
-  min-height: 3.75rem;
+  border: 0.125rem #60616d solid;
+  min-height: 5rem;
   justify-content: center;
   position: relative;
-  min-width: 95px;
+  min-width: 127px;
+}
+.mootimetercontainer .mootimetercolpages ul li img {
+  filter: brightness(0) saturate(100%) invert(71%) sepia(6%) saturate(275%) hue-rotate(194deg) brightness(92%) contrast(88%);
 }
 .mootimetercontainer .mootimetercolpages ul li:hover {
   border-color: #e99f80;
@@ -205,19 +223,65 @@
 .mootimetercontainer .mootimetercolpages ul li.active {
   border-color: #dc6534;
 }
+.mootimetercontainer .mootimetercolpages ul li.active img {
+  filter: invert(45%) sepia(68%) saturate(1342%) hue-rotate(349deg) brightness(91%) contrast(93%);
+}
 .mootimetercontainer .mootimetercolpages ul li.pageunvisible {
   background: linear-gradient(to top left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) calc(50% - 0.8px), rgb(255, 255, 255) 50%, rgba(255, 255, 255, 0) calc(50% + 0.8px), rgba(255, 255, 255, 0) 100%);
 }
-.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_move {
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible .mootimeter_pages_count,
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible .mootimeter_page_move,
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible .mootimeter_page_delete,
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible .mootimeter_page_visibility {
+  color: #60616d;
+}
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible img {
+  filter: invert(40%) sepia(6%) saturate(495%) hue-rotate(202deg) brightness(94%) contrast(87%);
+}
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible.active {
+  background: linear-gradient(to top left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) calc(50% - 1.5px), #dc6534 50%, rgba(255, 255, 255, 0) calc(50% + 1.5px), rgba(255, 255, 255, 0) 100%);
+}
+.mootimetercontainer .mootimetercolpages ul li.pageunvisible.active img {
+  filter: invert(45%) sepia(68%) saturate(1342%) hue-rotate(349deg) brightness(91%) contrast(93%);
+}
+.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_visibility {
   position: absolute;
   right: 0.4375rem;
+  top: 0.25rem;
+  cursor: pointer;
+  color: #a4a5ac;
+  font-size: 0.875rem;
+}
+.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_visibility:hover {
+  color: #e99f80;
+}
+.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_visibility .icon {
+  margin: 0;
+}
+.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_move {
+  position: absolute;
+  left: 0.4375rem;
   bottom: 0.25rem;
   font-family: Atkinson Hyperlegible;
   font-size: 0.75rem;
   font-style: normal;
   font-weight: 400;
   line-height: 1rem;
-  color: #60616d;
+  color: #a4a5ac;
+}
+.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_delete {
+  position: absolute;
+  right: 0.4375rem;
+  bottom: 0.25rem;
+  cursor: pointer;
+  color: #a4a5ac;
+  font-size: 0.875rem;
+}
+.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_delete:hover {
+  color: #e99f80;
+}
+.mootimetercontainer .mootimetercolpages ul li .mootimeter_page_delete .icon {
+  margin: 0;
 }
 .mootimetercontainer .mootimetercolpages ul li .mootimeter_pages_count {
   position: absolute;
@@ -228,13 +292,18 @@
   font-style: normal;
   font-weight: 400;
   line-height: 1rem;
-  color: #60616d;
+  color: #a4a5ac;
 }
 .mootimetercontainer .mootimetercolpages ul .mootimeter_addpage {
-  background-color: #d33f01;
-  border: 0.0625rem #d33f01 solid;
+  background: none;
+  border: 0.125rem #60616d solid;
+  border-radius: 0.25rem;
   width: 100%;
   z-index: 1;
+  transition: background-color 0.3s ease;
+}
+.mootimetercontainer .mootimetercolpages ul .mootimeter_addpage:hover {
+  background-color: #d33f01;
 }
 @media screen and (max-width: 680px) {
   .mootimetercontainer .mootimetercolpages {
@@ -242,14 +311,28 @@
   }
   .mootimetercontainer .mootimetercolpages ul {
     display: flex;
-    gap: 1.25rem;
+    gap: 0.75rem;
     padding: 0.625rem;
     margin-bottom: 0;
   }
   .mootimetercontainer .mootimetercolpages ul li {
-    width: 5.375rem;
+    width: 4.75rem;
+    min-width: 4.75rem;
+    min-height: 3rem;
     margin-bottom: 0;
     flex-shrink: 0;
+  }
+  .mootimetercontainer .mootimetercolpages ul li img {
+    max-width: 1rem;
+    max-height: 1rem;
+  }
+  .mootimetercontainer .mootimetercolpages ul .mootimeter_addpage {
+    width: 4.75rem;
+    min-width: 4.75rem;
+    min-height: 3rem;
+  }
+  .mootimetercontainer .mootimetercolpages #mootimeter-addpage-button {
+    padding: 0.625rem;
   }
 }
 .mootimetercontainer .mootimetercolpages .mootimeter-render-loading {
@@ -384,12 +467,12 @@
   color: #fff;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 .mootimetercontainer.isNotNewPage .mootimetersettings form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 .mootimetercontainer.isNotNewPage .mootimetersettings .mootimetersettings-head {
   display: flex;
@@ -398,8 +481,64 @@
 }
 .mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-visualization-options-wrapper {
   display: flex;
+  gap: 0.25rem;
+}
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-visualization-options-wrapper .mootimeter-btn-icon {
+  background-color: transparent;
+  border: none;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-visualization-options-wrapper .mootimeter-btn-icon:hover {
+  opacity: 0.8;
+}
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-visualization-options-wrapper .mootimeter-btn-icon.active {
+  opacity: 1;
+  border: 2px solid #dc6534;
+  border-radius: 0.25rem;
+}
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-diagram-type-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 0.5rem;
-  flex-wrap: wrap;
+}
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-diagram-type-row .mootimeter-diagram-type-label {
+  margin-bottom: 0;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.25rem;
+  background-color: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-size: 1rem;
+}
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-action-btn:hover {
+  color: #dc6534;
+}
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-action-btn i {
+  width: 1.25rem;
+  text-align: center;
+}
+.mootimetercontainer.isNotNewPage .mootimetersettings .mootimeter-answer-actions-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 
 .dark .mootimetercoledit {
@@ -440,7 +579,7 @@
   margin-right: 0;
 }
 .mootimeter-header-wrapper .mootimeter-page-dropbtn {
-  padding: 16px;
+  text-align: right;
 }
 .mootimeter-header-wrapper .mootimeter-page-dropdown {
   position: relative;
@@ -474,9 +613,33 @@
   display: block;
 }
 
+.mootimeter-hidden-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  background-color: rgba(220, 101, 52, 0.1);
+  color: #dc6534;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.mootimeter-sublabel {
+  font-size: 0.75rem;
+  color: #60616d;
+  margin-bottom: 0.25rem;
+}
+
 .dark .mootimeter-page-dropdown-content div {
   background-color: #00091e;
   color: #fff;
+}
+.dark .mootimeter-hidden-badge {
+  background-color: rgba(220, 101, 52, 0.2);
+  color: #e99f80;
+}
+.dark .mootimeter-sublabel {
+  color: #60616d;
 }
 
 .mootimetercontainer .mootimetercolcontent {
@@ -562,8 +725,8 @@
 }
 .mootimetercontainer .mootimetercolcontent .mootimeter-content-menu {
   position: absolute;
-  top: 1.25rem;
-  background: #00091e;
+  bottom: 1.5rem;
+  background: #303142;
   padding: 0.5rem 1.25rem;
   border-radius: 3.125rem;
   display: flex;
@@ -572,6 +735,13 @@
 }
 .mootimetercontainer .mootimetercolcontent .mootimeter-content-menu:empty {
   display: none;
+}
+.mootimetercontainer .mootimetercolcontent .mootimeter-content-menu .mootimeter-btn-icon-only-rounded {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+.mootimetercontainer .mootimetercolcontent .mootimeter-content-menu .mootimeter-btn-icon-only-rounded .icon {
+  font-size: 1.25rem;
 }
 @media screen and (max-width: 425px) {
   .mootimetercontainer .mootimetercolcontent .mootimeter-content-menu {
@@ -595,6 +765,18 @@
   justify-content: center;
   text-align: center;
   gap: 1.25rem;
+}
+.mootimetercontainer .mootimetercolcontent .mootimeter-checkbox label {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+.mootimetercontainer .mootimetercolcontent .mootimeter-checkbox label .checkbox-icon-wrapper {
+  margin-left: 0;
+  margin-right: 0.625rem;
+}
+.mootimetercontainer .mootimetercolcontent .mootimeter-number-input label {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
 }
 .mootimetercontainer.isNewPage .mootimetercolcontent {
   flex: 0 0 0;
@@ -754,6 +936,11 @@
   opacity: 0.5;
 }
 
+.mootimeter-field-wrapper {
+  display: inline-block;
+  width: 4.5rem;
+}
+
 .input-with-checkbox-icon_wrapper {
   display: flex;
   flex-direction: column;
@@ -776,8 +963,7 @@
   display: none !important;
 }
 .mootimeter-checkbox label span {
-  margin-left: 0 !important;
-  margin-right: 10px !important;
+  margin-right: 0 !important;
 }
 
 .mootimeter-radio-btn input[type=radio] {
@@ -795,11 +981,11 @@
   justify-content: center;
   align-items: center;
   position: relative;
-  border: 0.0938rem solid #d33f01;
+  border: 0.0938rem solid #60616d;
   border-radius: 0.125rem;
   width: 1.25rem !important;
   height: 1.25rem;
-  margin-right: 0.625rem;
+  margin-left: 0.625rem;
   padding: 0.125rem;
 }
 .mootimeter-checkbox label .checkbox-icon-wrapper .checkbox-icon {
@@ -807,6 +993,9 @@
   margin: 0;
   width: 1rem;
   height: 1rem;
+}
+.mootimeter-checkbox label:hover .checkbox-icon-wrapper {
+  border-color: #d33f01;
 }
 .mootimeter-checkbox label input[type=checkbox] {
   display: none;
@@ -961,6 +1150,36 @@
   border-color: #fff;
 }
 
+.mootimeter-textarea {
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.875rem;
+  border: 0.0625rem solid #60616d;
+  background-color: unset;
+  color: #fff;
+  width: 100%;
+  resize: vertical;
+  min-height: 4rem;
+}
+.mootimeter-textarea:focus {
+  border-color: #fff;
+}
+.mootimeter-textarea.light-background {
+  color: #00091e;
+  border-color: #00091e;
+}
+
+.mootimeter-content-wrapper .mootimeter-textarea {
+  color: #00091e;
+  border-color: #00091e;
+}
+.mootimeter-content-wrapper .mootimeter-textarea:focus {
+  border-color: #00091e;
+}
+
+.contrast .mootimeter-textarea {
+  border-color: #fff;
+}
+
 .input-with-inner-icon {
   position: relative;
 }
@@ -1045,7 +1264,7 @@
 .mootimeter-number-input label {
   display: flex;
   width: 100%;
-  gap: 0.5rem;
+  gap: 1rem;
   align-items: center;
 }
 .mootimeter-number-input.light-background {
@@ -1292,9 +1511,9 @@
 }
 
 .button-icon-with-text {
-  display: flex !important;
-  justify-content: center;
+  display: flex;
   align-items: center;
+  justify-content: start;
   gap: 0.5rem;
   cursor: pointer;
 }
@@ -1306,7 +1525,10 @@
   text-align: center;
 }
 .button-icon-with-text:hover {
-  background-color: #a4a5ac;
+  color: #dc6534;
+}
+.button-icon-with-text:hover .icon {
+  color: #dc6534;
 }
 
 .mootimeter-highlighter {

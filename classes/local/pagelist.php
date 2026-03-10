@@ -87,6 +87,22 @@ class pagelist {
         foreach ($pages as $pagerow) {
             $uniqid = uniqid('mtmt_page_'); // This is necessary to separate the different page list elements.
             $pixrawurl = '/mod/mootimeter/tools/' . $pagerow->tool . '/pix/' . $pagerow->tool . '-white.svg';
+
+            $pagevisibleiconclass = 'fa-eye';
+            $pagevisibilitytooltip = get_string('tooltip_enable_page', 'mod_mootimeter');
+            if (empty($pagerow->visible)) {
+                $pagevisibleiconclass = 'fa-eye-slash';
+                $pagevisibilitytooltip = get_string('tooltip_disable_page', 'mod_mootimeter');
+            }
+
+            $dataseticonvisibility = [
+                'data-togglename="page_visibility"',
+                'data-pageid="' . $pagerow->id . '"',
+                'data-iconid="page_visibility_iconid_' . $uniqid . '"',
+                'data-iconenabled="fa-eye"',
+                'data-icondisabled="fa-eye-slash"',
+            ];
+
             $temppages['pageslist'][] = [
                 'toolicon' => (new \moodle_url($pixrawurl))->out(true),
                 'active' => ($pagerow->id == $pageidselected) ? "active" : "",
@@ -97,6 +113,14 @@ class pagelist {
                 'cmid' => $cm->id,
                 'id' => $uniqid,
                 'tooltip' => mb_strimwidth($helper::get_tool_config($pagerow, 'question'), 0, 40, '...'),
+                'uniqid' => $uniqid,
+                'page_visibility-eye' => [
+                    'icon' => $pagevisibleiconclass,
+                    'id' => 'toggle_page_visibility_' . $uniqid,
+                    'iconid' => 'page_visibility_iconid_' . $uniqid,
+                    'dataset' => implode(" ", $dataseticonvisibility),
+                    'tooltip' => $pagevisibilitytooltip,
+                ],
             ];
             $pagenumber++;
         }

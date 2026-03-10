@@ -41,9 +41,9 @@ use mod_mootimeter\privacy\mootimeter_plugin_request_data;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
+    \core_privacy\local\metadata\provider,
     \mod_mootimeter\privacy\mootimetertool_provider,
-    \mod_mootimeter\privacy\mootimetertool_user_provider,
-    \core_privacy\local\metadata\provider {
+    \mod_mootimeter\privacy\mootimetertool_user_provider {
     /**
      * Provides meta data that is stored about a user with mod_assign
      *
