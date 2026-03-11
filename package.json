@@ -4,6 +4,6 @@
     "compile-sass": "sass --no-source-map styles.scss styles.css"
   },
   "devDependencies": {
-    "sass": "^1.97.3"
+    "sass": "^1.98.0"
   }
 }
