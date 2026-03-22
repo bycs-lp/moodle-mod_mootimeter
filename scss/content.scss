@@ -63,6 +63,10 @@
         width: 100%;
         height: 600px;
         justify-content: center;
+        // MBS-10668: Prevent overflow of long result list inside the container
+        &.mootimeter-height-auto {
+          height: auto;
+        }
       }
 
       @media screen and (max-width: 539px) {
@@ -174,6 +178,10 @@
         &.mootimeter-width-xl {
           height: 80vH;
           justify-content: center;
+          // MBS-10668: Prevent overflow of long result list inside the container
+          &.mootimeter-height-auto {
+            height: auto;
+          }
         }
 
       }
