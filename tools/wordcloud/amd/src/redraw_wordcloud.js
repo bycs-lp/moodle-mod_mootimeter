@@ -99,7 +99,38 @@ const getAnswers = async (id) => {
 function redrawwordcloud(container) {
     let answers = JSON.parse(container.dataset.answers);
 
-    WordCloud(container, {list: answers, weightFactor: 24, color: '#f98012', fontFamily: 'OpenSans'});
+    // Parse count from string to number.
+    const sortedAnswers = answers.map(item => [item[0], Number(item[1])]);
+
+    // Order the array by answer count desc, so most frequent answers are drawn first.
+    sortedAnswers.sort(compareByCount);
+
+    // Calculate dynamic weightFactor based on container dimension and maxCount.
+    const weightFactor = (Math.min(container.clientHeight, container.clientWidth) / 3) / sortedAnswers[0][1];
+
+    // Render wordcloud with a function that calculates the fontSize per answer.
+    // 20px minimum font size to ensure readability of infrequent answers.
+    // shrinkToFit prevents answers from being silently dropped if they don't fit.
+    WordCloud(container, {
+        list: sortedAnswers,
+        weightFactor: function(count) {
+            return Math.max(weightFactor * count, 20);
+        },
+        color: '#f98012',
+        fontFamily: 'OpenSans',
+        shrinkToFit: true,
+    });
+}
+
+/**
+ * Comparator to sort wordcloud answer arrays by count descending.
+ *
+ * @param {Array} a
+ * @param {Array} b
+ * @returns {number}
+ */
+function compareByCount(a, b) {
+    return b[1] - a[1];
 }
 
 /**
