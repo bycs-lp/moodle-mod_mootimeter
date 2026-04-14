@@ -41,9 +41,9 @@ use mod_mootimeter\privacy\mootimeter_plugin_request_data;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
+    \core_privacy\local\metadata\provider,
     \mod_mootimeter\privacy\mootimetertool_provider,
-    \mod_mootimeter\privacy\mootimetertool_user_provider,
-    \core_privacy\local\metadata\provider {
+    \mod_mootimeter\privacy\mootimetertool_user_provider {
     /**
      * Provides meta data that is stored about a user with mod_assign
      *
@@ -53,16 +53,16 @@ class provider implements
     public static function get_metadata(collection $collection): collection {
 
         $collection->add_database_table(
-            'mootimetertool_wordcloud_subs',
+            'mootimetertool_wordcloud_answers',
             [
-                'usermodified' => 'privacy:metadata:mootimetertool_wordcloud_subs:userid',
-                'pageid' => 'privacy:metadata:mootimetertool_wordcloud_subs:pageid',
-                'optionid' => 'privacy:metadata:mootimetertool_wordcloud_subs:optionid',
-                'timecreated' => 'privacy:metadata:mootimetertool_wordcloud_subs:timecreated',
-                'timemodified' => 'privacy:metadata:mootimetertool_wordcloud_subs:timemodified',
+                'usermodified' => 'privacy:metadata:mootimetertool_wordcloud_answers:userid',
+                'pageid' => 'privacy:metadata:mootimetertool_wordcloud_answers:pageid',
+                'optionid' => 'privacy:metadata:mootimetertool_wordcloud_answers:optionid',
+                'timecreated' => 'privacy:metadata:mootimetertool_wordcloud_answers:timecreated',
+                'timemodified' => 'privacy:metadata:mootimetertool_wordcloud_answers:timemodified',
 
             ],
-            'privacy:metadata:mootimetertool_wordcloud_subs'
+            'privacy:metadata:mootimetertool_wordcloud_answers'
         );
 
         return $collection;
