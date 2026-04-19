@@ -1,4 +1,4 @@
-<table class="table" id="mtmt_wordcloud_overview_{{uniqid}}">
+<table class="table mb-0" id="mtmt_wordcloud_overview_{{uniqid}}">
     <thead>
         <tr>
             <th>#</th>
@@ -33,6 +33,18 @@
         {{/answers}}
     </tbody>
 </table>
+
+{{#hasanswergroups}}
+<div class="mtmt-answer-groups p-2 bg-white">
+    <div class="font-weight-bold mb-2" style="font-size: 18px;">{{#str}} answergroups, mootimetertool_wordcloud {{/str}}</div>
+    <div class="mtmt-answer-groups-pills d-flex flex-wrap" style="gap: 0.5rem;">
+        {{#answergroups}}
+        <div class="mootimeter-pill {{additional_class}}"><span>{{pill}}</span></div>
+        {{/answergroups}}
+    </div>
+</div>
+{{/hasanswergroups}}
+
 {{#js}}
 require(['mootimetertool_wordcloud/sort_answer_overview'], function(SortAnswerOverview) {
     SortAnswerOverview.init('mtmt_wordcloud_overview_{{uniqid}}');
