@@ -3,7 +3,12 @@
         <tr>
             <th>#</th>
             <th>{{#str}} name {{/str}}</th>
-            <th>{{#str}} answer {{/str}}</th>
+            <th class="mtmt-sortable-header" data-sort-key="answer" data-sort-dir="none">
+                <button type="button" class="btn btn-link p-0 mtmt-sort-btn">
+                    {{#str}} answer {{/str}}
+                    <i class="icon fa fa-sort mtmt-sort-icon fa-light" aria-hidden="true"></i>
+                </button>
+            </th>
             <th>{{#str}} date {{/str}} / {{#str}} time {{/str}}</th>
             <th>{{#str}} options {{/str}}</th>
         </tr>
@@ -28,3 +33,8 @@
         {{/answers}}
     </tbody>
 </table>
+{{#js}}
+require(['mootimetertool_wordcloud/sort_answer_overview'], function(SortAnswerOverview) {
+    SortAnswerOverview.init('mtmt_wordcloud_overview_{{uniqid}}');
+});
+{{/js}}
