@@ -1,0 +1,56 @@
+{{!
+    @template mootimetertool_openended/view_results
+
+    Renders the bubble grid with reaction buttons. Polled live by render_bubbles.js.
+
+    Example context (json):
+    {
+        "pageid": 1,
+        "uniqid": "abc",
+        "lastupdated": 1700000000,
+        "teacherpermissiontoview": 1,
+        "enablereactions": true,
+        "hasbubbles": true,
+        "bubbles": [
+            {"id": 1, "answer": "Hello", "reactions": [
+                {"key": "thumbsup", "symbol": "👍", "count": 0, "mine": false}
+            ]}
+        ]
+    }
+}}
+
+{{^teacherpermissiontoview}}
+    <div class="mootimeterfullwidth mootimeter-colcontent-preview mootimeter-width-xl mootimeter-vertical-align"
+        id="mtmt_openended_no_answer_wrapper_{{uniqid}}">
+        {{#str}}no_answer_due_to_showteacherpermission, mootimetertool_openended{{/str}}
+    </div>
+{{/teacherpermissiontoview}}
+
+{{#teacherpermissiontoview}}
+<div
+    class="mootimeterfullwidth mootimeter-colcontent-preview mootimeter-width-xl mootimeter-oe-results"
+    id="openended_grid_wrapper_{{uniqid}}"
+    data-pageid="{{pageid}}"
+    data-lastupdated="{{lastupdated}}"
+    data-enablereactions="{{#enablereactions}}1{{/enablereactions}}{{^enablereactions}}0{{/enablereactions}}"
+>
+    <div class="mootimeter-oe-grid" id="openended_grid_{{uniqid}}">
+        {{#bubbles}}
+        {{> mootimetertool_openended/bubble}}
+        {{/bubbles}}
+    </div>
+    {{^hasbubbles}}
+    <div class="mootimeter-oe-empty" id="openended_empty_{{uniqid}}">
+        {{#str}}no_answer, mootimetertool_openended{{/str}}
+    </div>
+    {{/hasbubbles}}
+</div>
+
+{{#js}}
+require(['mootimetertool_openended/render_bubbles'], (module) => module.init(
+    "openended_grid_wrapper_{{uniqid}}",
+    "openended_grid_{{uniqid}}",
+    "openended_empty_{{uniqid}}"
+));
+{{/js}}
+{{/teacherpermissiontoview}}

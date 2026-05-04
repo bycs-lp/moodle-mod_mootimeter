@@ -1,0 +1,52 @@
+{{!
+    @template mootimetertool_openended/view_overview
+
+    Moderator overview of all open-ended answers (always shows real names, even when
+    anonymousmode is on). Allows inplace-editing the answer text, toggling per-answer
+    visibility, and deleting answers.
+}}
+<table class="table mootimeter-oe-overview-table" id="mtmt_openended_overview_{{uniqid}}">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>{{#str}}name{{/str}}</th>
+            <th>{{#str}}answer{{/str}}</th>
+            <th>{{#str}}reactioncount, mootimetertool_openended{{/str}}</th>
+            <th>{{#str}}date{{/str}} / {{#str}}time{{/str}}</th>
+            <th>{{#str}}options{{/str}}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#answers}}
+        <tr class="mootimeter-oe-overview-row{{^visible}} mootimeter-oe-overview-row-hidden{{/visible}}">
+            <td>{{nbr}}</td>
+            <td>{{userfullname}}</td>
+            <td>
+                {{#answer}}
+                {{> core/inplace_editable}}
+                {{/answer}}
+            </td>
+            <td>{{reactioncount}}</td>
+            <td>{{datetime}}</td>
+            <td>
+                {{#visibility_button}}
+                <button type="button"
+                    class="mootimeter-btn-icon-only-rounded mtmt-oe-visibility-toggle"
+                    data-answerid="{{answerid}}"
+                    title="{{#str}}toggle_visibility_title, mootimetertool_openended{{/str}}"
+                >
+                    <i class="icon fa {{icon}} fa-light" aria-hidden="true"></i>
+                </button>
+                {{/visibility_button}}
+                {{#delete_button}}
+                {{> mod_mootimeter/elements/snippet_button_icon_only_rounded_with_js}}
+                {{/delete_button}}
+            </td>
+        </tr>
+        {{/answers}}
+    </tbody>
+</table>
+
+{{#js}}
+require(['mootimetertool_openended/toggle_visibility'], (module) => module.init("mtmt_openended_overview_{{uniqid}}"));
+{{/js}}

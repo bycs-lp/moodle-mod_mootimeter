@@ -1,0 +1,178 @@
+// Open-ended tool: bubble grid, reaction buttons, character counter,
+// moderator overview hidden state.
+
+.mootimeter-oe-input-wrapper {
+  .mootimeter-oe-input-row {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+  }
+
+  .mootimeter-oe-textarea {
+    @include rounded-s;
+    border: 1px solid $grey-200;
+    padding: 0.5rem 0.75rem;
+    resize: vertical;
+    min-height: 3.5rem;
+    max-height: 12rem;
+    width: 100%;
+    font-family: inherit;
+  }
+
+  .mootimeter-oe-charcount {
+    align-self: flex-end;
+    font-size: 0.8rem;
+    color: $grey-300;
+
+    &.oe-charcount-near {
+      color: $lernplatform-400;
+    }
+    &.oe-charcount-full {
+      color: $feedback-error;
+      font-weight: 600;
+    }
+  }
+
+  .mootimeter-oe-own-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin: 0.25rem 0 0.5rem;
+  }
+}
+
+.mootimeter-oe-results {
+  width: 100%;
+
+  .mootimeter-oe-empty {
+    margin: 1rem 0;
+    color: $grey-300;
+    font-style: italic;
+    text-align: center;
+  }
+}
+
+.mootimeter-oe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+.mootimeter-oe-bubble {
+  @include rounded-m;
+  background-color: $white-standard;
+  border: 1px solid $grey-100;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  padding: 0.75rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 5rem;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+
+  .mootimeter-oe-bubble-text {
+    flex: 1 1 auto;
+    color: $grey-500;
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+
+  .mootimeter-oe-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: auto;
+  }
+
+  .mootimeter-oe-reaction {
+    @include rounded-s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1px solid $grey-100;
+    background-color: $grey-100;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background-color: $lernplatform-200;
+      border-color: $lernplatform-300;
+    }
+
+    &.active {
+      background-color: $lernplatform-200;
+      border-color: $lernplatform-400;
+      color: $grey-500;
+      font-weight: 600;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: progress;
+    }
+
+    .oe-emoji {
+      font-size: 1.05rem;
+      line-height: 1;
+    }
+
+    .oe-count {
+      min-width: 1ch;
+      text-align: center;
+    }
+  }
+
+  // The user's own contributions display reaction counts but the buttons
+  // never become interactive - cursor stays default, no hover effect.
+  &.mootimeter-oe-bubble-own {
+    .mootimeter-oe-reaction,
+    .mootimeter-oe-reaction:hover {
+      cursor: not-allowed;
+      opacity: 0.7;
+      background-color: $grey-100;
+      border-color: $grey-100;
+      color: $grey-300;
+      font-weight: normal;
+    }
+  }
+}
+
+.mootimeter-oe-overview-table {
+  .mootimeter-oe-overview-row-hidden {
+    opacity: 0.55;
+
+    td:nth-child(3) {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.dark {
+  .mootimeter-oe-bubble {
+    background-color: $grey-400;
+    border-color: $grey-300;
+
+    .mootimeter-oe-bubble-text {
+      color: $white-standard;
+    }
+
+    .mootimeter-oe-reaction {
+      background-color: $grey-300;
+      border-color: $grey-300;
+      color: $white-standard;
+
+      &.active {
+        background-color: $lernplatform-400;
+        border-color: $lernplatform-500;
+      }
+    }
+  }
+}

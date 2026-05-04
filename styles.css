@@ -55,34 +55,30 @@
 }
 
 /** This is to hide the topbar on fullscreen mode. */
-#mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen {
-  /** Setting for theme_boost */
-}
 #mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen .navbar,
 #mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen bycs-topbar {
   display: none;
+}
+#mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen {
+  /** Setting for theme_boost */
 }
 #mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen #page {
   margin-top: 0;
 }
 
 @font-face {
-  .mootimetercontainer {
-    font-display: swap;
-    font-family: "Atkinson Hyperlegible";
-    font-style: normal;
-    font-weight: 400;
-    src: url("/mod/mootimeter/fonts/atkinson-hyperlegible-v11-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-  }
+  font-display: swap;
+  font-family: "Atkinson Hyperlegible";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/mod/mootimeter/fonts/atkinson-hyperlegible-v11-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
 }
 @font-face {
-  .mootimetercontainer {
-    font-display: swap;
-    font-family: "Lexend";
-    font-style: normal;
-    font-weight: 400;
-    src: url("/mod/mootimeter/fonts/lexend-v18-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-  }
+  font-display: swap;
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/mod/mootimeter/fonts/lexend-v18-latin-regular.woff2") format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
 }
 .mootimetercontainer h1,
 .mootimetercontainer h2,
@@ -1352,4 +1348,152 @@
 .mootimeter-overlay-content {
   display: table-cell;
   vertical-align: middle;
+}
+
+.mootimeter-oe-input-wrapper .mootimeter-oe-input-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+.mootimeter-oe-input-wrapper .mootimeter-oe-textarea {
+  border-radius: 0.25rem;
+  border: 1px solid #a4a5ac;
+  padding: 0.5rem 0.75rem;
+  resize: vertical;
+  min-height: 3.5rem;
+  max-height: 12rem;
+  width: 100%;
+  font-family: inherit;
+}
+.mootimeter-oe-input-wrapper .mootimeter-oe-charcount {
+  align-self: flex-end;
+  font-size: 0.8rem;
+  color: #60616d;
+}
+.mootimeter-oe-input-wrapper .mootimeter-oe-charcount.oe-charcount-near {
+  color: #d33f01;
+}
+.mootimeter-oe-input-wrapper .mootimeter-oe-charcount.oe-charcount-full {
+  color: #ff0000;
+  font-weight: 600;
+}
+.mootimeter-oe-input-wrapper .mootimeter-oe-own-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.mootimeter-oe-results {
+  width: 100%;
+}
+.mootimeter-oe-results .mootimeter-oe-empty {
+  margin: 1rem 0;
+  color: #60616d;
+  font-style: italic;
+  text-align: center;
+}
+
+.mootimeter-oe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+.mootimeter-oe-bubble {
+  border-radius: 0.5rem;
+  background-color: #fff;
+  border: 1px solid #e8e8ea;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  padding: 0.75rem 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 5rem;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.mootimeter-oe-bubble .mootimeter-oe-bubble-text {
+  flex: 1 1 auto;
+  color: #00091e;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+.mootimeter-oe-bubble .mootimeter-oe-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: auto;
+}
+.mootimeter-oe-bubble .mootimeter-oe-reaction {
+  border-radius: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid #e8e8ea;
+  background-color: #e8e8ea;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.mootimeter-oe-bubble .mootimeter-oe-reaction:hover:not(:disabled) {
+  background-color: #e99f80;
+  border-color: #dc6534;
+}
+.mootimeter-oe-bubble .mootimeter-oe-reaction.active {
+  background-color: #e99f80;
+  border-color: #d33f01;
+  color: #00091e;
+  font-weight: 600;
+}
+.mootimeter-oe-bubble .mootimeter-oe-reaction:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.mootimeter-oe-bubble .mootimeter-oe-reaction .oe-emoji {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.mootimeter-oe-bubble .mootimeter-oe-reaction .oe-count {
+  min-width: 1ch;
+  text-align: center;
+}
+.mootimeter-oe-bubble.mootimeter-oe-bubble-own .mootimeter-oe-reaction,
+.mootimeter-oe-bubble.mootimeter-oe-bubble-own .mootimeter-oe-reaction:hover {
+  cursor: not-allowed;
+  opacity: 0.7;
+  background-color: #e8e8ea;
+  border-color: #e8e8ea;
+  color: #60616d;
+  font-weight: normal;
+}
+
+.mootimeter-oe-overview-table .mootimeter-oe-overview-row-hidden {
+  opacity: 0.55;
+}
+.mootimeter-oe-overview-table .mootimeter-oe-overview-row-hidden td:nth-child(3) {
+  text-decoration: line-through;
+}
+
+.dark .mootimeter-oe-bubble {
+  background-color: #303142;
+  border-color: #60616d;
+}
+.dark .mootimeter-oe-bubble .mootimeter-oe-bubble-text {
+  color: #fff;
+}
+.dark .mootimeter-oe-bubble .mootimeter-oe-reaction {
+  background-color: #60616d;
+  border-color: #60616d;
+  color: #fff;
+}
+.dark .mootimeter-oe-bubble .mootimeter-oe-reaction.active {
+  background-color: #d33f01;
+  border-color: #a93201;
 }

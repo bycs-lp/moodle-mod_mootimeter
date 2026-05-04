@@ -1,0 +1,53 @@
+{{!
+    @template mootimetertool_openended/view_settings
+
+    Settings panel shown to moderators while editing.
+}}
+<div class="mootimetersettings mootimeterfullwidth">
+
+    {{> mod_mootimeter/elements/snippet_settings_col_header}}
+
+    {{#question}}
+    {{> mod_mootimeter/elements/snippet_input}}
+    {{#js}}
+    require(['mod_mootimeter/reload_page_content'], (module) => module.init("{{mtm-input-id}}_{{uniqid}}"));
+    {{/js}}
+    {{/question}}
+
+    {{> mod_mootimeter/elements/snippet_divider}}
+
+    <p class="text-bold">{{#str}}heading_answer, mootimetertool_openended{{/str}}</p>
+
+    {{#maxcharacters}}
+    {{> mod_mootimeter/elements/snippet_number_input}}
+    {{/maxcharacters}}
+
+    {{#maxinputsperuser}}
+    {{> mod_mootimeter/elements/snippet_number_input}}
+    {{/maxinputsperuser}}
+
+    {{#settings}}
+
+    {{> mod_mootimeter/elements/snippet_divider}}
+
+    <p class="text-bold">{{#str}}settings{{/str}}</p>
+
+    {{#enablereactions}}
+    {{> mod_mootimeter/elements/snippet_checkbox_with_label}}
+    {{/enablereactions}}
+
+    {{#anonymousmode}}
+    {{> mod_mootimeter/elements/snippet_checkbox_with_label}}
+    {{/anonymousmode}}
+
+    {{#showonteacherpermission}}
+    {{> mod_mootimeter/elements/snippet_checkbox_with_label}}
+    {{/showonteacherpermission}}
+
+    {{#showresultlive}}
+    {{> mod_mootimeter/elements/snippet_checkbox_with_label}}
+    {{/showresultlive}}
+
+    {{/settings}}
+
+</div>

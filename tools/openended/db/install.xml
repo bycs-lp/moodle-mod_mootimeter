@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="mod/mootimeter/tools/openended/db" VERSION="20260504" COMMENT="XMLDB file for Moodle mod/mootimeter/tools/openended"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="mootimetertool_openended_answers" COMMENT="Stores the open-ended text contributions per page.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="pageid" TYPE="int" LENGTH="20" NOTNULL="false" SEQUENCE="false" COMMENT="The page id the answer relates to"/>
+        <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="answer" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="visible" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Soft-hide flag for moderation. 1 = visible to students, 0 = hidden."/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="usermodified" TYPE="foreign" FIELDS="usermodified" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="pageid_visible" UNIQUE="false" FIELDS="pageid, visible"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="mootimetertool_openended_reactions" COMMENT="Stores per-user emoji reactions on open-ended answers.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="answerid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The answer id this reaction belongs to."/>
+        <FIELD NAME="pageid" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="Denormalised pageid for fast page-level deletes."/>
+        <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="emoji" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="Emoji slug, e.g. thumbsup, heart, laugh, wow, think."/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="answerid" TYPE="foreign" FIELDS="answerid" REFTABLE="mootimetertool_openended_answers" REFFIELDS="id"/>
+        <KEY NAME="usermodified" TYPE="foreign" FIELDS="usermodified" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="reaction_unique" UNIQUE="true" FIELDS="answerid, usermodified"/>
+        <INDEX NAME="pageid" UNIQUE="false" FIELDS="pageid"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>

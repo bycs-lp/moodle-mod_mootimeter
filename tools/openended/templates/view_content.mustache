@@ -1,0 +1,73 @@
+{{!
+    @template mootimetertool_openended/view_content
+
+    Renders the student input form for the open-ended tool.
+
+    Example context (json):
+    {
+        "pageid": 1,
+        "uniqid": "abc",
+        "toolname": {"pill": "Open ended"},
+        "question": "What is your impression?",
+        "maxcharacters": 200,
+        "placeholder": "Your contribution",
+        "answers": [],
+        "button_answer": {"mtm-button-id": "openended_enter_answer", "mtm-button-text": "Submit"}
+    }
+}}
+{{#withwrapper}}
+<div class="mootimetercontainer {{{containerclasses}}}">
+{{/withwrapper}}
+
+    <div class="mootimeter-colcontent-preview mootimeter-width-s mootimeter-oe-input-wrapper" id="mtmt_openended_overview_{{uniqid}}">
+
+        {{{error}}}
+
+        <div class="mootimeter-colcontent-preview-header filter_mathjaxloader_equation" id="mtmt_tool-colct-header">
+            {{#toolname}}
+            {{> mod_mootimeter/elements/snippet_pill}}
+            {{/toolname}}
+
+            <h4 id="mtm_question_{{uniqid}}">{{{question}}}</h4>
+        </div>
+
+        <div class="filter_mathjaxloader_equation mootimeter-oe-own-pills" id="mtmt_openended_pills_{{uniqid}}">
+            {{#answers}}
+            {{> mod_mootimeter/elements/snippet_pill}}
+            {{/answers}}
+        </div>
+
+        <div class="mootimeter-oe-input-row">
+            <textarea
+                id="openended_input_{{uniqid}}"
+                class="mootimeter-input mootimeterfullwidth mootimeter-oe-textarea"
+                name="answer"
+                rows="3"
+                maxlength="{{maxcharacters}}"
+                placeholder="{{placeholder}}"
+                data-pageid="{{pageid}}"
+                data-maxchars="{{maxcharacters}}"
+                autofocus
+            ></textarea>
+            <div class="mootimeter-oe-charcount" id="openended_charcount_{{uniqid}}">
+                <span class="oe-current">0</span> / <span class="oe-max">{{maxcharacters}}</span>
+            </div>
+        </div>
+
+        {{#button_answer}}
+        {{> mod_mootimeter/elements/snippet_button_full}}
+        {{/button_answer}}
+
+    </div>
+
+    {{#js}}
+    require(['mootimetertool_openended/store_answer'], (module) => module.init(
+        "openended_input_{{uniqid}}",
+        "openended_enter_answer_{{uniqid}}",
+        "openended_charcount_{{uniqid}}"
+    ));
+    {{/js}}
+
+{{#withwrapper}}
+</div>
+{{/withwrapper}}
