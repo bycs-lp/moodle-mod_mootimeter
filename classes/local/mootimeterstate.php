@@ -138,7 +138,13 @@ class mootimeterstate {
         // We do not want to set the answerschangedat value if the user is on the question subpage.
         $datasetarray['answerschangedat'] = 0;
         if (!empty($dataset->o) || !empty($dataset->r)) {
-            $datasetarray['answerschangedat'] = $helper->get_data_changed($page, 'answers');
+            // Some tools (e.g. openended) bump a separate 'reactions' identifier
+            // so reaction toggles don't trigger a full pagecontent reload. The
+            // tool's own JS polls this combined value to pick up either change.
+            $datasetarray['answerschangedat'] = max(
+                $helper->get_data_changed($page, 'answers'),
+                $helper->get_data_changed($page, 'reactions')
+            );
         }
 
         $datasetarray['teacherpermissiontoview'] = $helper->get_teacherpermission_to_view($helper->get_page($page->id));

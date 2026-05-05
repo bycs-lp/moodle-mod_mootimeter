@@ -1426,6 +1426,7 @@
   break-inside: avoid;
   word-break: break-word;
   overflow-wrap: anywhere;
+  position: relative;
 }
 .mootimeter-oe-bubble .mootimeter-oe-bubble-text {
   color: #00091e;
@@ -1615,4 +1616,38 @@
 }
 .mootimeter-oe-reaction.active .oe-emoji {
   animation: oe-reaction-pop 0.35s ease;
+}
+
+.mootimeter-oe-rain-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 2;
+}
+
+.mootimeter-oe-rain-particle {
+  position: absolute;
+  top: 0;
+  font-size: 1.4rem;
+  line-height: 1;
+  will-change: transform, opacity;
+  animation: oe-rain-fall 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes oe-rain-fall {
+  0% {
+    transform: translateY(-30%) translateX(0) scale(0.6) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(140%) translateX(var(--rain-drift, 0)) scale(1.2) rotate(var(--rain-rot, 20deg));
+    opacity: 0;
+  }
 }

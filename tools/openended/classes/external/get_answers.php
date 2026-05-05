@@ -77,7 +77,11 @@ class get_answers extends external_api {
         }
 
         return [
-            'lastupdated' => $helper->get_data_changed($page, 'answers'),
+            // Track answers + reactions together so the client picks up either.
+            'lastupdated' => max(
+                $helper->get_data_changed($page, 'answers'),
+                $helper->get_data_changed($page, 'reactions')
+            ),
             'teacherpermissiontoview' => (int) $teacherpermission,
             'enablereactions' => $enablereactions,
             'bubbles' => $bubbles,

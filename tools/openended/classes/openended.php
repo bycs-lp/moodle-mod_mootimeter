@@ -267,7 +267,12 @@ class openended extends \mod_mootimeter\toolhelper {
         global $USER;
 
         $params['pageid'] = $page->id;
-        $params['lastupdated'] = $this->get_data_changed($page, 'answers');
+        // Track answers + reactions together so render_bubbles.js picks up
+        // either kind of change in its delta check.
+        $params['lastupdated'] = max(
+            $this->get_data_changed($page, 'answers'),
+            $this->get_data_changed($page, 'reactions')
+        );
         $params['enablereactions'] = !empty(self::get_tool_config($page->id, 'enablereactions'));
         // The result-render code path doesn't merge the page-level question, so
         // grab it here so the title can render at the top of the bubble grid.
@@ -617,7 +622,11 @@ class openended extends \mod_mootimeter\toolhelper {
         }
 
         $page = $this->get_page($answer->pageid, false);
-        $this->notify_data_changed($page, 'answers');
+        // Use a separate identifier so the global mootimeter content-reload loop
+        // (which keys off 'answers' via contentchangedat on the result view)
+        // doesn't replace our entire grid. Our render_bubbles.js polls for the
+        // max of both timestamps and applies live deltas in place.
+        $this->notify_data_changed($page, 'reactions');
 
         // Return the full reaction state for this bubble so the frontend can sync
         // every button in one round-trip.

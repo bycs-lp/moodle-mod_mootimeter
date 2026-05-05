@@ -87,6 +87,8 @@
   break-inside: avoid;
   word-break: break-word;
   overflow-wrap: anywhere;
+  // Anchor for the absolute rain-particle layer.
+  position: relative;
 
   .mootimeter-oe-bubble-text {
     color: $grey-500;
