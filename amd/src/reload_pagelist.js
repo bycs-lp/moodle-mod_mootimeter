@@ -71,6 +71,11 @@ export const execReloadPagelist = async(pageid, cmid, forcereload = false) => {
     var mtmstate = document.getElementById('mootimeterstate');
     var dataset = mtmstate.dataset;
 
+    // Early exit if page reload is locked (e.g., during page transitions).
+    if (mtmstate.dataset.lockpagereload && !forcereload) {
+        return;
+    }
+
     // Early exit if there were no changes.
     if (
         (
@@ -108,10 +113,7 @@ export const execReloadPagelist = async(pageid, cmid, forcereload = false) => {
         // Replace the pages list.
         Templates.renderForPromise('mod_mootimeter/elements/snippet_page_list', pagelist)
             .then(({html, js}) => {
-                if (document.getElementById('mootimeter-addpage-button')) {
-                    document.getElementById('mootimeter-addpage-button').remove();
-                }
-                Templates.replaceNode(document.getElementById('mootimeter-pages-list'), html, js);
+                Templates.replaceNodeContents(document.getElementById('mootimeter-pages-list'), html, js);
 
                 // Finally make pageslist sortable.
                 var listelements = document.getElementsByClassName('mootimeter_pages_li');

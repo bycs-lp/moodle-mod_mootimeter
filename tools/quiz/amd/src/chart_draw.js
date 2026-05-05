@@ -183,7 +183,24 @@ const getAnswers = async (pageid, id) => {
 
     let chartStatus = ChartJS.getChart(id); // <canvas> id
     if (chartStatus != undefined) {
-        chartStatus.destroy();
+        // Update existing chart instead of destroying and recreating.
+        chartStatus.data.labels = labels;
+        chartStatus.data.datasets[0].label = response.question;
+        chartStatus.data.datasets[0].data = values;
+        chartStatus.data.datasets[0].backgroundColor = chartsettings.backgroundColor;
+        chartStatus.data.datasets[0].borderRadius = chartsettings.borderRadius;
+        chartStatus.data.datasets[0].pointStyle = chartsettings.pointStyle;
+        chartStatus.data.datasets[0].pointRadius = chartsettings.pointRadius;
+        chartStatus.data.datasets[0].pointHoverRadius = chartsettings.pointHoverRadius;
+
+        // Check if chart type changed (rare case).
+        if (chartStatus.config.type !== chartsettings.charttype) {
+            chartStatus.destroy();
+            chartStatus = null; // Will be recreated below.
+        } else {
+            // Update without animation for instant response.
+            chartStatus.update('none');
+        }
     }
 
     ChartJS.defaults.font.size = 16;

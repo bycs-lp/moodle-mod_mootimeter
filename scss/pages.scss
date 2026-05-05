@@ -75,6 +75,7 @@
         justify-content: center;
         position: relative;
         min-width: 95px;
+        transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out;
 
         &:hover {
           border-color: $lernplatform-200;
