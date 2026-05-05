@@ -1,8 +1,20 @@
 import { call as fetchMany } from 'core/ajax';
-import WordCloud from 'mootimetertool_wordcloud/wordcloud2';
+import cloud from 'mootimetertool_wordcloud/d3_cloud';
 import {notifyFilterContentUpdated} from 'core_filters/events';
 
 const observerRegistry = new Map();
+
+const MIN_FONT_PX = 16;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+const COLORS = [
+    '#c0580a', // BYCS Orange (dunkel, ausreichend Kontrast)
+    '#1a5fa8', // BYCS Blau
+    '#b33000', // Tiefes Rot-Orange
+    '#2e7d32', // Dunkelgrün
+    '#6b3fa0', // Violett
+    '#c2185b', // Tief-Pink
+];
 
 export const init = (id) => {
 
@@ -99,7 +111,91 @@ const getAnswers = async (id) => {
 function redrawwordcloud(container) {
     let answers = JSON.parse(container.dataset.answers);
 
-    WordCloud(container, {list: answers, weightFactor: 24, color: '#f98012', fontFamily: 'OpenSans'});
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+
+    // Parse count from string to number.
+    const sortedAnswers = answers.map(item => [item[0], Number(item[1])]);
+
+    // Order the array by answer count desc, so most frequent answers are drawn first.
+    sortedAnswers.sort(compareByCount);
+
+    // Scale largest word inversely with sqrt of total word count.
+    const maxFontSize = Math.min(w, h) / Math.max(4, Math.ceil(Math.sqrt(sortedAnswers.length)));
+    const weightFactor = maxFontSize / sortedAnswers[0][1];
+
+     /**
+      *
+      * @param {array} words
+      */
+    function renderSvg(words) {
+         const map = container.querySelector('svg');
+         if (map) {
+             container.removeChild(map);
+         }
+         if (!words || words.length === 0) {
+             return;
+         }
+
+         const svg = document.createElementNS(SVG_NS, 'svg');
+         svg.setAttribute('width', '100%');
+         svg.setAttribute('viewBox', `${-w / 2} ${-h / 2} ${w} ${h}`);
+
+         const g = document.createElementNS(SVG_NS, 'g');
+         svg.appendChild(g);
+         words.forEach((word, index) => {
+
+             const title = svgEl('title', {});
+             title.textContent = `${word.text}: ${word.count}`;
+
+             const text = svgEl('text', {
+                 transform: `translate(${word.x}, ${word.y})rotate(${word.rotate})`,
+                 'font-family': 'Lexend',
+                 'font-size': `${word.size}px`,
+                 'text-anchor': 'middle',
+                 'fill': COLORS[index % COLORS.length]
+             });
+             text.replaceChildren(title, document.createTextNode(word.text));
+             g.appendChild(text);
+         });
+         container.appendChild(svg);
+    }
+
+    const layout = cloud()
+        .size([w, h])
+        .words(sortedAnswers.map(([text, count]) => ({text, count})))
+        .padding(4)
+        .rotate(() => (Math.random() > 0.2 ? 0 : -90))
+        .font('Lexend')
+        .fontSize(d => Math.min(Math.max(weightFactor * d.count, MIN_FONT_PX), maxFontSize));
+    layout.on('end', renderSvg);
+    layout.start();
+
+}
+
+/**
+ * Helper function to create svg elements
+ *
+ * @param {String} tag
+ * @param {Object} attrs
+ */
+function svgEl(tag, attrs)
+{
+    const element = document.createElementNS(SVG_NS, tag);
+    Object.entries(attrs).forEach(([key, value]) =>
+        element.setAttribute(key, value));
+    return element;
+}
+
+/**
+ * Comparator to sort wordcloud answer arrays by count descending.
+ *
+ * @param {Array} a
+ * @param {Array} b
+ * @returns {number}
+ */
+function compareByCount(a, b) {
+    return b[1] - a[1];
 }
 
 /**
