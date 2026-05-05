@@ -45,24 +45,24 @@ class provider implements
     \mod_mootimeter\privacy\mootimetertool_provider,
     \mod_mootimeter\privacy\mootimetertool_user_provider {
     /**
-     * Provides meta data that is stored about a user with mod_assign
+     * Provides meta data that is stored about a user with mod_assign.
      *
-     * @param  collection $collection A collection of meta data items to be added to.
-     * @return  collection Returns the collection of metadata.
+     * @param  collection $collection
+     * @return  collection
      */
     public static function get_metadata(collection $collection): collection {
 
         $collection->add_database_table(
-            'mootimetertool_wordcloud_subs',
+            'mootimetertool_wordcloud_answers',
             [
-                'usermodified' => 'privacy:metadata:mootimetertool_wordcloud_subs:userid',
-                'pageid' => 'privacy:metadata:mootimetertool_wordcloud_subs:pageid',
-                'optionid' => 'privacy:metadata:mootimetertool_wordcloud_subs:optionid',
-                'timecreated' => 'privacy:metadata:mootimetertool_wordcloud_subs:timecreated',
-                'timemodified' => 'privacy:metadata:mootimetertool_wordcloud_subs:timemodified',
+                'usermodified' => 'privacy:metadata:mootimetertool_wordcloud_answers:userid',
+                'pageid' => 'privacy:metadata:mootimetertool_wordcloud_answers:pageid',
+                'optionid' => 'privacy:metadata:mootimetertool_wordcloud_answers:optionid',
+                'timecreated' => 'privacy:metadata:mootimetertool_wordcloud_answers:timecreated',
+                'timemodified' => 'privacy:metadata:mootimetertool_wordcloud_answers:timemodified',
 
             ],
-            'privacy:metadata:mootimetertool_wordcloud_subs'
+            'privacy:metadata:mootimetertool_wordcloud_answers'
         );
 
         return $collection;
@@ -71,9 +71,9 @@ class provider implements
     /**
      * Returns all of the contexts that has information relating to the userid.
      *
-     * @param  int $userid The user ID.
-     * @param  contextlist $contextlist The contextlist
-     * @return contextlist an object with the contexts related to a userid.
+     * @param  int $userid
+     * @param  contextlist $contextlist
+     * @return contextlist
      */
     public static function get_context_for_userid_within_mootimetertool(int $userid, contextlist $contextlist) {
 
@@ -99,7 +99,7 @@ class provider implements
     /**
      * If you have tables that contain userids please fill in this method.
      *
-     * @param  \core_privacy\local\request\userlist $userlist The userlist object
+     * @param  \core_privacy\local\request\userlist $userlist
      */
     public static function get_userids_from_context(\core_privacy\local\request\userlist $userlist) {
 
@@ -123,6 +123,7 @@ class provider implements
 
     /**
      * Export user data.
+     *
      * @param mootimeter_plugin_request_data $exportdata
      * @return void
      */
@@ -152,9 +153,10 @@ class provider implements
     }
 
     /**
-     * Any call to this method should delete all user data for the context defined in the deletion_criteria.
+     * Any call to this method should delete all user data
+     * for the context defined in the deletion_criteria.
      *
-     * @param  mootimeter_plugin_request_data $requestdata Data useful for deleting user data from this sub-plugin.
+     * @param  mootimeter_plugin_request_data $requestdata
      */
     public static function delete_answers_for_context(mootimeter_plugin_request_data $requestdata) {
 
@@ -168,9 +170,10 @@ class provider implements
     }
 
     /**
-     * Any call to this method should delete users data for the context defined in the deletion_criteria.
+     * Any call to this method should delete users data for
+     * the context defined in the deletion_criteria.
      *
-     * @param  mootimeter_plugin_request_data $requestdata Data useful for deleting user data from this sub-plugin.
+     * @param  mootimeter_plugin_request_data $requestdata
      */
     public static function delete_answers_for_user($requestdata) {
         if ($requestdata->get_page()->tool != "wordcloud") {
