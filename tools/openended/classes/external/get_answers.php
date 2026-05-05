@@ -97,6 +97,7 @@ class get_answers extends external_api {
                     'id' => new external_value(PARAM_INT, 'Answer id'),
                     'answer' => new external_value(PARAM_TEXT, 'Answer text'),
                     'isown' => new external_value(PARAM_BOOL, 'Whether this contribution belongs to the requesting user'),
+                    'textsize' => new external_value(PARAM_ALPHA, 'Font-size bucket: l, m, or s'),
                     'reactions' => new external_multiple_structure(
                         new external_single_structure([
                             'key' => new external_value(PARAM_ALPHANUMEXT, 'Emoji slug'),
@@ -104,6 +105,7 @@ class get_answers extends external_api {
                             'count' => new external_value(PARAM_INT, 'Number of reactions for this emoji'),
                             'mine' => new external_value(PARAM_BOOL, 'Whether the requesting user has reacted with this emoji'),
                             'isown' => new external_value(PARAM_BOOL, 'Whether the bubble belongs to the requesting user (mirrors bubble.isown)'),
+                            'index0' => new external_value(PARAM_INT, '0-based position used to stagger the picker animation'),
                         ])
                     ),
                 ]),

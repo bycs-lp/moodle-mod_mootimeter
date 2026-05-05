@@ -20,13 +20,14 @@
     data-answerid="{{id}}"
     data-isown="{{#isown}}1{{/isown}}{{^isown}}0{{/isown}}"
 >
-    <div class="mootimeter-oe-bubble-text">{{answer}}</div>
+    <div class="mootimeter-oe-bubble-text oe-text-{{textsize}}">{{answer}}</div>
     {{#reactions.0}}
     <div class="mootimeter-oe-reactions">
         {{#reactions}}
         <button type="button"
-            class="mootimeter-oe-reaction{{#mine}} active{{/mine}}"
+            class="mootimeter-oe-reaction{{#mine}} active{{/mine}}{{#count}} has-reactions{{/count}}"
             data-emoji="{{key}}"
+            style="--oe-stagger-i: {{index0}};"
             aria-pressed="{{#mine}}true{{/mine}}{{^mine}}false{{/mine}}"
             {{#isown}}disabled aria-disabled="true" title="{{#str}}cannot_react_to_own, mootimetertool_openended{{/str}}"{{/isown}}
         >
@@ -34,6 +35,16 @@
             <span class="oe-count">{{count}}</span>
         </button>
         {{/reactions}}
+        {{^isown}}
+        <button type="button"
+            class="mootimeter-oe-reaction-trigger"
+            aria-label="{{#str}}show_reactions, mootimetertool_openended{{/str}}"
+            aria-expanded="false"
+            title="{{#str}}show_reactions, mootimetertool_openended{{/str}}"
+        >
+            <i class="fa fa-ellipsis-h" aria-hidden="true"></i>
+        </button>
+        {{/isown}}
     </div>
     {{/reactions.0}}
 </div>

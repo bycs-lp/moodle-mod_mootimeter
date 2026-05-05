@@ -61,25 +61,46 @@ class inplace_edit_answer extends \core\output\inplace_editable {
      * @return self
      */
     public static function update(mixed $itemid, mixed $newvalue) {
-        global $DB;
+        global $DB, $PAGE;
 
         $newvalue = clean_param($newvalue, PARAM_TEXT);
         $newvalue = mb_substr($newvalue, 0, openended::MAX_CHARS_HARD_LIMIT);
 
         $helper = new \mod_mootimeter\helper();
-        [$pageid, $answerid] = explode('_', $itemid);
+
+        if (!preg_match('/^([0-9]+)_([0-9]+)$/', (string) $itemid, $matches)) {
+            throw new \invalid_parameter_exception('Invalid open-ended answer item id.');
+        }
+        $pageid = (int) $matches[1];
+        $answerid = (int) $matches[2];
+
+        $page = $helper->get_page($pageid, false);
+        if (empty($page)) {
+            throw new \invalid_parameter_exception('Invalid open-ended page id.');
+        }
+        if ($page->tool !== 'openended') {
+            throw new \invalid_parameter_exception('Page is not an open-ended page.');
+        }
+        $cm = $helper::get_cm_by_instance($page->instance);
+        $modulecontext = \context_module::instance($cm->id);
+        $PAGE->set_context($modulecontext);
+        require_capability('mod/mootimeter:moderator', $modulecontext);
 
         $answertable = $helper->get_tool_answer_table($pageid);
         $answercol = $helper->get_tool_answer_column($pageid);
 
-        $answerrecord = $DB->get_record($answertable, ['id' => $answerid]);
+        $answerrecord = $DB->get_record($answertable, ['id' => $answerid], '*', MUST_EXIST);
+        if ((int) $answerrecord->pageid !== $pageid) {
+            throw new \invalid_parameter_exception('Open-ended answer does not belong to the requested page.');
+        }
+
         $answerrecord->{$answercol} = $newvalue;
         $answerrecord->timemodified = time();
         $DB->update_record($answertable, $answerrecord);
 
         $helper->clear_caches($pageid);
-        $helper->notify_data_changed($helper->get_page($pageid), 'answers');
+        $helper->notify_data_changed($page, 'answers');
 
-        return new self($helper->get_page($pageid), $answerrecord);
+        return new self($page, $answerrecord);
     }
 }

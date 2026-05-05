@@ -38,7 +38,7 @@ $functions = [
         'classname'     => 'mootimetertool_openended\external\get_answers',
         'methodname'    => 'execute',
         'description'   => 'Get all visible open-ended answers including reactions.',
-        'type'          => 'write',
+        'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'mod/mootimeter:view',
     ],

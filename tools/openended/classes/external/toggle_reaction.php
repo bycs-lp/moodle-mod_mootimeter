@@ -103,6 +103,7 @@ class toggle_reaction extends external_api {
                     'count' => new external_value(PARAM_INT, 'Total count for this emoji on this answer'),
                     'mine' => new external_value(PARAM_BOOL, 'Whether the calling user is now reacting with this emoji'),
                     'isown' => new external_value(PARAM_BOOL, 'Whether the answer belongs to the calling user'),
+                    'index0' => new external_value(PARAM_INT, '0-based position used to stagger the picker animation'),
                 ]),
                 'Full reaction state for the affected bubble.'
             ),

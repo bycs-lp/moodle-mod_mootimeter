@@ -67,6 +67,56 @@ class openended extends \mod_mootimeter\toolhelper {
     }
 
     /**
+     * Pick a font-size bucket ('l', 'm', 's') from the answer length so longer
+     * messages render smaller and the masonry grid stays balanced.
+     *
+     * @param string $text
+     * @return string one of 'l', 'm', 's'
+     */
+    public static function text_size_bucket(string $text): string {
+        $len = mb_strlen($text);
+        if ($len <= 80) {
+            return 'l';
+        }
+        if ($len <= 200) {
+            return 'm';
+        }
+        return 's';
+    }
+
+    /**
+     * Get the configured character limit clamped to the tool's supported range.
+     *
+     * @param int $pageid
+     * @return int
+     */
+    public static function get_effective_maxchars(int $pageid): int {
+        $maxchars = (int) self::get_tool_config($pageid, 'maxcharacters');
+        if ($maxchars <= 0) {
+            $maxchars = self::MAX_CHARS_DEFAULT;
+        }
+        return min($maxchars, self::MAX_CHARS_HARD_LIMIT);
+    }
+
+    /**
+     * Build data attributes for the shared answer delete button.
+     *
+     * @param int $pageid
+     * @param int $answerid
+     * @return string
+     */
+    private static function build_delete_dataset(int $pageid, int $answerid): string {
+        return implode(' ', [
+            'data-ajaxmethode="mod_mootimeter_delete_single_answer"',
+            'data-pageid="' . $pageid . '"',
+            'data-answerid="' . $answerid . '"',
+            'data-confirmationtitlestr="' . get_string('delete_single_answer_dialog_title', 'mod_mootimeter') . '"',
+            'data-confirmationquestionstr="' . get_string('delete_single_answer_dialog_question', 'mod_mootimeter') . '"',
+            'data-confirmationtype="DELETE_CANCEL"',
+        ]);
+    }
+
+    /**
      * Get the tool's answer column.
      */
     public function get_answer_column() {
@@ -121,15 +171,9 @@ class openended extends \mod_mootimeter\toolhelper {
      * @return void
      */
     public function insert_answer(object $page, $answer): void {
-        $maxchars = (int) self::get_tool_config($page->id, 'maxcharacters');
-        if ($maxchars <= 0) {
-            $maxchars = self::MAX_CHARS_DEFAULT;
-        }
-        $maxchars = min($maxchars, self::MAX_CHARS_HARD_LIMIT);
-
         $record = new \stdClass();
         $record->pageid = $page->id;
-        $record->answer = mb_substr($answer, 0, $maxchars);
+        $record->answer = mb_substr($answer, 0, self::get_effective_maxchars($page->id));
         $record->visible = 1;
         $record->timecreated = time();
 
@@ -180,11 +224,7 @@ class openended extends \mod_mootimeter\toolhelper {
     public function get_renderer_params(object $page) {
         global $USER;
 
-        $maxchars = (int) self::get_tool_config($page->id, 'maxcharacters');
-        if ($maxchars <= 0) {
-            $maxchars = self::MAX_CHARS_DEFAULT;
-        }
-        $maxchars = min($maxchars, self::MAX_CHARS_HARD_LIMIT);
+        $maxchars = self::get_effective_maxchars($page->id);
 
         $params = [];
         $params['pageid'] = $page->id;
@@ -196,21 +236,13 @@ class openended extends \mod_mootimeter\toolhelper {
         // Show the user's own contributions as deletable pills.
         $userpills = [];
         foreach ($this->get_user_answers(self::ANSWER_TABLE, $page->id, self::ANSWER_COLUMN, $USER->id) as $element) {
-            $dataseticontrash = [
-                'data-ajaxmethode = "mod_mootimeter_delete_single_answer"',
-                'data-pageid="' . $page->id . '"',
-                'data-answerid="' . $element->id . '"',
-                'data-confirmationtitlestr="' . get_string('delete_single_answer_dialog_title', 'mod_mootimeter') . '"',
-                'data-confirmationquestionstr="' . get_string('delete_single_answer_dialog_question', 'mod_mootimeter') . '"',
-                'data-confirmationtype="DELETE_CANCEL"',
-            ];
             $userpills[] = [
                 'pill' => $element->answer,
                 'additional_class' => 'mootimeter-pill-inline',
                 'deletebutton' => [
                     'id' => 'mtmt_delete_answer_' . $element->id,
                     'iconid' => 'mtmt_delete_iconid_' . $element->id,
-                    'dataset' => implode(' ', $dataseticontrash),
+                    'dataset' => self::build_delete_dataset($page->id, (int) $element->id),
                 ],
             ];
         }
@@ -237,6 +269,7 @@ class openended extends \mod_mootimeter\toolhelper {
         $params['pageid'] = $page->id;
         $params['lastupdated'] = $this->get_data_changed($page, 'answers');
         $params['enablereactions'] = !empty(self::get_tool_config($page->id, 'enablereactions'));
+        $params['toolname'] = ['pill' => get_string('pluginname', 'mootimetertool_openended')];
         $params['template'] = 'mootimetertool_openended/view_results';
 
         if (empty($params['teacherpermissiontoview'])) {
@@ -280,15 +313,6 @@ class openended extends \mod_mootimeter\toolhelper {
                 $userfullname = $user->firstname . ' ' . $user->lastname;
             }
 
-            $datasetdelete = [
-                'data-ajaxmethode = "mod_mootimeter_delete_single_answer"',
-                'data-pageid="' . $page->id . '"',
-                'data-answerid="' . $answer->id . '"',
-                'data-confirmationtitlestr="' . get_string('delete_single_answer_dialog_title', 'mod_mootimeter') . '"',
-                'data-confirmationquestionstr="' . get_string('delete_single_answer_dialog_question', 'mod_mootimeter') . '"',
-                'data-confirmationtype="DELETE_CANCEL"',
-            ];
-
             $isvisible = (int) ($answer->visible ?? 1);
 
             $inplaceedit = new \mootimetertool_openended\local\inplace_edit_answer($page, $answer);
@@ -308,7 +332,7 @@ class openended extends \mod_mootimeter\toolhelper {
                     'icon' => 'fa-trash',
                     'id' => 'mtmt_delete_answer_' . $answer->id,
                     'iconid' => 'mtmt_delete_iconid_' . $answer->id,
-                    'dataset' => implode(' ', $datasetdelete),
+                    'dataset' => self::build_delete_dataset($page->id, (int) $answer->id),
                 ],
             ];
             $i++;
@@ -361,6 +385,7 @@ class openended extends \mod_mootimeter\toolhelper {
         ];
 
         $maxchars = self::get_tool_config($page->id, 'maxcharacters');
+        $maxinputsperuser = self::get_tool_config($page->id, 'maxinputsperuser');
         $params['maxcharacters'] = [
             'title' => get_string('maxcharacters', 'mootimetertool_openended'),
             'additional_class' => 'mootimeter_settings_selector',
@@ -380,9 +405,9 @@ class openended extends \mod_mootimeter\toolhelper {
             'min' => 0,
             'pageid' => $page->id,
             'ajaxmethode' => 'mod_mootimeter_store_setting',
-            'value' => empty(self::get_tool_config($page->id, 'maxinputsperuser'))
+            'value' => empty($maxinputsperuser)
                 ? '0'
-                : self::get_tool_config($page->id, 'maxinputsperuser'),
+                : $maxinputsperuser,
         ];
 
         $params['settings']['enablereactions'] = [
@@ -504,6 +529,7 @@ class openended extends \mod_mootimeter\toolhelper {
         foreach ($answers as $answer) {
             $isown = ((int) $answer->usermodified === $userid);
             $reactions = [];
+            $index = 0;
             foreach ($emojis as $key => $symbol) {
                 $reactions[] = [
                     'key' => $key,
@@ -513,6 +539,8 @@ class openended extends \mod_mootimeter\toolhelper {
                     // Duplicated onto each reaction so the Mustache template can render
                     // the disabled state without parent-context lookups.
                     'isown' => $isown,
+                    // 0-based position drives the picker stagger animation in CSS.
+                    'index0' => $index++,
                 ];
             }
             $bubbles[] = [
@@ -520,6 +548,9 @@ class openended extends \mod_mootimeter\toolhelper {
                 'answer' => $answer->answer,
                 'isown' => $isown,
                 'reactions' => $reactions,
+                // Bucket by character count so the template can shrink long messages
+                // and keep the bubble compact alongside short ones.
+                'textsize' => self::text_size_bucket($answer->answer),
             ];
         }
         return $bubbles;

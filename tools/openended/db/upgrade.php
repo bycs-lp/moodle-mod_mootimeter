@@ -55,6 +55,9 @@ function xmldb_mootimetertool_openended_upgrade($oldversion) {
                 ['answerid' => $row->answerid, 'usermodified' => $row->usermodified],
                 IGNORE_MULTIPLE
             );
+            if (empty($latest)) {
+                continue;
+            }
             $DB->delete_records_select(
                 'mootimetertool_openended_reactions',
                 'answerid = :answerid AND usermodified = :usermodified AND id <> :keepid',

@@ -29,6 +29,22 @@ import {call as fetchMany} from 'core/ajax';
 import {exception as displayException} from 'core/notification';
 
 const HANDLED_FLAG = 'oeReactionHandlerBound';
+const OPEN_CLASS = 'is-open';
+let outsideListenerBound = false;
+
+/**
+ * Close every open picker on the page. Called on outside taps and after a
+ * reaction has been submitted.
+ */
+function closeAllPickers() {
+    document.querySelectorAll('.mootimeter-oe-reactions.' + OPEN_CLASS).forEach((el) => {
+        el.classList.remove(OPEN_CLASS);
+        const trigger = el.querySelector('.mootimeter-oe-reaction-trigger');
+        if (trigger) {
+            trigger.setAttribute('aria-expanded', 'false');
+        }
+    });
+}
 
 /**
  * Wire all .mootimeter-oe-reaction inside the given grid container.
@@ -41,6 +57,16 @@ export const init = (grid) => {
     }
     grid.dataset[HANDLED_FLAG] = '1';
     grid.addEventListener('click', onClick);
+
+    // A single document-level listener handles outside taps for every grid.
+    if (!outsideListenerBound) {
+        outsideListenerBound = true;
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.mootimeter-oe-reactions')) {
+                closeAllPickers();
+            }
+        });
+    }
 };
 
 /**
@@ -73,6 +99,7 @@ function syncBubble(bubble, reactions) {
             continue;
         }
         btn.classList.toggle('active', !!r.mine);
+        btn.classList.toggle('has-reactions', r.count > 0);
         btn.setAttribute('aria-pressed', String(!!r.mine));
         const countEl = btn.querySelector('.oe-count');
         if (countEl) {
@@ -87,6 +114,24 @@ function syncBubble(bubble, reactions) {
  * @param {Event} event
  */
 async function onClick(event) {
+    // The "..." trigger toggles the picker for touch/click users. The outside
+    // tap listener handles closing when the user taps elsewhere.
+    const trigger = event.target.closest('.mootimeter-oe-reaction-trigger');
+    if (trigger) {
+        event.preventDefault();
+        const reactions = trigger.closest('.mootimeter-oe-reactions');
+        if (!reactions) {
+            return;
+        }
+        const wasOpen = reactions.classList.contains(OPEN_CLASS);
+        closeAllPickers();
+        if (!wasOpen) {
+            reactions.classList.add(OPEN_CLASS);
+            trigger.setAttribute('aria-expanded', 'true');
+        }
+        return;
+    }
+
     const button = event.target.closest('.mootimeter-oe-reaction');
     if (!button) {
         return;
@@ -123,4 +168,6 @@ async function onClick(event) {
 
     syncBubble(bubble, response.reactions);
     allButtons.forEach((b) => { b.disabled = false; });
+    // Close the picker after a successful pick so touch users get a clean state.
+    closeAllPickers();
 }

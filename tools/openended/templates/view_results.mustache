@@ -34,6 +34,12 @@
     data-lastupdated="{{lastupdated}}"
     data-enablereactions="{{#enablereactions}}1{{/enablereactions}}{{^enablereactions}}0{{/enablereactions}}"
 >
+    <div class="mootimeter-colcontent-preview-header filter_mathjaxloader_equation">
+        {{#toolname}}
+        {{> mod_mootimeter/elements/snippet_pill}}
+        {{/toolname}}
+        <h4 id="mtm_question_results_{{uniqid}}">{{{question}}}</h4>
+    </div>
     <div class="mootimeter-oe-grid" id="openended_grid_{{uniqid}}">
         {{#bubbles}}
         {{> mootimetertool_openended/bubble}}

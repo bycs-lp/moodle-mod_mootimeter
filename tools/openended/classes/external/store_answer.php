@@ -79,12 +79,7 @@ class store_answer extends external_api {
         $helper = new helper();
         $page = $helper->get_page($pageid);
 
-        $maxchars = (int) helper::get_tool_config($page->id, 'maxcharacters');
-        if ($maxchars <= 0) {
-            $maxchars = openended::MAX_CHARS_DEFAULT;
-        }
-        $maxchars = min($maxchars, openended::MAX_CHARS_HARD_LIMIT);
-
+        $maxchars = openended::get_effective_maxchars($page->id);
         if (mb_strlen($trimmed) > $maxchars) {
             return [
                 'code' => openended::ERRORCODE_TOO_LONG,

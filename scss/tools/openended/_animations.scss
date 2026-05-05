@@ -1,0 +1,92 @@
+// Animations for the open-ended reaction picker.
+//
+// Default: only buttons that already carry reactions (.has-reactions) are
+// visible, plus a small grayed-out ellipsis trigger. Hovering or focusing
+// the reaction bar fades the trigger out and bounces the remaining emojis
+// in with a staggered Animate.css-style bounceIn.
+
+.mootimeter-oe-bubble {
+  .mootimeter-oe-reaction {
+    transform-origin: center;
+    transition:
+      max-width 0.25s ease,
+      padding 0.25s ease,
+      margin 0.25s ease,
+      opacity 0.2s ease,
+      transform 0.25s ease;
+    max-width: 4rem;
+  }
+
+  // Hidden default state for emojis without any reactions yet.
+  .mootimeter-oe-reaction:not(.has-reactions) {
+    opacity: 0;
+    transform: scale(0);
+    max-width: 0;
+    padding-inline: 0;
+    margin-inline: 0;
+    pointer-events: none;
+  }
+
+  .mootimeter-oe-reaction-trigger {
+    transition:
+      opacity 0.2s ease,
+      max-width 0.25s ease,
+      min-width 0.25s ease,
+      padding 0.2s ease,
+      margin 0.2s ease,
+      color 0.15s ease,
+      background-color 0.15s ease;
+    max-width: 2.5rem;
+    opacity: 1;
+  }
+}
+
+// Picker reveal on hover, focus, or .is-open (set by JS for touch/click).
+// Only on bubbles that aren't the user's own.
+.mootimeter-oe-bubble:not(.mootimeter-oe-bubble-own) {
+  .mootimeter-oe-reactions:hover,
+  .mootimeter-oe-reactions:focus-within,
+  .mootimeter-oe-reactions.is-open {
+    .mootimeter-oe-reaction:not(.has-reactions) {
+      opacity: 1;
+      transform: scale(1);
+      max-width: 4rem;
+      padding-inline: 0.25rem;
+      margin-left: 0.25rem;
+      pointer-events: auto;
+      animation: oe-bounce-in 0.55s cubic-bezier(.34, 1.56, .64, 1) backwards;
+      animation-delay: calc(var(--oe-stagger-i, 0) * 50ms);
+      transition-delay: calc(var(--oe-stagger-i, 0) * 50ms);
+    }
+
+    .mootimeter-oe-reaction-trigger {
+      opacity: 0;
+      max-width: 0;
+      min-width: 0;
+      padding-inline: 0;
+      margin-inline: 0;
+      pointer-events: none;
+    }
+  }
+}
+
+// Classic Animate.css bounceIn keyframe – the picker entrance.
+@keyframes oe-bounce-in {
+  0%   { opacity: 0; transform: scale3d(0.3, 0.3, 0.3); }
+  20%  { transform: scale3d(1.1, 1.1, 1.1); }
+  40%  { transform: scale3d(0.9, 0.9, 0.9); }
+  60%  { opacity: 1; transform: scale3d(1.03, 1.03, 1.03); }
+  80%  { transform: scale3d(0.97, 0.97, 0.97); }
+  100% { opacity: 1; transform: scale3d(1, 1, 1); }
+}
+
+// Quick pop when the user's own reaction toggles to active.
+@keyframes oe-reaction-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.mootimeter-oe-reaction.active .oe-emoji {
+  animation: oe-reaction-pop 0.35s ease;
+}

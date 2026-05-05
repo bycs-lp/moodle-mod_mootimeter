@@ -64,6 +64,7 @@ $string['reaction_think'] = 'Thinking';
 $string['reaction_wow'] = 'Wow';
 $string['reactioncount'] = 'Reactions';
 $string['settings'] = 'Settings';
+$string['show_reactions'] = 'Show reactions';
 $string['showresultlive'] = 'Show results live';
 $string['showresultteacherpermission'] = 'Show results on teacher permission';
 $string['submit'] = 'Submit';

@@ -64,6 +64,64 @@ const execGetAnswers = (pageid) => fetchMany([{
 }])[0];
 
 /**
+ * Poll the central Mootimeter state before fetching the full answer payload.
+ *
+ * @param {int} pageid
+ * @param {int} cmid
+ * @param {string} dataset
+ * @returns {Promise}
+ */
+const execGetMootimeterState = (pageid, cmid, dataset) => fetchMany([{
+    methodname: 'mod_mootimeter_get_mootimeterstate',
+    args: {
+        pageid,
+        cmid,
+        dataset,
+    },
+}])[0];
+
+/**
+ * Keep the shared #mootimeterstate dataset current and return it.
+ *
+ * @param {HTMLElement} wrapper
+ * @returns {Promise<DOMStringMap|null>}
+ */
+const updateMootimeterState = async(wrapper) => {
+    const mtmstate = document.getElementById('mootimeterstate');
+    if (!mtmstate) {
+        return null;
+    }
+
+    const dataset = mtmstate.dataset;
+    const urlParams = new URLSearchParams(window.location.search);
+    const resultview = urlParams.get('r');
+    const overview = urlParams.get('o');
+    if (resultview) {
+        dataset.r = resultview;
+    }
+    if (overview) {
+        dataset.o = overview;
+    }
+
+    const pageid = parseInt(wrapper.dataset.pageid || dataset.pageid || urlParams.get('pageid') || '0', 10);
+    const cmid = parseInt(urlParams.get('id') || dataset.cmid || '0', 10);
+    if (!pageid || !cmid) {
+        return null;
+    }
+
+    const response = await execGetMootimeterState(pageid, cmid, JSON.stringify(dataset));
+    if (parseInt(response.code, 10) !== 200) {
+        return null;
+    }
+
+    const states = JSON.parse(response.state);
+    Object.keys(states).forEach((name) => {
+        mtmstate.setAttribute('data-' + name, states[name]);
+    });
+    return mtmstate.dataset;
+};
+
+/**
  * Compare server lastupdated with our local copy and re-render if needed.
  *
  * @param {string} wrapperid
@@ -77,6 +135,19 @@ const refresh = async(wrapperid, gridid, emptyid) => {
     }
     const pageid = parseInt(wrapper.dataset.pageid, 10);
     const enableReactions = wrapper.dataset.enablereactions === '1';
+    let stateDataset = null;
+    try {
+        stateDataset = await updateMootimeterState(wrapper);
+    } catch (err) {
+        displayException(err);
+        return;
+    }
+
+    const previousLastupdated = parseInt(wrapper.dataset.lastupdated || '0', 10);
+    const answerschangedat = stateDataset ? parseInt(stateDataset.answerschangedat || '0', 10) : 0;
+    if (answerschangedat > 0 && answerschangedat === previousLastupdated) {
+        return;
+    }
 
     let response = null;
     try {
@@ -86,11 +157,10 @@ const refresh = async(wrapperid, gridid, emptyid) => {
         return;
     }
 
-    const previousLastupdated = parseInt(wrapper.dataset.lastupdated || '0', 10);
     if (response.lastupdated && response.lastupdated === previousLastupdated) {
         return;
     }
-    wrapper.dataset.lastupdated = response.lastupdated;
+    wrapper.dataset.lastupdated = response.lastupdated || answerschangedat;
 
     const grid = document.getElementById(gridid);
     if (!grid) {
@@ -117,7 +187,13 @@ const refresh = async(wrapperid, gridid, emptyid) => {
             response.bubbles.map((bubble) => {
                 const ctx = enableReactions
                     ? bubble
-                    : {id: bubble.id, answer: bubble.answer, isown: bubble.isown, reactions: []};
+                    : {
+                        id: bubble.id,
+                        answer: bubble.answer,
+                        isown: bubble.isown,
+                        textsize: bubble.textsize,
+                        reactions: [],
+                    };
                 return Templates.renderForPromise('mootimetertool_openended/bubble', ctx);
             })
         );
