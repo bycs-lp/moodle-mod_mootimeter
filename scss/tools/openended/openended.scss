@@ -47,6 +47,14 @@
   width: 100%;
   background-color: $grey-100;
 
+  .mootimeter-oe-question-title {
+    color: $grey-300;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+    line-height: 1.3;
+  }
+
   .mootimeter-oe-empty {
     margin: 1rem 0;
     color: $grey-300;

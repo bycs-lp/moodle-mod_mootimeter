@@ -269,7 +269,9 @@ class openended extends \mod_mootimeter\toolhelper {
         $params['pageid'] = $page->id;
         $params['lastupdated'] = $this->get_data_changed($page, 'answers');
         $params['enablereactions'] = !empty(self::get_tool_config($page->id, 'enablereactions'));
-        $params['toolname'] = ['pill' => get_string('pluginname', 'mootimetertool_openended')];
+        // The result-render code path doesn't merge the page-level question, so
+        // grab it here so the title can render at the top of the bubble grid.
+        $params['question'] = clean_param(self::get_tool_config($page, 'question'), PARAM_TEXT);
         $params['template'] = 'mootimetertool_openended/view_results';
 
         if (empty($params['teacherpermissiontoview'])) {

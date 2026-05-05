@@ -1390,6 +1390,13 @@
   width: 100%;
   background-color: #e8e8ea;
 }
+.mootimeter-oe-results .mootimeter-oe-question-title {
+  color: #60616d;
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.3;
+}
 .mootimeter-oe-results .mootimeter-oe-empty {
   margin: 1rem 0;
   color: #60616d;
