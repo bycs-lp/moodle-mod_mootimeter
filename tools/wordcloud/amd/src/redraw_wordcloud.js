@@ -1,4 +1,4 @@
-import { call as fetchMany } from 'core/ajax';
+import {call as fetchMany} from 'core/ajax';
 import cloud from 'mootimetertool_wordcloud/d3_cloud';
 import {notifyFilterContentUpdated} from 'core_filters/events';
 
@@ -71,7 +71,7 @@ const execGetAnswers = (
  * @param {string} id
  * @returns {mixed}
  */
-const getAnswers = async (id) => {
+const getAnswers = async(id) => {
 
     if (!document.getElementById(id)) {
         return;
@@ -130,8 +130,12 @@ function redrawwordcloud(container) {
       */
     function renderSvg(words) {
          const map = container.querySelector('svg');
+         const oldsr = container.querySelector('ul');
          if (map) {
              container.removeChild(map);
+         }
+         if (oldsr) {
+             container.removeChild(oldsr);
          }
          if (!words || words.length === 0) {
              return;
@@ -140,6 +144,9 @@ function redrawwordcloud(container) {
          const svg = document.createElementNS(SVG_NS, 'svg');
          svg.setAttribute('width', '100%');
          svg.setAttribute('viewBox', `${-w / 2} ${-h / 2} ${w} ${h}`);
+         svg.setAttribute('aria-label', `Wortwolke mit ${words.length} Begriffen`);
+         svg.setAttribute('role', 'img');
+         svg.setAttribute('aria-describedby', `Wortliste_${container.id}`);
 
          const g = document.createElementNS(SVG_NS, 'g');
          svg.appendChild(g);
@@ -159,6 +166,18 @@ function redrawwordcloud(container) {
              g.appendChild(text);
          });
          container.appendChild(svg);
+
+         // Accessability
+         const srOnly = document.createElement('ul');
+         srOnly.setAttribute('id', `Wortliste_${container.id}`);
+         srOnly.setAttribute('class', 'sr-only');
+
+         words.forEach(word => {
+             const title = document.createElement('li');
+             title.textContent = `${word.text}: ${word.count}`;
+             srOnly.appendChild(title);
+         });
+         container.appendChild(srOnly);
     }
 
     const layout = cloud()
@@ -179,8 +198,7 @@ function redrawwordcloud(container) {
  * @param {String} tag
  * @param {Object} attrs
  */
-function svgEl(tag, attrs)
-{
+function svgEl(tag, attrs) {
     const element = document.createElementNS(SVG_NS, tag);
     Object.entries(attrs).forEach(([key, value]) =>
         element.setAttribute(key, value));
