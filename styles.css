@@ -68,6 +68,7 @@
 
 .mootimeter-colcontent-preview svg text {
   cursor: pointer;
+  will-change: filter;
   transition: filter 0.2s ease;
 }
 .mootimeter-colcontent-preview svg text:hover {

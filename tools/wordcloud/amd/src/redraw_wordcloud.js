@@ -160,7 +160,8 @@ function redrawwordcloud(container) {
          svg.setAttribute('role', 'img');
          svg.setAttribute('aria-describedby', `wordlist_${container.id}`);
          getString('wordcloud_aria_label', 'mootimetertool_wordcloud', words.length)
-             .then(label => svg.setAttribute('aria-label', label));
+             .then(label => svg.setAttribute('aria-label', label))
+             .catch(() => svg.setAttribute('aria-label', `Word cloud with ${words.length} terms`));
 
          const g = document.createElementNS(SVG_NS, 'g');
          svg.appendChild(g);
@@ -181,7 +182,7 @@ function redrawwordcloud(container) {
          });
          container.appendChild(svg);
 
-         // Accessability
+         // Accessibility
          const srOnly = document.createElement('ul');
          srOnly.setAttribute('id', `wordlist_${container.id}`);
          srOnly.setAttribute('class', 'sr-only');
@@ -208,8 +209,7 @@ function redrawwordcloud(container) {
         .size([w, h])
         .words(sortedAnswers.map(([text, count]) => ({text, count})))
         .padding(4)
-        // Only 20% of the elements get rotated.
-        .rotate(() => (Math.random() > 0.2 ? 0 : -90))
+        .rotate(() => (Math.random() > 0.8 ? -90 : 0))
         .font('Lexend')
         // Scale font size proportionally to word count, clamped between MIN_FONT_SIZE and maxFontSize.
         .fontSize(d => Math.min(Math.max(weightFactor * d.count, MIN_FONT_SIZE), maxFontSize))
@@ -260,20 +260,11 @@ function ensureObserver(container) {
         return;
     }
 
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver(() => {
         if (!document.body.contains(container)) {
             observer.disconnect();
             observerRegistry.delete(container.id);
             return;
-        }
-        for (const mutation of mutations) {
-            if (mutation.addedNodes.length > 0) {
-                for (const node of mutation.addedNodes) {
-                    if (node.tagName === 'SPAN') {
-                        node.classList.add('filter_mathjaxloader_equation');
-                    }
-                }
-            }
         }
         notifyFilterContentUpdated([container]);
     });
