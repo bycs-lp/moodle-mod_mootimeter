@@ -4,16 +4,27 @@ import {notifyFilterContentUpdated} from 'core_filters/events';
 
 const observerRegistry = new Map();
 
-const MIN_FONT_PX = 16;
+// Tracks the active render per container.
+// Needed because d3-cloud layout is async, so a newer redraw can start before an older one finishes.
+// The token ensures only the latest render calls renderSvg.
+const activeRenders = new Map();
+
+const MIN_FONT_SIZE = 16;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const COLORS = [
-    '#c0580a', // BYCS Orange (dunkel, ausreichend Kontrast)
-    '#1a5fa8', // BYCS Blau
-    '#b33000', // Tiefes Rot-Orange
-    '#2e7d32', // Dunkelgrün
-    '#6b3fa0', // Violett
-    '#c2185b', // Tief-Pink
+    // Orange.
+    '#c0580a',
+    // Blue.
+    '#1a5fa8',
+    // Red-orange.
+    '#b33000',
+    // Darkgreen.
+    '#2e7d32',
+    // Violett.
+    '#6b3fa0',
+    // Pink.
+    '#c2185b',
 ];
 
 export const init = (id) => {
@@ -125,6 +136,7 @@ function redrawwordcloud(container) {
     const weightFactor = maxFontSize / sortedAnswers[0][1];
 
      /**
+      * Renders the wordcloud as an SVG element inside the container.
       *
       * @param {array} words
       */
@@ -180,14 +192,34 @@ function redrawwordcloud(container) {
          container.appendChild(srOnly);
     }
 
+    // Stop any previous layout for this container.
+    const prev = activeRenders.get(container.id);
+    if (prev) {
+        prev.layout.stop();
+    }
+
+    // Assign a unique render ID for this call.
+    const myRenderId = (prev?.renderId ?? 0) + 1;
+
+    // Create layout
     const layout = cloud()
         .size([w, h])
         .words(sortedAnswers.map(([text, count]) => ({text, count})))
         .padding(4)
+        // Only 20% of the elements get rotated.
         .rotate(() => (Math.random() > 0.2 ? 0 : -90))
         .font('Lexend')
-        .fontSize(d => Math.min(Math.max(weightFactor * d.count, MIN_FONT_PX), maxFontSize));
-    layout.on('end', renderSvg);
+        // Scale font size proportionally to word count, clamped between MIN_FONT_SIZE and maxFontSize.
+        .fontSize(d => Math.min(Math.max(weightFactor * d.count, MIN_FONT_SIZE), maxFontSize))
+        .on('end', words => {
+            // D3-cloud calls step() synchronously on start(), so the end event can fire before layout.start() returns.
+            if (activeRenders.get(container.id)?.renderId === myRenderId) {
+                renderSvg(words);
+            }
+        });
+
+    // Register token before start().
+    activeRenders.set(container.id, {renderId: myRenderId, layout});
     layout.start();
 
 }
