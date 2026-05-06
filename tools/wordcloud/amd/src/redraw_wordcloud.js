@@ -1,5 +1,6 @@
 import {call as fetchMany} from 'core/ajax';
 import cloud from 'mootimetertool_wordcloud/d3_cloud';
+import {getString} from 'core/str';
 import {notifyFilterContentUpdated} from 'core_filters/events';
 
 const observerRegistry = new Map();
@@ -156,9 +157,10 @@ function redrawwordcloud(container) {
          const svg = document.createElementNS(SVG_NS, 'svg');
          svg.setAttribute('width', '100%');
          svg.setAttribute('viewBox', `${-w / 2} ${-h / 2} ${w} ${h}`);
-         svg.setAttribute('aria-label', `Wortwolke mit ${words.length} Begriffen`);
          svg.setAttribute('role', 'img');
-         svg.setAttribute('aria-describedby', `Wortliste_${container.id}`);
+         svg.setAttribute('aria-describedby', `wordlist_${container.id}`);
+         getString('wordcloud_aria_label', 'mootimetertool_wordcloud', words.length)
+             .then(label => svg.setAttribute('aria-label', label));
 
          const g = document.createElementNS(SVG_NS, 'g');
          svg.appendChild(g);
@@ -181,7 +183,7 @@ function redrawwordcloud(container) {
 
          // Accessability
          const srOnly = document.createElement('ul');
-         srOnly.setAttribute('id', `Wortliste_${container.id}`);
+         srOnly.setAttribute('id', `wordlist_${container.id}`);
          srOnly.setAttribute('class', 'sr-only');
 
          words.forEach(word => {
