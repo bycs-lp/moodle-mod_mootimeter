@@ -12,19 +12,14 @@ const activeRenders = new Map();
 
 const MIN_FONT_SIZE = 16;
 const SVG_NS = 'http://www.w3.org/2000/svg';
-
+const RATIO = 4;
+const FILL_TARGET = 0.65;
 const COLORS = [
-    // Orange.
     '#c0580a',
-    // Blue.
     '#1a5fa8',
-    // Red-orange.
     '#b33000',
-    // Darkgreen.
     '#2e7d32',
-    // Violett.
     '#6b3fa0',
-    // Pink.
     '#c2185b',
 ];
 
@@ -121,7 +116,7 @@ const getAnswers = async(id) => {
  * @param {HTMLElement} container
  */
 function redrawwordcloud(container) {
-    let answers = JSON.parse(container.dataset.answers);
+    const answers = JSON.parse(container.dataset.answers);
 
     const w = container.clientWidth;
     const h = container.clientHeight;
@@ -131,10 +126,6 @@ function redrawwordcloud(container) {
 
     // Order the array by answer count desc, so most frequent answers are drawn first.
     sortedAnswers.sort(compareByCount);
-
-    // Scale largest word inversely with sqrt of total word count.
-    const maxFontSize = Math.min(w, h) / Math.max(4, Math.ceil(Math.sqrt(sortedAnswers.length)));
-    const weightFactor = maxFontSize / sortedAnswers[0][1];
 
      /**
       * Renders the wordcloud as an SVG element inside the container.
@@ -195,6 +186,28 @@ function redrawwordcloud(container) {
          container.appendChild(srOnly);
     }
 
+    if (sortedAnswers.length === 0) {
+        renderSvg([]);
+        return;
+    }
+
+    const maxCount = sortedAnswers[0][1];
+    const minCount = sortedAnswers[sortedAnswers.length - 1][1];
+    const countSpread = maxCount - minCount;
+
+    const words = sortedAnswers.map(([text, count]) => {
+        // How frequent is this word relative to the others? 0 = least, 1 = most.
+        const t = countSpread > 0 ? (count - minCount) / countSpread : 0;
+        // Size factor for this word. sqrt gives mid-range words more visual weight.
+        const multiplier = 1 + (RATIO - 1) * Math.sqrt(t);
+        return {text, count, multiplier};
+    });
+
+    // Calculate how much space all words would need at a given base size.
+    const S = words.reduce((sum, wd) => sum + wd.text.length * 0.6 * wd.multiplier * wd.multiplier, 0);
+    // Pick the largest base size that keeps total word area within the container budget.
+    const baseFontSize = Math.max(MIN_FONT_SIZE, Math.sqrt(FILL_TARGET * w * h / S));
+
     // Stop any previous layout for this container.
     const prev = activeRenders.get(container.id);
     if (prev) {
@@ -207,16 +220,15 @@ function redrawwordcloud(container) {
     // Create layout
     const layout = cloud()
         .size([w, h])
-        .words(sortedAnswers.map(([text, count]) => ({text, count})))
+        .words(words)
         .padding(4)
         .rotate(() => (Math.random() > 0.8 ? -90 : 0))
         .font('Lexend')
-        // Scale font size proportionally to word count, clamped between MIN_FONT_SIZE and maxFontSize.
-        .fontSize(d => Math.min(Math.max(weightFactor * d.count, MIN_FONT_SIZE), maxFontSize))
-        .on('end', words => {
+        .fontSize(d => baseFontSize * d.multiplier)
+        .on('end', placed => {
             // D3-cloud calls step() synchronously on start(), so the end event can fire before layout.start() returns.
             if (activeRenders.get(container.id)?.renderId === myRenderId) {
-                renderSvg(words);
+                renderSvg(placed);
             }
         });
 
