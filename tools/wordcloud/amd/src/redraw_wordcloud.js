@@ -127,6 +127,14 @@ function redrawwordcloud(container) {
     // Order the array by answer count desc, so most frequent answers are drawn first.
     sortedAnswers.sort(compareByCount);
 
+    // Find the character length of the longest answer text.
+    const maxWordLen = Math.max(...sortedAnswers.map(([text]) => text.length));
+    // Cap font size so words fit the container: use the smaller of an area-based and a width-based limit.
+    const maxFontSize = Math.min(
+        Math.min(w, h) / Math.max(2, Math.ceil(Math.sqrt(sortedAnswers.length))),
+        w / (maxWordLen * 0.65)
+    );
+
      /**
       * Renders the wordcloud as an SVG element inside the container.
       *
@@ -224,7 +232,7 @@ function redrawwordcloud(container) {
         .padding(4)
         .rotate(() => (Math.random() > 0.8 ? -90 : 0))
         .font('Lexend')
-        .fontSize(d => baseFontSize * d.multiplier)
+        .fontSize(d => Math.min(maxFontSize, baseFontSize * d.multiplier))
         .on('end', placed => {
             // D3-cloud calls step() synchronously on start(), so the end event can fire before layout.start() returns.
             if (activeRenders.get(container.id)?.renderId === myRenderId) {
