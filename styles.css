@@ -59,9 +59,6 @@
 #mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen bycs-topbar {
   display: none;
 }
-#mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen {
-  /** Setting for theme_boost */
-}
 #mootimetertool_wordcloud_get_answers #page-wrapper.fullscreen #page {
   margin-top: 0;
 }
