@@ -14,6 +14,10 @@ const MIN_FONT_SIZE = 16;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const RATIO = 4;
 const FILL_TARGET = 0.65;
+const FREQUENCY_EXPONENT = 0.8;
+const CHAR_WIDTH = 0.6;
+const FIT_CHAR_WIDTH = 0.65;
+const DENSITY_DIVISOR = 3;
 const COLORS = [
     '#c0580a',
     '#1a5fa8',
@@ -73,12 +77,12 @@ const ensureObserver = (container) => {
 /**
  * Redraw the wordcloud.
  * @param {HTMLElement} container
- */
-const redrawwordcloud = (container) => {
+*/
+const redrawwordcloud = async(container) => {
     const answers = JSON.parse(container.dataset.answers);
 
-    const w = container.clientWidth;
-    const h = container.clientHeight;
+    const contWidth = container.clientWidth;
+    const contHeight = container.clientHeight;
 
     // Parse count from string to number.
     const sortedAnswers = answers.map(item => [item[0], Number(item[1])]);
@@ -86,13 +90,10 @@ const redrawwordcloud = (container) => {
     // Order the array by answer count desc, so most frequent answers are drawn first.
     sortedAnswers.sort(compareByCount);
 
-    // Find the character length of the longest answer text.
-    const maxWordLen = Math.max(...sortedAnswers.map(([text]) => text.length));
-    // Cap font size so words fit the container: use the smaller of an area-based and a width-based limit.
-    const maxFontSize = Math.min(
-        Math.min(w, h) / Math.max(3, Math.ceil(Math.sqrt(sortedAnswers.length))),
-        w / (maxWordLen * 0.65)
-    );
+    // Ceiling so one word cannot fill the whole canvas; binds mainly when there are few words
+    // (prevent baseFontSize from exploding). For many words baseFontSize and the per-word
+    // length cap in fontSize() govern, so the most frequent word is no longer artificially shrunk.
+    const densityCap = Math.min(contWidth, contHeight) / DENSITY_DIVISOR;
 
     const fontFamily = 'Lexend, sans-serif';
 
@@ -117,7 +118,7 @@ const redrawwordcloud = (container) => {
 
         const svg = document.createElementNS(SVG_NS, 'svg');
         svg.setAttribute('width', '100%');
-        svg.setAttribute('viewBox', `${-w / 2} ${-h / 2} ${w} ${h}`);
+        svg.setAttribute('viewBox', `${-contWidth / 2} ${-contHeight / 2} ${contWidth} ${contHeight}`);
         svg.setAttribute('role', 'img');
         svg.setAttribute('aria-describedby', `wordlist_${container.id}`);
         const ariaLabel = await getString('wordcloud_aria_label', 'mootimetertool_wordcloud', words.length);
@@ -160,6 +161,11 @@ const redrawwordcloud = (container) => {
         return;
     }
 
+    // D3-cloud measures text in the real font; wait for it before layout.
+    if (document.fonts?.ready) {
+        await document.fonts.ready;
+    }
+
     const maxCount = sortedAnswers[0][1];
     const minCount = sortedAnswers[sortedAnswers.length - 1][1];
     const countSpread = maxCount - minCount;
@@ -167,15 +173,17 @@ const redrawwordcloud = (container) => {
     const words = sortedAnswers.map(([text, count]) => {
         // How frequent is this word relative to the others? 0 = least, 1 = most.
         const normalizedFrequency = countSpread > 0 ? (count - minCount) / countSpread : 0;
-        // Size factor for this word. sqrt gives mid-range words more visual weight.
-        const multiplier = 1 + (RATIO - 1) * Math.sqrt(normalizedFrequency);
-        return {text, count, multiplier};
+        // Size factor for this word. The exponent shapes the curve: < 1 = fuller mid-range, 1 = linear.
+        const multiplier = 1 + (RATIO - 1) * Math.pow(normalizedFrequency, FREQUENCY_EXPONENT);
+        // Set rotation so the fontSize cap below knows the word's orientation.
+        const rotate = Math.random() > 0.8 ? -90 : 0;
+        return {text, count, multiplier, rotate};
     });
 
     // Calculate how much space all words would need at a given base size.
-    const estimatedSpace = words.reduce((sum, wd) => sum + wd.text.length * 0.6 * wd.multiplier * wd.multiplier, 0);
+    const estimatedSpace = words.reduce((sum, word) => sum + word.text.length * CHAR_WIDTH * word.multiplier * word.multiplier, 0);
     // Pick the largest base size that keeps total word area within the container budget.
-    const baseFontSize = Math.max(MIN_FONT_SIZE, Math.sqrt(FILL_TARGET * w * h / estimatedSpace));
+    const baseFontSize = Math.max(MIN_FONT_SIZE, Math.sqrt(FILL_TARGET * contWidth * contHeight / estimatedSpace));
 
     // Stop any previous layout for this container.
     const prev = activeRenders.get(container.id);
@@ -188,12 +196,21 @@ const redrawwordcloud = (container) => {
 
     // Create layout
     const layout = cloud()
-        .size([w, h])
+        .size([contWidth, contHeight])
         .words(words)
         .padding(4)
-        .rotate(() => (Math.random() > 0.8 ? -90 : 0))
+        .rotate(d => d.rotate)
         .font(fontFamily)
-        .fontSize(d => Math.min(maxFontSize, baseFontSize * d.multiplier))
+        .fontSize(d => {
+            // A word spans `contWidth` horizontally, but `contHeight` when rotated 90°. Cap so it never overflows its axis.
+            const spanAxis = d.rotate === 0 ? contWidth : contHeight;
+            // Largest size at which the full word still fits along the given axis. Shrink long words instead of dropping them.
+            const lengthCap = spanAxis / (d.text.length * FIT_CHAR_WIDTH);
+            // Take the smallest of three values: the size we want (baseFontSize x frequency multiplier)
+            // and two upper limits. densityCap stops a single word from filling the canvas, lengthCap stops a long
+            // word from overflowing its edge.
+            return Math.min(baseFontSize * d.multiplier, densityCap, lengthCap);
+        })
         .on('end', placed => {
             // D3-cloud calls step() synchronously on start(), so the end event can fire before layout.start() returns.
             if (activeRenders.get(container.id)?.renderId === myRenderId) {
@@ -257,7 +274,7 @@ const getAnswers = async(id) => {
     }
     container.setAttribute('data-answers', JSON.stringify(response.answerlist));
     ensureObserver(container);
-    redrawwordcloud(container);
+    await redrawwordcloud(container);
 
     return;
 };
