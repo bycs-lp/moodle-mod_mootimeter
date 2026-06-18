@@ -18,6 +18,8 @@ const FREQUENCY_EXPONENT = 0.8;
 const CHAR_WIDTH = 0.6;
 const FIT_CHAR_WIDTH = 0.65;
 const DENSITY_DIVISOR = 3;
+const MAX_SHRINK_ATTEMPTS = 3;
+const SHRINK_STEP = 0.85;
 const COLORS = [
     '#c0580a',
     '#1a5fa8',
@@ -194,8 +196,12 @@ const redrawwordcloud = async(container) => {
     // Assign a unique render ID for this call.
     const myRenderId = (prev?.renderId ?? 0) + 1;
 
-    // Create layout
-    const layout = cloud()
+    // Retry/shrink state for this render.
+    let shrinkFactor = 1;
+    let attempt = 0;
+
+    // Build a fresh d3-cloud layout. A factory because each shrink round needs its own layout.
+    const buildLayout = () => cloud()
         .size([contWidth, contHeight])
         .words(words)
         .padding(4)
@@ -208,17 +214,32 @@ const redrawwordcloud = async(container) => {
             const lengthCap = spanAxis / (d.text.length * FIT_CHAR_WIDTH);
             // Take the smallest of three values: the size we want (baseFontSize x frequency multiplier)
             // and two upper limits. densityCap stops a single word from filling the canvas, lengthCap stops a long
-            // word from overflowing its edge.
-            return Math.min(baseFontSize * d.multiplier, densityCap, lengthCap);
+            // word from overflowing its edge. shrinkFactor scales everything down on a retry round.
+            return Math.min(baseFontSize * d.multiplier, densityCap, lengthCap) * shrinkFactor;
         })
         .on('end', placed => {
             // D3-cloud calls step() synchronously on start(), so the end event can fire before layout.start() returns.
-            if (activeRenders.get(container.id)?.renderId === myRenderId) {
-                renderSvg(placed);
+            const active = activeRenders.get(container.id);
+            // Ignore callbacks from a superseded render.
+            if (active?.renderId !== myRenderId) {
+                return;
             }
+            // D3-cloud drops unplaceable words silently. Shrink everything and re-layout
+            // until all words fit or the attempt budget is exhausted.
+            if (placed.length < words.length && attempt < MAX_SHRINK_ATTEMPTS) {
+                attempt++;
+                shrinkFactor *= SHRINK_STEP;
+                active.layout.stop();
+                const retry = buildLayout();
+                activeRenders.set(container.id, {renderId: myRenderId, layout: retry});
+                retry.start();
+                return;
+            }
+            renderSvg(placed);
         });
 
     // Register token before start().
+    const layout = buildLayout();
     activeRenders.set(container.id, {renderId: myRenderId, layout});
     layout.start();
 };
