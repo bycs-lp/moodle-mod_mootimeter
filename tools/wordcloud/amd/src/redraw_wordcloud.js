@@ -2,8 +2,10 @@ import {call as fetchMany} from 'core/ajax';
 import cloud from 'mootimetertool_wordcloud/d3_cloud';
 import {getString} from 'core/str';
 import {notifyFilterContentUpdated} from 'core_filters/events';
+import Log from 'core/log';
 
 const observerRegistry = new Map();
+const activePolls = new Map();
 
 // Tracks the active render per container.
 // Needed because d3-cloud layout is async, so a newer redraw can start before an older one finishes.
@@ -273,7 +275,7 @@ const getAnswers = async(id) => {
         return;
     }
 
-    var pageid = document.getElementById(id).dataset.pageid;
+    const pageid = document.getElementById(id).dataset.pageid;
 
     const mtmstate = document.getElementById('mootimeterstate');
 
@@ -301,25 +303,46 @@ const getAnswers = async(id) => {
 };
 
 export const init = (id) => {
-
-    if (!document.getElementById(id)) {
+    const container = document.getElementById(id);
+    if (!container) {
         return;
     }
 
-    // Initially getAnswers.
-    getAnswers(id);
-
-    setTimeout(() => {
-        const intervalms = document.getElementById('mootimeterstate').dataset.refreshinterval;
-        const interval = setInterval(() => {
-            if (!document.getElementById(id)) {
-                clearInterval(interval);
-                return;
-            }
-            getAnswers(id);
-        }, intervalms);
-    }, 2000);
-
     const mtmstate = document.getElementById('mootimeterstate');
+    // Reset before the first fetch so the early-exit check in getAnswers does not skip it.
     mtmstate.setAttribute('data-wclastupdated', 0);
+
+    const configuredInterval = Number(mtmstate.dataset.refreshinterval);
+    const intervalMs = Number.isFinite(configuredInterval) && configuredInterval >= 1000
+        ? configuredInterval
+        : 1000;
+
+    // Incrementing token per init() call: invalidates older polling loops for this id
+    // when reloadPage() replaces the DOM with a new element sharing the same id.
+    const pollToken = (activePolls.get(id) ?? 0) + 1;
+    activePolls.set(id, pollToken);
+
+    // Token check: is this still the latest loop? Element check: is the container still the same node?
+    const isActive = () =>
+        activePolls.get(id) === pollToken
+        && document.getElementById(id) === container;
+
+    // Self-scheduling: the next fetch is planned only after the current one completes.
+    const poll = async() => {
+        if (!isActive()) {
+            return;
+        }
+        try {
+            await getAnswers(id);
+        } catch (error) {
+            Log.error(error);
+        }
+        if (isActive()) {
+            setTimeout(() => {
+                poll().catch(error => Log.error(error));
+            }, intervalMs);
+        }
+    };
+
+    poll().catch(error => Log.error(error));
 };

@@ -1,11 +1,11 @@
 {
   "devDependencies": {
-    "d3-cloud": "1.2.9"
+    "d3-cloud": "^1.2.9"
   },
   "eslintIgnore": [
     "amd/src/d3_cloud.js"
   ],
   "scripts": {
-    "deploy-d3-cloud": "npm i d3-cloud@1.2.9 --save-exact && cp node_modules/d3-cloud/build/d3.layout.cloud.js amd/src/d3_cloud.js && grunt amd --force"
+    "deploy-d3-cloud": "npm i d3-cloud@^1.2.9 && cp node_modules/d3-cloud/build/d3.layout.cloud.js amd/src/d3_cloud.js && grunt amd --force"
   }
 }
