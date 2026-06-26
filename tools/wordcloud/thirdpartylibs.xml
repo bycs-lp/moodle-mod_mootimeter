@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <libraries>
   <library>
-    <location>amd/src/wordcloud2.js</location>
-    <name>WordCloud2</name>
-    <description>A JS library for generating wordclouds</description>
-    <version>1.2.2</version>
-    <license>MIT</license>
-    <repository>https://github.com/timdream/wordcloud2.js</repository>
+    <location>amd/src/d3_cloud.js</location>
+    <name>d3-cloud</name>
+    <description>Word cloud layout library</description>
+    <version>1.2.9</version>
+    <license>BSD-3-Clause</license>
+    <repository>https://github.com/jasondavies/d3-cloud</repository>
     <copyrights>
-      <copyright>2011- Timothy Guan-tin Chien, https://timdream.org/</copyright>
+      <copyright>Jason Davies, https://www.jasondavies.com/</copyright>
     </copyrights>
   </library>
 </libraries>
