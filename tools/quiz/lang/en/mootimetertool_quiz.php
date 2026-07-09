@@ -26,10 +26,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['actions'] = 'Actions';
 $string['add_question_option'] = "Add answer option";
-$string['answeroptions'] = "Answer options";
-$string['answers_max_number'] = 'Maximum number of answers that can be selected per participant (0: unlimited)';
+$string['answeroptions'] = "Answers";
+$string['answers'] = 'Answers';
+$string['answers_max_number'] = 'Max. answers per user (0: unlimited)';
 $string['atleastoneanswer'] = 'You need to select at least one answer';
+$string['diagram_type'] = 'Diagram type';
 $string['enter_answeroption'] = 'Please enter an answer option.';
 $string['error_to_many_answers'] = 'You have selected to many answers. You only can select {$a} options.';
 $string['mark_correct_answer'] = 'Please mark the correct answer (optional)';

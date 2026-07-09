@@ -1,39 +1,41 @@
 <div class="mootimeter-number-input">
-		<label>
-		<span class="mootimeter-number-input-wrapper">
-			<input
-				type="number"
-				{{#id}} id="{{id}}"{{/id}}
-				{{#value}} value="{{value}}"{{/value}}
-				{{#name}} name="{{name}}"{{/name}}
-				class="{{additional_class}}"
-				data-min="{{min}}"
-			>
-			<button
-				class="mootimeter-btn-icon-only-transparent mootimeter-number-input-btn-up"
-				aria-hidden="true"
-				{{#id}} id="up_{{id}}"{{/id}}
-				data-id="{{id}}"
-				{{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
-				{{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
-				{{#name}}data-name="{{name}}"{{/name}}
-			>
-				<i class="icon fa fa-sort-up fa-light" aria-hidden="true"></i>
-			</button>
-			<button
-				class="mootimeter-btn-icon-only-transparent mootimeter-number-input-btn-down"
-				aria-hidden="true"
-				{{#id}} id="down_{{id}}"{{/id}}
-				data-id="{{id}}"
-				{{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
-				{{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
-				{{#name}}data-name="{{name}}"{{/name}}
-			>
-				<i class="icon fa fa-sort-down fa-light" aria-hidden="true"></i>
-			</button>
-		</span>
-		{{title}}
-	</label>
+        <label>
+        {{title}}
+    <span class="mootimeter-number-input-wrapper">
+        <span class="mootimeter-field-wrapper mootimeter-number-input-field-wrapper">
+            <input
+                type="number"
+                {{#id}} id="{{id}}"{{/id}}
+                {{#value}} value="{{value}}"{{/value}}
+                {{#name}} name="{{name}}"{{/name}}
+                class="{{additional_class}}"
+                data-min="{{min}}"
+            >
+        </span>
+            <button
+                class="mootimeter-btn-icon-only-transparent mootimeter-number-input-btn-up"
+                aria-hidden="true"
+                {{#id}} id="up_{{id}}"{{/id}}
+                data-id="{{id}}"
+                {{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+                {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                {{#name}}data-name="{{name}}"{{/name}}
+            >
+                <i class="icon fa fa-sort-up fa-light" aria-hidden="true"></i>
+            </button>
+            <button
+                class="mootimeter-btn-icon-only-transparent mootimeter-number-input-btn-down"
+                aria-hidden="true"
+                {{#id}} id="down_{{id}}"{{/id}}
+                data-id="{{id}}"
+                {{#ajaxmethode}}data-ajaxmethode="{{ajaxmethode}}"{{/ajaxmethode}}
+                {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+                {{#name}}data-name="{{name}}"{{/name}}
+            >
+                <i class="icon fa fa-sort-down fa-light" aria-hidden="true"></i>
+            </button>
+        </span>
+    </label>
 </div>
 {{#ajaxmethode}}
 {{#js}}
