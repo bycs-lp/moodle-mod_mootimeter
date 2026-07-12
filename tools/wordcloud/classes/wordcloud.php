@@ -254,7 +254,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
     }
 
     /**
-     * Convert a grouped answer list to an array, that is readable by wordcloud2.js.
+     * Convert a grouped answer list to an array, that is readable by the d3-cloud SVG renderer.
      *
      * @param array $answerslist
      * @return array
@@ -269,7 +269,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
     }
 
     /**
-     * Get the answer list in wordcloud2 format.
+     * Get the answer list in d3-cloud SVG format.
      * [{"answer":"Answer word 1","cnt":"3"},{"answer":"Answer word 2","cnt":"1"}, ...]
      *
      * @param int $pageid
