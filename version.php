@@ -30,4 +30,4 @@ $plugin->release = '0.3.3';
 $plugin->version = 2025121100;
 $plugin->requires = 2022112800;
 $plugin->maturity = MATURITY_ALPHA;
-$plugin->supported = [403, 405]; // A range of branch numbers of supported moodle versions.
+$plugin->supported = [405, 502];
