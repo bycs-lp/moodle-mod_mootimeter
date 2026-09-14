@@ -1,22 +1,22 @@
+@font-face {
+  font-display: swap;
+  font-family: "Atkinson Hyperlegible";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/mod/mootimeter/fonts/atkinson-hyperlegible-v11-latin-regular.woff2")
+    format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+@font-face {
+  font-display: swap;
+  font-family: "Lexend";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/mod/mootimeter/fonts/lexend-v18-latin-regular.woff2")
+    format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
 .mootimetercontainer {
-  @font-face {
-    font-display: swap;
-    font-family: "Atkinson Hyperlegible";
-    font-style: normal;
-    font-weight: 400;
-    src: url("/mod/mootimeter/fonts/atkinson-hyperlegible-v11-latin-regular.woff2")
-      format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-  }
-
-  @font-face {
-    font-display: swap;
-    font-family: "Lexend";
-    font-style: normal;
-    font-weight: 400;
-    src: url("/mod/mootimeter/fonts/lexend-v18-latin-regular.woff2")
-      format("woff2"); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-  }
-
   h1,
   h2,
   h3,

@@ -15,20 +15,6 @@
     {{/js}}
     {{/icon-check}}
 
-    {{#icon-restart}}
-    {{> mod_mootimeter/elements/snippet_button_icon_only_rounded}}
-    {{#js}}
-    require(['mod_mootimeter/handle_button_clicked'], (module) => module.init(["{{id}}_{{uniqid}}"]));
-    {{/js}}
-    {{/icon-restart}}
-
-    {{#icon-answer-overview}}
-    {{> mod_mootimeter/elements/snippet_button_icon_only_rounded}}
-    {{#js}}
-    require(['mod_mootimeter/reload_page'], (module) => module.init(["{{id}}_{{uniqid}}"]));
-    {{/js}}
-    {{/icon-answer-overview}}
-
     {{#icon-eye}}
     <div class="vertical-divider"></div>
     {{/icon-eye}}
