@@ -79,6 +79,10 @@ class inplace_edit_answer extends \core\output\inplace_editable {
 
         [$pageid, $answerid] = explode("_", $itemid);
 
+        // Editing a stored answer is a moderator action; the inplace editable callback only validates the context.
+        $cm = \mod_mootimeter\helper::get_cm_by_pageid($pageid);
+        require_capability('mod/mootimeter:moderator', \context_module::instance($cm->id));
+
         $answertable = $helper->get_tool_answer_table($pageid);
         $answercol = $helper->get_tool_answer_column($pageid);
 
