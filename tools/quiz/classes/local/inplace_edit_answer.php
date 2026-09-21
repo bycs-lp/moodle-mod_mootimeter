@@ -111,7 +111,13 @@ class inplace_edit_answer extends \core\output\inplace_editable {
         $answertable = $helper->get_tool_answer_table($pageid);
         $answercol = $helper->get_tool_answer_column($pageid);
 
-        $userid = intval($DB->get_record($answertable, ['id' => $answerid])->usermodified);
+        $answerrecord = $DB->get_record(
+            $answertable,
+            ['id' => $answerid, 'pageid' => $pageid],
+            '*',
+            MUST_EXIST
+        );
+        $userid = intval($answerrecord->usermodified);
 
         $newansweroptionids = json_decode($newvalue, true);
 
