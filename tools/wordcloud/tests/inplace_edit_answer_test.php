@@ -91,4 +91,90 @@ final class inplace_edit_answer_test extends advanced_testcase {
             'Answer in a foreign course was overwritten via a mismatched page id.'
         );
     }
+
+    /**
+     * A participant without the moderator capability must not be able to edit a stored answer,
+     * not even their own one, as the callback itself only validates the context.
+     */
+    public function test_update_requires_moderator_capability(): void {
+        global $CFG, $DB;
+        require_once($CFG->dirroot . '/lib/external/externallib.php');
+
+        $this->resetAfterTest();
+
+        /** @var \mootimetertool_wordcloud_generator $toolgenerator */
+        $toolgenerator = $this->getDataGenerator()->get_plugin_generator('mootimetertool_wordcloud');
+
+        $course = $this->getDataGenerator()->create_course();
+        // Setting the admin user for convenience to be able to create a page. Later on the correct user will be
+        // set for proper capabilities testing.
+        $this->setAdminUser();
+        $page = $toolgenerator->create_wordcloud_page($course);
+
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $answerid = $toolgenerator->create_answer($page->id, $student->id, 'original answer');
+
+        $this->assertFalse(has_capability(
+            'mod/mootimeter:moderator',
+            \context_module::instance($page->cmid),
+            $student
+        ));
+        $this->setUser($student);
+
+        try {
+            \core_external::update_inplace_editable(
+                'mootimeter',
+                'wordcloud_editanswer',
+                $page->id . '_' . $answerid,
+                'falsified'
+            );
+            $this->fail('A user without the moderator capability was allowed to update an answer.');
+        } catch (\required_capability_exception $e) {
+            $this->assertInstanceOf(\required_capability_exception::class, $e);
+        }
+
+        $this->assertEquals(
+            'original answer',
+            $DB->get_field('mootimetertool_wordcloud_answers', 'answer', ['id' => $answerid]),
+            'An answer was overwritten by a user without the moderator capability.'
+        );
+    }
+
+    /**
+     * A moderator may edit an answer that belongs to a page of their own course.
+     */
+    public function test_update_as_moderator(): void {
+        global $CFG, $DB;
+        require_once($CFG->dirroot . '/lib/external/externallib.php');
+
+        $this->resetAfterTest();
+
+        /** @var \mootimetertool_wordcloud_generator $toolgenerator */
+        $toolgenerator = $this->getDataGenerator()->get_plugin_generator('mootimetertool_wordcloud');
+
+        $course = $this->getDataGenerator()->create_course();
+        // Setting the admin user for convenience to be able to create a page. Later on the correct user will be
+        // set for proper capabilities testing.
+        $this->setAdminUser();
+        $page = $toolgenerator->create_wordcloud_page($course);
+
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $answerid = $toolgenerator->create_answer($page->id, $student->id, 'original answer');
+
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        $this->setUser($teacher);
+
+        \core_external::update_inplace_editable(
+            'mootimeter',
+            'wordcloud_editanswer',
+            $page->id . '_' . $answerid,
+            'corrected answer'
+        );
+
+        $this->assertEquals(
+            'corrected answer',
+            $DB->get_field('mootimetertool_wordcloud_answers', 'answer', ['id' => $answerid]),
+            'A moderator was not able to edit an answer of their own page.'
+        );
+    }
 }
