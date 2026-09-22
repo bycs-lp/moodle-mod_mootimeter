@@ -50,7 +50,7 @@ final class delete_instance_test extends advanced_testcase {
      * @covers \mod_mootimeter\helper::delete_page()
      * @return void
      */
-    public function test_async_delete_suceeds_when_teacher_loses_capability(): void {
+    public function test_async_delete_succeeds_when_teacher_loses_capability(): void {
         global $DB, $CFG;
 
         require_once($CFG->dirroot . '/course/lib.php');
@@ -83,7 +83,7 @@ final class delete_instance_test extends advanced_testcase {
 
         // Add at least one page to the mootimeter instance.
         $mtmgenerator = $generator->get_plugin_generator('mod_mootimeter');
-        $page = $mtmgenerator->create_page($this, [
+        $page = $mtmgenerator->create_page([
             'instance' => $mootimeter->id,
             'tool' => 'wordcloud',
             'title' => 'Test Page for Async Delete',

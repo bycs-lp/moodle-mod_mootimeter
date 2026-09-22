@@ -53,8 +53,7 @@ class mod_mootimeter_generator extends testing_module_generator {
      * @throws coding_exception
      * @throws required_capability_exception
      */
-    public function create_page(advanced_testcase $atc, $record = []): stdClass {
-
+    public function create_page($record = []): stdClass {
         $record = (array) $record;
 
         $tool = (empty($record['tool'])) ? self::MTMT_DEFAULT_TOOLNAME_WORDCLOUD : $record['tool'];
@@ -72,8 +71,6 @@ class mod_mootimeter_generator extends testing_module_generator {
             'sortorder' => $mtmhelper->get_page_next_sortorder($record['instance']),
             'visible' => $mtmhelper::PAGE_VISIBLE,
         ];
-
-        $atc->setAdminUser();
 
         $pageid = $mtmhelper->store_page((object)$record);
 
