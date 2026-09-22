@@ -17,13 +17,9 @@
 namespace mootimetertool_wordcloud;
 
 use advanced_testcase;
-use stdClass;
+use PHPUnit\Framework\Attributes\CoversMethod;
 
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->dirroot . '/lib/external/externallib.php');
-
+#[CoversMethod(\mootimetertool_wordcloud\local\inplace_edit_answer::class, 'update')]
 /**
  * Tests for the inplace edit of wordcloud answers.
  *
@@ -45,7 +41,9 @@ final class inplace_edit_answer_test extends advanced_testcase {
      * Exercises the answer row being loaded by id alone, uncorrelated with the validated page.
      */
     public function test_update_cross_course_answer(): void {
-        global $DB;
+        global $CFG, $DB;
+        require_once($CFG->dirroot . '/lib/external/externallib.php');
+
         $this->resetAfterTest();
 
         $toolgenerator = $this->getDataGenerator()->get_plugin_generator('mootimetertool_wordcloud');
