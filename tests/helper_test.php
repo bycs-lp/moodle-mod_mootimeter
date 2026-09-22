@@ -151,7 +151,7 @@ final class helper_test extends advanced_testcase {
         $helper = new \mod_mootimeter\helper();
 
         $this->setUser($this->users['teacher']);
-        $page = $mtmgenerator->create_page($this, ['instance' => $this->mootimeter->id]);
+        $page = $mtmgenerator->create_page(['instance' => $this->mootimeter->id]);
 
         $helper->store_page_detail($page->id, 'tool', self::TOOLNAME_QUIZ);
         $pagenew = $helper->get_page($page->id);
@@ -169,10 +169,10 @@ final class helper_test extends advanced_testcase {
         $helper = new \mod_mootimeter\helper();
 
         $this->setUser($this->users['teacher']);
-        $page1 = $mtmgenerator->create_page($this, ['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
-        $page2 = $mtmgenerator->create_page($this, ['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
-        $page3 = $mtmgenerator->create_page($this, ['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
-        $page4 = $mtmgenerator->create_page($this, ['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
+        $page1 = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
+        $page2 = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
+        $page3 = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
+        $page4 = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
 
         // Sort to the beginning of the list.
         $helper->store_page_detail($page3->id, 'sortorder', 0);
@@ -210,6 +210,7 @@ final class helper_test extends advanced_testcase {
      */
     public function test_validate_page_belongs_to_instance(): void {
         $this->resetAfterTest();
+        $this->setAdminUser();
 
         $helper = new \mod_mootimeter\helper();
         $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
@@ -220,8 +221,8 @@ final class helper_test extends advanced_testcase {
         $mootimeter2 = $this->generator->create_module('mootimeter', ['course' => $this->course]);
 
         // Create a page in each instance.
-        $page = $mtmgenerator->create_page($this, ['instance' => $this->mootimeter->id]);
-        $page2 = $mtmgenerator->create_page($this, ['instance' => $mootimeter2->id]);
+        $page = $mtmgenerator->create_page(['instance' => $this->mootimeter->id]);
+        $page2 = $mtmgenerator->create_page(['instance' => $mootimeter2->id]);
 
         // Get all pages of instance 1.
         $myinstancepages = $helper->get_pages($this->mootimeter->id);
@@ -243,11 +244,12 @@ final class helper_test extends advanced_testcase {
      */
     public function test_set_get_tool_config(): void {
         $this->resetAfterTest();
+        $this->setAdminUser();
 
         $helper = new \mod_mootimeter\helper();
         $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
 
-        $page = $mtmgenerator->create_page($this, ['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
+        $page = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
 
         $helper->set_tool_config($page, 'question', self::TEST_QUESTION_TITLE);
 
@@ -269,10 +271,11 @@ final class helper_test extends advanced_testcase {
      */
     public function test_toggle_state(): void {
         $this->resetAfterTest();
+        $this->setAdminUser();
 
         $helper = new \mod_mootimeter\helper();
         $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
-        $page = $mtmgenerator->create_page($this, ['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
+        $page = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
 
         $this->setUser($this->users['teacher']);
         $helper->toggle_state($page, 'teststate');
@@ -303,9 +306,10 @@ final class helper_test extends advanced_testcase {
      */
     public function test_store_answer_exception_missing_pageid(): void {
         $this->resetAfterTest();
+        $this->setAdminUser();
 
         $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
-        $page = $mtmgenerator->create_page($this, [
+        $page = $mtmgenerator->create_page([
             'instance' => $this->mootimeter->id,
             'tool' => 'wordcloud',
             'visible' => helper::PAGE_VISIBLE,
@@ -341,9 +345,10 @@ final class helper_test extends advanced_testcase {
      */
     public function test_store_answer_update_existing_and_multiple_answers(): void {
         $this->resetAfterTest();
+        $this->setAdminUser();
 
         $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
-        $page = $mtmgenerator->create_page($this, [
+        $page = $mtmgenerator->create_page([
             'instance' => $this->mootimeter->id,
             'tool' => 'wordcloud',
             'visible' => helper::PAGE_VISIBLE,
@@ -408,9 +413,10 @@ final class helper_test extends advanced_testcase {
      */
     public function test_store_answer_multiple_answers(): void {
         $this->resetAfterTest();
+        $this->setAdminUser();
 
         $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
-        $page = $mtmgenerator->create_page($this, [
+        $page = $mtmgenerator->create_page([
             'instance' => $this->mootimeter->id,
             'tool' => 'wordcloud',
             'visible' => helper::PAGE_VISIBLE,
