@@ -498,4 +498,48 @@ final class helper_test extends advanced_testcase {
 
         $this->assertEquals(array_values($answervalues), ['Test3', 'Test4']);
     }
+
+    #[\PHPUnit\Framework\Attributes\Group('baseline')]
+    /**
+     * A page of another Mootimeter instance must not be rendered for the authorised cmid.
+     *
+     * @covers \mod_mootimeter\helper::get_page_content_params
+     */
+    public function test_get_page_content_params_rejects_foreign_page(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $othercourse = $this->generator->create_course();
+        $othermootimeter = $this->generator->create_module('mootimeter', ['course' => $othercourse]);
+        $foreignpage = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter')->create_page(
+            ['instance' => $othermootimeter->id]
+        );
+        $DB->set_field('mootimeter_pages', 'visible', \mod_mootimeter\helper::PAGE_VISIBLE, ['id' => $foreignpage->id]);
+        $this->setUser($this->users['student']);
+
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('pageaccessexception', 'mod_mootimeter'));
+        (new \mod_mootimeter\helper())->get_page_content_params($this->mootimeter->cmid, $foreignpage->id);
+    }
+
+    #[\PHPUnit\Framework\Attributes\Group('baseline')]
+    /**
+     * A page of the authorised Mootimeter instance is still rendered.
+     *
+     * @covers \mod_mootimeter\helper::get_page_content_params
+     */
+    public function test_get_page_content_params_own_page(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $ownpage = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter')->create_page(
+            ['instance' => $this->mootimeter->id]
+        );
+        $DB->set_field('mootimeter_pages', 'visible', \mod_mootimeter\helper::PAGE_VISIBLE, ['id' => $ownpage->id]);
+        $this->setUser($this->users['student']);
+
+        $params = (new \mod_mootimeter\helper())->get_page_content_params($this->mootimeter->cmid, $ownpage->id);
+
+        $this->assertEquals($ownpage->id, $params['pageid']);
+    }
 }

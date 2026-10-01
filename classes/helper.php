@@ -431,6 +431,10 @@ class helper {
         $dataset = json_decode($dataset);
         [$course, $cm] = get_course_and_cm_from_cmid($cmid);
         $page = $this->get_page($pageid);
+
+        if (!empty($pageid) && (empty($page) || $page->instance != $cm->instance)) {
+            throw new \moodle_exception('pageaccessexception', 'mod_mootimeter');
+        }
         $contentmenudefaultparams = ['sp' => [
             'r' => (empty($dataset->r)) ? 0 : clean_param($dataset->r, PARAM_INT),
             'o' => (empty($dataset->o)) ? 0 : clean_param($dataset->o, PARAM_INT),
