@@ -245,7 +245,7 @@ class quiz extends \mod_mootimeter\toolhelper {
         $enablemultipleanswers = (
             self::get_tool_config($page, 'maxanswersperuser') > 1
             || (int) self::get_tool_config($page, 'maxanswersperuser') == 0
-        ) ? true : false;
+        );
 
         // Store the answers in the database.
         $this->store_answer(
