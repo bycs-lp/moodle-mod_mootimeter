@@ -318,8 +318,12 @@ class quiz extends \mod_mootimeter\toolhelper {
 
         if (!empty($record->id)) {
             $page = $this->get_page($record->pageid);
-            $origrecord = $DB->get_record($this->get_answer_option_table(), ['id' => $record->id], '*', MUST_EXIST);
-            $origrecord->pageid = $record->pageid;
+            $origrecord = $DB->get_record(
+                $this->get_answer_option_table(),
+                ['id' => $record->id, 'pageid' => $record->pageid],
+                '*',
+                MUST_EXIST
+            );
             $origrecord->optiontext = $record->optiontext;
             if ($page->tool == 'quiz') {
                 $origrecord->optioniscorrect = $record->optioniscorrect;

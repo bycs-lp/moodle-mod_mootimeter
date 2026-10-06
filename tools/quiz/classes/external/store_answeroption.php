@@ -81,7 +81,9 @@ class store_answeroption extends external_api {
             'id' => $id,
         ]);
         $cm = helper::get_cm_by_pageid($pageid);
-        self::validate_context(\context_module::instance($cm->id));
+        $cmcontext = \context_module::instance($cm->id);
+        self::validate_context($cmcontext);
+        require_capability('mod/mootimeter:moderator', $cmcontext);
 
         try {
             $quiz = new quiz();
