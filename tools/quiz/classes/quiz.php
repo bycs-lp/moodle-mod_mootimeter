@@ -146,6 +146,21 @@ class quiz extends \mod_mootimeter\toolhelper {
                                     'stepSize' => 1,
                                 ],
                             ],
+                            'y' => [
+                                'ticks' => [
+                                    'font' => ['size' => 14],
+                                ],
+                            ],
+                        ],
+                        'plugins' => [
+                            'title' => [
+                                'display' => true,
+                                'text' => self::get_tool_config($pageid, 'question'),
+                                'font' => ['size' => 18],
+                            ],
+                            'legend' => [
+                                'display' => false,
+                            ],
                         ],
                     ],
                     'backgroundColor' => explode(",", str_replace(' ', '', get_config('mod_mootimeter', 'chartcolors'))),
@@ -196,13 +211,17 @@ class quiz extends \mod_mootimeter\toolhelper {
                     'charttype' => "pie",
                     'options' => [
                         'responsive' => true,
-                        'title' => [
-                            'display' => true,
-                            'text' => self::get_tool_config($pageid, 'question'),
-                        ],
                         'plugins' => [
+                            'title' => [
+                                'display' => true,
+                                'text' => self::get_tool_config($pageid, 'question'),
+                                'font' => ['size' => 18],
+                            ],
                             'legend' => [
-                                'position' => 'right',
+                                'position' => 'bottom',
+                                'labels' => [
+                                    'font' => ['size' => 14],
+                                ],
                             ],
                         ],
                     ],
