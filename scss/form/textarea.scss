@@ -1,0 +1,37 @@
+
+.mootimeter-textarea {
+  @include rounded-s;
+  padding: 0.5rem 0.875rem;
+  border: 0.0625rem solid $grey-300;
+  background-color: unset;
+  color: $white-standard;
+  width: 100%;
+  resize: vertical;
+  min-height: 4rem;
+
+  &:focus {
+    border-color: $white-standard;
+  }
+
+  &.light-background {
+    color: $grey-500;
+    border-color: $grey-500;
+  }
+}
+
+.mootimeter-content-wrapper {
+  .mootimeter-textarea {
+    color: $grey-500;
+    border-color: $grey-500;
+
+    &:focus {
+      border-color: $grey-500;
+    }
+  }
+}
+
+.contrast {
+  .mootimeter-textarea {
+    border-color: $white-standard;
+  }
+}
