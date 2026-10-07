@@ -86,6 +86,9 @@ class get_mootimeterstate extends external_api {
             $dataset = json_decode($dataset);
             $helper = new \mod_mootimeter\helper();
             $page = $helper->get_page($pageid);
+            if (!empty($page) && $page->instance != $cm->instance) {
+                throw new \moodle_exception('pageaccessexception', 'mod_mootimeter');
+            }
             if (empty($page)) {
                 $pages = $helper->get_pages($cm->instance, "sortorder ASC");
                 $page = array_pop($pages);
