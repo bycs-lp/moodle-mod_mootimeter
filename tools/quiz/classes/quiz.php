@@ -226,7 +226,7 @@ class quiz extends \mod_mootimeter\toolhelper {
         // Iterate through each answer option.
         foreach ($aoids as $aoid) {
             // First check if the selected answer is part of the page.
-            if (!$DB->record_exists($this->get_answer_option_table(), ['id' => $aoid])) {
+            if (!$DB->record_exists($this->get_answer_option_table(), ['id' => $aoid, 'pageid' => $page->id])) {
                 // Skip to the next iteration if the answer is not part of the page.
                 continue;
             }
@@ -245,7 +245,7 @@ class quiz extends \mod_mootimeter\toolhelper {
         $enablemultipleanswers = (
             self::get_tool_config($page, 'maxanswersperuser') > 1
             || (int) self::get_tool_config($page, 'maxanswersperuser') == 0
-        ) ? true : false;
+        );
 
         // Store the answers in the database.
         $this->store_answer(
