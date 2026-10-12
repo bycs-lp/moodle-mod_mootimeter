@@ -167,6 +167,27 @@ class wordcloud extends \mod_mootimeter\toolhelper {
             $i++;
         }
 
+        // MBS 10742: Normalize to object – get_answers_grouped() returns stdClass on cache-miss, array on cache-hit.
+        $grouped = array_map(fn($g) => (object)$g, $this->get_answers_grouped(self::ANSWER_TABLE, ['pageid' => $page->id]));
+
+        // Sort in PHP to keep the cache path in get_answers_grouped untouched.
+        // Primary: frequency desc. Secondary: answer text asc (case-insensitive).
+        $groupedsorted = array_values($grouped);
+        usort($groupedsorted, function ($a, $b) {
+            if ((int)$a->cnt !== (int)$b->cnt) {
+                return (int)$b->cnt <=> (int)$a->cnt;
+            }
+            return strcasecmp($a->answer, $b->answer);
+        });
+
+        $params['answergroups'] = array_map(function ($g) {
+            return [
+                'pill' => $g->answer . ' ×' . $g->cnt,
+                'additional_class' => 'mootimeter-pill-inline',
+            ];
+        }, $groupedsorted);
+        $params['hasanswergroups'] = !empty($params['answergroups']);
+
         return $params;
     }
 
