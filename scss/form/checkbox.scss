@@ -8,17 +8,22 @@
     .checkbox-icon-wrapper {
       @include flex-center-all;
       position: relative;
-      border: 0.0938rem solid $lernplatform-400;
+      border: 0.0938rem solid $grey-300;
       border-radius: 0.125rem;
       width: 1.25rem !important;
       height: 1.25rem;
-      margin-right: 0.625rem;
+      margin-left: 0.625rem;
       padding: 0.125rem;
       .checkbox-icon {
         font-size: 1rem;
         margin: 0;
         width: 1rem;
         height: 1rem;
+      }
+    }
+    &:hover {
+      .checkbox-icon-wrapper {
+        border-color: $lernplatform-400;
       }
     }
 

@@ -3,7 +3,7 @@
     {{> mod_mootimeter/elements/snippet_settings_col_header}}
 
     {{#question}}
-    {{> mod_mootimeter/elements/snippet_input}}
+    {{> mod_mootimeter/elements/snippet_textarea}}
     {{#js}}
     require(['mod_mootimeter/reload_page_content'], (module) => module.init("{{mtm-input-id}}_{{uniqid}}"));
     {{/js}}
@@ -42,15 +42,41 @@
 
     {{> mod_mootimeter/elements/snippet_divider}}
 
-    <p class="text-bold">{{#str}} visualization , mootimetertool_quiz {{/str}}</p>
+    <div class="mootimeter-diagram-type-row">
+        <span class="mootimeter-diagram-type-label">{{#str}} diagram_type , mootimetertool_quiz {{/str}}</span>
+        <div class="mootimeter-visualization-options-wrapper">
+            {{#visualization}}
+            {{> mod_mootimeter/elements/snippet_settings_visualization_option}}
+            {{/visualization}}
+            {{#js}}
+            require(['mootimetertool_quiz/store_visualization'], (module) => module.init("{{uniqid}}"));
+            {{/js}}
+        </div>
+    </div>
 
-    <div class="mootimeter-visualization-options-wrapper">
-        {{#visualization}}
-        {{> mod_mootimeter/elements/snippet_settings_visualization_option}}
-        {{/visualization}}
+    {{> mod_mootimeter/elements/snippet_divider}}
+
+    <div class="mootimeter-actions-list">
+        {{#icon-eye}}
+        {{> mod_mootimeter/elements/snippet_button_action}}
         {{#js}}
-        require(['mootimetertool_quiz/store_visualization'], (module) => module.init("{{uniqid}}"));
+        require(['mod_mootimeter/toggle_state'], (module) => module.init(["{{id}}_{{uniqid}}"]));
         {{/js}}
+        {{/icon-eye}}
+
+        {{#icon-answer-overview}}
+        {{> mod_mootimeter/elements/snippet_button_action}}
+        {{#js}}
+        require(['mod_mootimeter/reload_page'], (module) => module.init(["{{id}}_{{uniqid}}"]));
+        {{/js}}
+        {{/icon-answer-overview}}
+
+        {{#icon-restart}}
+        {{> mod_mootimeter/elements/snippet_button_action}}
+        {{#js}}
+        require(['mod_mootimeter/handle_button_clicked'], (module) => module.init(["{{id}}_{{uniqid}}"]));
+        {{/js}}
+        {{/icon-restart}}
     </div>
 
     {{> mod_mootimeter/elements/snippet_divider}}
