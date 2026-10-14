@@ -16,18 +16,15 @@
 
 namespace mootimetertool_wordcloud\external;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\Group;
-
 /**
  * Tests for the get_answers web service of the wordcloud tool.
  *
  * @package    mootimetertool_wordcloud
+ * @covers     \mootimetertool_wordcloud\external\get_answers
  * @copyright  2026 ISB Bayern
  * @author     Dr. Peter Mayer
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-#[CoversClass(get_answers::class)]
 final class get_answers_test extends \advanced_testcase {
     /**
      * Create a released wordcloud page with one answer and a student.
@@ -50,10 +47,10 @@ final class get_answers_test extends \advanced_testcase {
         return [$page, $student];
     }
 
-    #[Group('baseline')]
     /**
      * A student cannot read the answers of a hidden page.
      *
+     * @covers \mootimetertool_wordcloud\external\get_answers::execute
      * @return void
      */
     public function test_hidden_page_answers_are_not_returned(): void {
@@ -65,10 +62,10 @@ final class get_answers_test extends \advanced_testcase {
         get_answers::execute($page->id);
     }
 
-    #[Group('baseline')]
     /**
      * A student still reads the answers of a visible page.
      *
+     * @covers \mootimetertool_wordcloud\external\get_answers::execute
      * @return void
      */
     public function test_visible_page_answers_are_returned(): void {
