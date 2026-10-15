@@ -11,6 +11,23 @@ Mootimeter currently has the following polling tools:
 Thanks to its submodule structure, Mootimeter can easily be extended with additional polling tools.
 An extensive API is available for the creation of further polling tools.
 
+## Requirements ##
+
+Moodle 5.2 or later. The user interface is built with React on top of the Moodle ESM/React integration.
+
+## Frontend development ##
+
+The React sources live in `js/esm/src` of the plugin and of each tool (`tools/<tool>/js/esm/src`).
+Build them from the Moodle root directory and commit the generated `js/esm/build` files:
+
+    $ npx grunt react
+
+A tool provides its user interface by default exporting React components from the modules
+`content`, `settings`, `results` and `overview` (and optionally a `menu`), see
+`\mod_mootimeter\toolhelper::get_react_components()`. The props of the components are described in
+`js/esm/src/lib/types.ts` (`ToolViewProps`). Shared components, hooks and the bridge to the Moodle
+AMD modules can be imported from `@moodle/lms/mod_mootimeter/lib/...`.
+
 ## Installing via uploaded ZIP file ##
 
 1. Log in to your Moodle site as an admin and go to _Site administration >

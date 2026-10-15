@@ -30,6 +30,8 @@ use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
 use mod_mootimeter\helper;
+use mod_mootimeter\local\external_util;
+use mootimetertool_wordcloud\wordcloud;
 
 /**
  * Web service to store a answer.
@@ -69,43 +71,44 @@ class store_answer extends external_api {
             'pageid' => $pageid,
             'answer' => $answer,
         ]);
-        $cm = helper::get_cm_by_pageid($pageid);
-        $cmcontext = \context_module::instance($cm->id);
-        self::validate_context($cmcontext);
-        require_capability('mod/mootimeter:view', $cmcontext);
+        [$page] = external_util::validate_page($pageid);
+        if ($page->tool !== 'wordcloud') {
+            throw new \invalid_parameter_exception('The page is not a wordcloud page.');
+        }
 
-        if (empty($answer) && strlen($answer) == 0) {
+        $answer = trim($answer);
+        if ($answer === '') {
             return [
                 'code' => helper::ERRORCODE_EMPTY_ANSWER,
-                'string' => get_string('error_empty_answers', 'mootimetertool_wordcloud'),
+                'message' => get_string('error_empty_answers', 'mootimetertool_wordcloud'),
             ];
         }
 
-        $helper = new helper();
-        $page = $helper->get_page($pageid);
-
-        $maxnumberofanswers = helper::get_tool_config($page->id, "maxinputsperuser");
-        $wordcloud = new \mootimetertool_wordcloud\wordcloud();
-        $submittedanswers = $wordcloud->get_user_answers('mootimetertool_wordcloud_answers', $page->id, 'answer', $USER->id);
+        $maxnumberofanswers = (int) helper::get_tool_config($page->id, "maxinputsperuser");
+        $wordcloud = new wordcloud();
+        $submittedanswers = $wordcloud->get_user_answers(wordcloud::ANSWER_TABLE, $page->id, wordcloud::ANSWER_COLUMN, $USER->id);
 
         if (count($submittedanswers) >= $maxnumberofanswers && $maxnumberofanswers > 0) {
             return [
                 'code' => helper::ERRORCODE_TO_MANY_ANSWERS,
-                'string' => get_string('error_to_many_answers', 'mootimetertool_wordcloud'),
+                'message' => get_string('error_to_many_answers', 'mootimetertool_wordcloud'),
             ];
         }
 
-        $submittedanswers = $wordcloud->get_answer_list_array($page->id, $USER->id);
+        $submittedanswers = array_map('strtolower', $wordcloud->get_answer_list_array($page->id, $USER->id));
         // Use strtolower in order to ignore case sensitive inputs of users. This makes the result more precise.
         if (!helper::get_tool_config($page->id, "allowduplicateanswers") && in_array(strtolower($answer), $submittedanswers)) {
             return [
                 'code' => helper::ERRORCODE_DUPLICATE_ANSWER,
-                'string' => get_string('error_no_duplicate_answers', 'mootimetertool_wordcloud'),
+                'message' => get_string('error_no_duplicate_answers', 'mootimetertool_wordcloud'),
             ];
         }
 
         $wordcloud->insert_answer($page, $answer);
-        return ['code' => helper::ERRORCODE_OK, 'string' => 'ok'];
+        return [
+            'code' => helper::ERRORCODE_OK,
+            'message' => get_string('notification_success_store_answer', 'mod_mootimeter'),
+        ];
     }
 
     /**
@@ -116,8 +119,8 @@ class store_answer extends external_api {
     public static function execute_returns(): external_single_structure {
         return new external_single_structure(
             [
-                'code' => new external_value(PARAM_INT, 'Return code of storage process.'),
-                'string' => new external_value(PARAM_TEXT, 'Return string of storage process.'),
+                'code' => new external_value(PARAM_INT, 'Result code, 200 on success'),
+                'message' => new external_value(PARAM_TEXT, 'Message for the participant'),
             ],
             'Status of answer storing process'
         );

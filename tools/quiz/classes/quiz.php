@@ -25,8 +25,6 @@
 
 namespace mootimetertool_quiz;
 
-use dml_exception;
-use coding_exception;
 use mod_mootimeter\helper;
 use required_capability_exception;
 use moodle_exception;
@@ -86,6 +84,21 @@ class quiz extends \mod_mootimeter\toolhelper {
     const MTMT_VIEW_RESULT_TEACHERPERMISSION = 2;
 
     /**
+     * Get the tool helper of a quiz or poll page.
+     *
+     * @param object $page
+     * @return quiz
+     * @throws \invalid_parameter_exception if the page is neither a quiz nor a poll
+     */
+    public static function get_for_page(object $page): quiz {
+        $toolhelper = helper::get_toolhelper($page->tool);
+        if (!$toolhelper instanceof quiz) {
+            throw new \invalid_parameter_exception('The page is not a quiz or poll page.');
+        }
+        return $toolhelper;
+    }
+
+    /**
      * Get the tools answer column.
      * @return string
      */
@@ -119,96 +132,58 @@ class quiz extends \mod_mootimeter\toolhelper {
     }
 
     /**
-     * Get the pix tool. This can be the same between multiple tools e.g. quiz and poll.
-     * @return string
+     * Get the tool specific page settings that may be stored by moderators.
+     *
+     * @return array of setting name => PARAM_* type
      */
-    public function get_pix_toolname() {
-        return "quiz";
+    public function get_setting_definitions(): array {
+        return [
+            'maxanswersperuser' => PARAM_INT,
+            'visualizationtype' => PARAM_INT,
+            'showanswercorrection' => PARAM_BOOL,
+        ];
     }
 
     /**
-     * Get chartjs visualization settings.
-     * @param int $visualizationtypeid
-     * @param mixed $pageid
-     * @return array|void
-     * @throws dml_exception
+     * Whether this tool supports marking options as correct.
+     *
+     * @return bool
      */
-    public function get_visualization_settings_charjs(int $visualizationtypeid, $pageid) {
-        switch ($visualizationtypeid) {
-            case self::VISUALIZATION_ID_CHART_BAR:
-                return [
-                    'charttype' => "bar",
-                    'options' => [
-                        'indexAxis' => 'y',
-                        'scales' => [
-                            'x' => [
-                                'ticks' => [
-                                    'stepSize' => 1,
-                                ],
-                            ],
-                        ],
-                    ],
-                    'backgroundColor' => explode(",", str_replace(' ', '', get_config('mod_mootimeter', 'chartcolors'))),
-                    'borderRadius' => 20,
-                ];
-            case self::VISUALIZATION_ID_CHART_LINE:
-                return [
-                    'charttype' => "line",
-                    'options' => [
-                        'indexAxis' => 'x',
-                        'scales' => [
-                            'x' => [
-                                'min' => 0,
-                                'ticks' => [
-                                    'stepSize' => 1,
-                                ],
-                            ],
-                        ],
-                    ],
-                    'backgroundColor' => explode(",", str_replace(' ', '', get_config('mod_mootimeter', 'chartcolors'))),
-                    'pointStyle' => 'circle',
-                    'pointRadius' => 10,
-                    'pointHoverRadius' => 15,
-                ];
-            case self::VISUALIZATION_ID_CHART_PILLAR:
-                return [
-                    'charttype' => "bar",
-                    'options' => [
-                        'indexAxis' => 'x',
-                        'scales' => [
-                            'x' => [
-                                'ticks' => [
-                                    'stepSize' => 1,
-                                ],
-                            ],
-                            'y' => [
-                                'ticks' => [
-                                    'stepSize' => 1,
-                                ],
-                            ],
-                        ],
-                    ],
-                    'backgroundColor' => explode(",", str_replace(' ', '', get_config('mod_mootimeter', 'chartcolors'))),
-                    'borderRadius' => 20,
-                ];
-            case self::VISUALIZATION_ID_CHART_PIE:
-                return [
-                    'charttype' => "pie",
-                    'options' => [
-                        'responsive' => true,
-                        'title' => [
-                            'display' => true,
-                            'text' => self::get_tool_config($pageid, 'question'),
-                        ],
-                        'plugins' => [
-                            'legend' => [
-                                'position' => 'right',
-                            ],
-                        ],
-                    ],
-                    'backgroundColor' => explode(",", str_replace(' ', '', get_config('mod_mootimeter', 'chartcolors'))),
-                ];
-        }
+    public function supports_correct_options(): bool {
+        return true;
+    }
+
+    /**
+     * The quiz adds the answer correction toggle to the content menu.
+     *
+     * @return array
+     */
+    public function get_react_components(): array {
+        $components = parent::get_react_components();
+        $components['menu'] = '@moodle/lms/mootimetertool_quiz/menu';
+        return $components;
+    }
+
+    /**
+     * Get the maximum number of options a participant may select, 0 means unlimited.
+     *
+     * New pages store MAXANSWERSDEFAULT, pages without the setting have always been unlimited.
+     *
+     * @param object $page
+     * @return int
+     */
+    public function get_max_answers(object $page): int {
+        return max(0, (int) self::get_tool_config($page, 'maxanswersperuser'));
+    }
+
+    /**
+     * Whether the correct options are revealed to the participants.
+     *
+     * @param object $page
+     * @return bool
+     */
+    public function is_answer_correction_shown(object $page): bool {
+        return $this->supports_correct_options() && !empty(self::get_tool_config($page, 'showanswercorrection'));
     }
 
     /**
@@ -226,7 +201,7 @@ class quiz extends \mod_mootimeter\toolhelper {
         // Iterate through each answer option.
         foreach ($aoids as $aoid) {
             // First check if the selected answer is part of the page.
-            if (!$DB->record_exists($this->get_answer_option_table(), ['id' => $aoid])) {
+            if (!$DB->record_exists($this->get_answer_option_table(), ['id' => $aoid, 'pageid' => $page->id])) {
                 // Skip to the next iteration if the answer is not part of the page.
                 continue;
             }
@@ -242,10 +217,7 @@ class quiz extends \mod_mootimeter\toolhelper {
         }
 
         // Check if multiple answers are allowed.
-        $enablemultipleanswers = (
-            self::get_tool_config($page, 'maxanswersperuser') > 1
-            || (int) self::get_tool_config($page, 'maxanswersperuser') == 0
-        ) ? true : false;
+        $enablemultipleanswers = $this->get_max_answers($page) !== 1;
 
         // Store the answers in the database.
         $this->store_answer(
@@ -277,25 +249,58 @@ class quiz extends \mod_mootimeter\toolhelper {
         // Store two answer options as default.
         $this->store_answer_option($record);
         $this->store_answer_option($record);
+        $this->set_tool_config($page, 'maxanswersperuser', (string) self::MAXANSWERSDEFAULT);
         return;
     }
 
     /**
-     * Handels inplace_edit.
+     * Replace the selected options of the participant who gave the referenced answer.
      *
-     * @param string $itemtype
-     * @param string $itemid
-     * @param mixed $newvalue
-     * @return mixed
-     * @throws coding_exception
-     * @throws dml_exception
-     * @throws required_capability_exception
-     * @throws moodle_exception
+     * Only moderators may change answers of participants.
+     *
+     * @param object $page
+     * @param int $answerid any answer record of the participant on this page
+     * @param int[] $optionids the new selected options
+     * @return void
+     * @throws moodle_exception if the selection is empty, too large or contains foreign options
      */
-    public function handle_inplace_edit(string $itemtype, string $itemid, mixed $newvalue) {
-        if ($itemtype === 'editanswerselect') {
-            return \mootimetertool_quiz\local\inplace_edit_answer::update($itemid, $newvalue);
+    public function update_user_answer(object $page, int $answerid, array $optionids): void {
+        global $DB;
+
+        $context = \context_module::instance(self::get_cm_by_pageid($page->id)->id);
+        require_capability('mod/mootimeter:moderator', $context);
+
+        $answerrecord = $DB->get_record($this->get_answer_table(), ['id' => $answerid, 'pageid' => $page->id], '*', MUST_EXIST);
+        $userid = (int) $answerrecord->usermodified;
+
+        $optionids = array_values(array_unique(array_map('intval', $optionids)));
+        if (empty($optionids)) {
+            throw new moodle_exception('atleastoneanswer', 'mootimetertool_quiz');
         }
+        $maxanswers = $this->get_max_answers($page);
+        if ($maxanswers !== 0 && count($optionids) > $maxanswers) {
+            throw new moodle_exception('morethanmaxanswers', 'mootimetertool_quiz', '', $maxanswers);
+        }
+        $pageoptionids = array_map('intval', array_keys($this->get_answer_options($page->id)));
+        if (array_diff($optionids, $pageoptionids)) {
+            throw new moodle_exception('invalidparameter', 'debug');
+        }
+
+        $transaction = $DB->start_delegated_transaction();
+        $DB->delete_records($this->get_answer_table(), ['pageid' => $page->id, 'usermodified' => $userid]);
+        foreach ($optionids as $optionid) {
+            $DB->insert_record($this->get_answer_table(), (object) [
+                'pageid' => $page->id,
+                'usermodified' => $userid,
+                'optionid' => $optionid,
+                'timecreated' => $answerrecord->timecreated,
+                'timemodified' => time(),
+            ]);
+        }
+        $transaction->allow_commit();
+
+        $this->clear_caches($page->id);
+        $this->notify_data_changed($page, 'answers');
     }
 
     /**
@@ -341,51 +346,6 @@ class quiz extends \mod_mootimeter\toolhelper {
     }
 
     /**
-     * Get content menu bar params.
-     *
-     * @param object $page
-     * @param array $params Defaultparams
-     * @return mixed
-     * @throws coding_exception
-     * @throws dml_exception
-     * @throws moodle_exception
-     */
-    public function get_content_menu_tool_params(object $page, array $params) {
-
-        $instance = \mod_mootimeter\helper::get_instance_by_pageid($page->id);
-        $cm = \mod_mootimeter\helper::get_cm_by_instance($instance);
-
-        if (has_capability('mod/mootimeter:moderator', \context_module::instance($cm->id))) {
-            $dataseticoncheck = [
-                'data-togglename = "showanswercorrection"',
-                'data-pageid = ' . $page->id,
-                // To configure the response handling.
-                'data-iconenabled = "fa-check-square-o"',
-                'data-icondisabled = "fa-square-o"',
-                'data-tooltipenabled = "' . get_string('tooltip_content_menu_answercorrection', 'mootimetertool_quiz') . '"',
-                'data-tooltipdisabled = "' .
-                    get_string('tooltip_content_menu_answercorrection_disabled', 'mootimetertool_quiz') . '"',
-            ];
-            $params['icon-check'] = [
-                'id' => 'toggleshowanswercorrectionid',
-                'iconid' => 'toggleshowanswercorrectioniconid',
-                'dataset' => implode(" ", $dataseticoncheck),
-            ];
-            if (!empty(self::get_tool_config($page->id, 'showanswercorrection'))) {
-                $params['icon-check']['icon'] = "fa-check-square-o";
-                $params['icon-check']['tooltip'] = get_string(
-                    'tooltip_content_menu_answercorrection_disabled',
-                    'mootimetertool_quiz'
-                );
-            } else if (empty(self::get_tool_config($page->id, 'showanswercorrection'))) {
-                $params['icon-check']['icon'] = "fa-square-o";
-                $params['icon-check']['tooltip'] = get_string('tooltip_content_menu_answercorrection', 'mootimetertool_quiz');
-            }
-        }
-        return $params;
-    }
-
-    /**
      * Remove an answer option.
      * @param int $pageid
      * @param int $aoid
@@ -420,91 +380,48 @@ class quiz extends \mod_mootimeter\toolhelper {
     }
 
     /**
-     * Get all parameters that are necessary for rendering the tools view.
+     * Export the data the question view and the settings view need.
+     *
+     * The correct options are only exported to moderators or once the answer correction is shown.
      *
      * @param object $page
+     * @param \context_module $context
+     * @param bool $ismoderator
      * @return array
-     * @deprecated
      */
-    public function get_renderer_params(object $page) {
+    public function export_page_data(object $page, \context_module $context, bool $ismoderator): array {
         global $USER;
 
-        // Parameter for initial wordcloud rendering.
-        $params['pageid'] = $page->id;
-        $instance = self::get_instance_by_pageid($page->id);
-        $cm = self::get_cm_by_instance($instance);
+        $answercorrection = $this->is_answer_correction_shown($page);
+        $revealcorrect = $this->supports_correct_options() && ($ismoderator || $answercorrection);
 
-        if (self::get_tool_config($page->id, 'showanswercorrection')) {
-            $params['showanswercorrection'] = true;
+        $options = [];
+        foreach ($this->get_answer_options($page->id) as $option) {
+            $options[] = [
+                'id' => (int) $option->id,
+                'text' => $ismoderator ? (string) $option->optiontext : '',
+                'texthtml' => format_string((string) $option->optiontext, true, ['context' => $context]),
+                'iscorrect' => $revealcorrect && !empty($option->optioniscorrect),
+            ];
         }
 
-        // Parameter for initializing Badges.
-        $params["toolname"] = ['pill' => get_string("pluginname", "mootimetertool_" . $page->tool)];
-        $params['template'] = "mootimetertool_quiz/view_content";
-
-        $answeroptions = $this->get_answer_options($page->id);
-
-        $useransweroptionsid = array_keys($this->get_user_answers(
+        $selected = array_map('intval', array_keys($this->get_user_answers(
             $this->get_answer_table(),
             $page->id,
             $this->get_answer_column(),
             $USER->id
-        ));
+        )));
 
-        $inputtype = 'cb';
-        if (intval(self::get_tool_config($page->id, 'maxanswersperuser', self::MAXANSWERSDEFAULT)) === 1) {
-            $inputtype = 'rb';
-        }
-        foreach ($answeroptions as $answeroption) {
-            $wrapperadditionalclass = (self::get_tool_config($page->id, 'showanswercorrection')) ? "mootimeter-highlighter" : '';
-            $wrapperadditionalclass .= (
-                self::get_tool_config($page->id, 'showanswercorrection') && $answeroption->optioniscorrect
-            ) ? " mootimeter-success" : '';
+        $visualization = (int) self::get_tool_config($page, 'visualizationtype');
 
-            if (
-                empty($answeroption->optiontext)
-                && has_capability('mod/mootimeter:moderator', \context_module::instance($cm->id))
-            ) {
-                $optiontext = get_string('enter_answeroption', 'mootimetertool_quiz');
-            } else {
-                $optiontext = $answeroption->optiontext;
-            }
-
-            $params['answeroptions'][$inputtype][] = [
-                'wrapper_' . $inputtype . '_with_label_id' => "wrapper_ao_" . $answeroption->id,
-                'wrapper_' . $inputtype . '_with_label_additional_class' => $wrapperadditionalclass,
-
-                $inputtype . '_with_label_id' => "ao_" . $answeroption->id,
-                $inputtype . '_with_label_text' => $optiontext,
-                'pageid' => $page->id,
-                $inputtype . '_with_label_name' => 'multipleanswers[]',
-                $inputtype . '_with_label_value' => $answeroption->id,
-                $inputtype . '_with_label_additional_class' => 'mootimeter_settings_selector ' .
-                    'mootimeter-highlighter mootimeter-success',
-                $inputtype . '_with_label_checked' => (in_array($answeroption->id, $useransweroptionsid)) ? "checked" : '',
-                $inputtype . '_with_label_additional_attribut' => (self::get_tool_config($page->id, 'showanswercorrection')) ?
-                    "disabled" : '',
-            ];
-        }
-
-        if (empty(self::get_tool_config($page->id, 'showanswercorrection'))) {
-            $params['sendbutton'] = [
-                'mtm-button-id' => 'mtmt_store_answer',
-                'mtm-button-text' => get_string('submit_answer', 'mootimetertool_quiz'),
-                'mtm-button-dataset' => 'data-pageid="' . $page->id . '"',
-            ];
-
-            if (intval(self::get_tool_config($page, 'maxanswersperuser')) == 1) {
-                $sendbuttoncontext = get_string('sendbutton_context_one_answers_possible', 'mootimetertool_quiz');
-            } else {
-                $sendbuttoncontext = get_string('sendbutton_context_more_answers_possible', 'mootimetertool_quiz');
-            }
-            $params['sendbutton_context'] = [
-                'text' => $sendbuttoncontext,
-            ];
-        }
-
-        return $params;
+        return [
+            'options' => $options,
+            'selected' => $selected,
+            'maxanswers' => $this->get_max_answers($page),
+            'answercorrection' => $answercorrection,
+            'supportscorrect' => $this->supports_correct_options(),
+            'visualization' => $visualization ?: self::VISUALIZATION_ID_CHART_BAR,
+        ];
     }
 
     /**
@@ -530,275 +447,42 @@ class quiz extends \mod_mootimeter\toolhelper {
     }
 
     /**
-     * Get the params for settings column.
+     * Export the results of a page for the chart.
+     *
+     * The counts are only exported if the current user may see the results.
      *
      * @param object $page
-     * @param array $params
+     * @param \context_module $context
      * @return array
-     * @throws dml_exception
-     * @throws coding_exception
      */
-    public function get_col_settings_tool_params(object $page, array $params = []) {
-        global $USER;
-
-        $instance = self::get_instance_by_pageid($page->id);
-        $cm = self::get_cm_by_instance($instance);
-        if (!has_capability('mod/mootimeter:moderator', \context_module::instance($cm->id)) || empty($USER->editing)) {
-            return [];
-        }
-
-        $params['template'] = 'mootimetertool_quiz/view_settings';
-
-        $params['ispoll'] = false;
-        if ($page->tool == "poll") {
-            $params['ispoll'] = true;
-        }
-
-        $params['question'] = [
-            'mtm-input-id' => 'mtm_input_question',
-            'mtm-input-value' => clean_param(self::get_tool_config($page, 'question'), PARAM_TEXT),
-            'mtm-input-placeholder' => get_string('enter_question', 'mod_mootimeter'),
-            'mtm-input-name' => "question",
-            'additional_class' => 'mootimeter_settings_selector',
-            'pageid' => $page->id,
-            'ajaxmethode' => "mod_mootimeter_store_setting",
-        ];
-
-        $params['notification_mark_correct_anser'] = [
-            'notification_id' => 'mtmt_mark_correct_answer',
-            'notification_type' => 'info',
-            'notification_icon' => 'fa-share fa-flip-vertical',
-            'notification_icon_rotation' => 'mootimeter_rotate_110',
-            'notification_text' => get_string('mark_correct_answer', 'mootimetertool_quiz'),
-        ];
-
-        $ispoll = false;
-        if ($page->tool == "poll") {
-            $ispoll = true;
-        }
-
-        $answeroptions = $this->get_answer_options($page->id);
-        foreach ($answeroptions as $answeroption) {
-            $params['answeroptions'][] = [
-                'aoid' => $answeroption->id,
-                'ispoll' => $ispoll,
-                'mtm-ao-wrapper-id' => 'ao_wrapper_' . $answeroption->id,
-
-                'mtm-input-id' => 'ao_text_' . $answeroption->id,
-                'mtm-input-name' => 'ao_text',
-                'mtm-input-value' => $answeroption->optiontext,
-                'mtm-input-placeholder' => get_string('enter_answeroption', 'mootimetertool_quiz'),
-                'ajaxmethode' => "mootimetertool_quiz_store_answeroption_text",
-                'additional_class' => 'mootimeter-answer-options mootimeter_settings_selector',
-                'dataset' => 'data-pageid=' . $page->id . ' data-aoid=' . $answeroption->id,
-
-                'mtm-cb-without-label-id' => 'ao_iscorrect_' . $answeroption->id,
-                'mtm-cb-without-label-name' => 'ao_iscorrect',
-                'mtm-cb-without-label-ajaxmethode' => "mootimetertool_quiz_store_answeroption_is_correct",
-                'mtm-cb-without-label-checked' => ($answeroption->optioniscorrect) ? "checked" : '',
-                'mtm-cb-without-label-dataset' => 'data-pageid=' . $page->id . ' data-aoid=' . $answeroption->id,
-
-                'button_icon_only_transparent_id' => 'ao_delete_' . $answeroption->id,
-                'button_icon_only_transparent_dataset' => 'data-pageid=' . $page->id . ' data-aoid=' . $answeroption->id,
-                'button_icon_only_transparent_icon' => 'fa-close',
-                'button_icon_only_transparent_additionalclass' => 'mtmt-remove-answeroption',
-                'button_icon_only_transparent_ajaxmethod' => 'mootimetertool_quiz_remove_anseroption',
-            ];
-        }
-
-        $params['addoption'] = [
-            'button_icon_only_transparent_icon' => 'fa-plus',
-            'button-text' => get_string('add_question_option', 'mootimetertool_quiz'),
-            'button_icon_only_transparent_id' => 'add_answer_option',
-            'button_icon_only_transparent_dataset' => 'data-pageid="' . $page->id . '"',
-        ];
-
-        $visualizationtype = self::get_tool_config($page, 'visualizationtype');
-
-        $params['visualization'] = [
-            [
-                'mtm-button-icon-id' => 'visualization_' . self::VISUALIZATION_ID_CHART_PILLAR,
-                'mtm-button-icon-additionalclass' => 'mtmt_visualization_selector',
-                'mtm-button-icon-img' => [
-                    'path' => "tools/" . $this->get_pix_toolname() . "/pix/chart-pillar.svg",
-                    'width' => "24px",
-                ],
-                'mtm-button-icon-active' => ($visualizationtype == self::VISUALIZATION_ID_CHART_PILLAR) ? true : false,
-                'mtm-button-icon-dataset' => 'data-pageid="' . $page->id . '" data-visuid=' . self::VISUALIZATION_ID_CHART_PILLAR,
-            ],
-            [
-                'mtm-button-icon-id' => 'visualization_' . self::VISUALIZATION_ID_CHART_BAR,
-                'mtm-button-icon-additionalclass' => 'mtmt_visualization_selector',
-                'mtm-button-icon-img' => [
-                    'path' => "tools/" . $this->get_pix_toolname() . "/pix/chart-bar.svg",
-                    'width' => "24px",
-                ],
-                'mtm-button-icon-active' => ($visualizationtype == self::VISUALIZATION_ID_CHART_BAR) ? true : false,
-                'mtm-button-icon-dataset' => 'data-pageid="' . $page->id . '" data-visuid=' . self::VISUALIZATION_ID_CHART_BAR,
-            ],
-            [
-                'mtm-button-icon-id' => 'visualization_' . self::VISUALIZATION_ID_CHART_PIE,
-                'mtm-button-icon-additionalclass' => 'mtmt_visualization_selector',
-                'mtm-button-icon-img' => [
-                    'path' => "tools/" . $this->get_pix_toolname() . "/pix/chart-pie.svg",
-                    'width' => "24px",
-                ],
-                'mtm-button-icon-active' => ($visualizationtype == self::VISUALIZATION_ID_CHART_PIE) ? true : false,
-                'mtm-button-icon-dataset' => 'data-pageid="' . $page->id . '" data-visuid=' . self::VISUALIZATION_ID_CHART_PIE,
-            ],
-        ];
-
-        $maxanswers = self::get_tool_config($page->id, "maxanswersperuser", self::MAXANSWERSDEFAULT);
-        if (!is_number($maxanswers)) {
-            $maxanswers = intval($maxanswers);
-        }
-
-        $params['maxanswers'] = [
-            'title' => get_string('answers_max_number', 'mootimetertool_quiz'),
-            'additional_class' => 'mootimeter_settings_selector',
-            'id' => "maxanswersperuser",
-            'name' => "maxanswersperuser",
-            'min' => '0',
-            'pageid' => $page->id,
-            'ajaxmethode' => "mod_mootimeter_store_setting",
-            'value' => strval($maxanswers),
-        ];
-
-        $params['anonymousmode'] = [
-            'cb_with_label_id' => 'anonymousmode',
-            'pageid' => $page->id,
-            'cb_with_label_text' => get_string('anonymousmode', 'mod_mootimeter')
-                . " " . get_string('anonymousmode_desc', 'mod_mootimeter'),
-            'cb_with_label_name' => 'anonymousmode',
-            'cb_with_label_additional_class' => 'mootimeter_settings_selector',
-            'cb_with_label_ajaxmethod' => "mod_mootimeter_store_setting",
-            'cb_with_label_checked' => (\mod_mootimeter\helper::get_tool_config($page, 'anonymousmode') ? "checked" : ''),
-        ];
-
-        $answers = $this->get_answers($this->get_answer_table(), $page->id, $this->get_answer_column());
-        // The anonymous mode could not be changed if, there are any answers already given.
-        if (!empty($answers)) {
-            $params['anonymousmode']['cb_with_label_checked'] .= ' disabled ';
-            unset($params['anonymousmode']['cb_with_label_ajaxmethod']);
-        }
-
-        $returnparams['colsettings'] = $params;
-        return $returnparams;
-    }
-
-    /**
-     * Get the bar/pillar background color.
-     *
-     * @param int $pageid
-     * @return string|array
-     * @throws dml_exception
-     */
-    public function get_chartjs_background_color(int $pageid): string|array {
-
-        if (!self::get_tool_config($pageid, 'showanswercorrection')) {
-            return self::CHARTJS_DEFAULT_COLOR;
-        }
-
-        $answeroptions = $this->get_answer_options($pageid);
-
-        $backgroundcolors = [];
-
-        foreach ($answeroptions as $answeroption) {
-            if ($answeroption->optioniscorrect) {
-                $backgroundcolors[] = self::CHARTJS_DEFAULT_COLOR_SUCCESS;
-                continue;
-            }
-            $backgroundcolors[] = self::CHARTJS_DEFAULT_COLOR;
-        }
-
-        return $backgroundcolors;
-    }
-
-    /**
-     * Get the quiz results in chartjs style.
-     * @param object $page
-     * @return array
-     * @throws dml_exception
-     */
-    public function get_quiz_results_chartjs(object $page): array {
-
-        $instance = self::get_instance_by_pageid($page->id);
-        $cm = self::get_cm_by_instance($instance);
-
-        if ($this->get_teacherpermission_to_view($page)) {
-            $answersgrouped = (array)$this->get_answers_grouped(
+    public function export_results(object $page, \context_module $context): array {
+        $visible = (bool) $this->get_teacherpermission_to_view($page);
+        $answersgrouped = [];
+        if ($visible) {
+            $answersgrouped = (array) $this->get_answers_grouped(
                 $this->get_answer_table(),
-                ["pageid" => $page->id],
+                ['pageid' => $page->id],
                 $this->get_answer_column()
             );
-        } else {
-            $answersgrouped = [];
         }
-        $answeroptions = $this->get_answer_options($page->id);
 
         $labels = [];
         $values = [];
-
-        foreach ($answeroptions as $answeroption) {
-            $labels[] = $answeroption->optiontext;
-            if (empty($answersgrouped[$answeroption->id])) {
-                $values[] = 0;
-            } else {
-                $tmp = (array)$answersgrouped[$answeroption->id];
-                $values[] = (int)$tmp['cnt'];
-            }
+        foreach ($this->get_answer_options($page->id) as $option) {
+            $labels[] = format_string((string) $option->optiontext, true, ['context' => $context, 'escape' => false]);
+            $values[] = empty($answersgrouped[$option->id]) ? 0 : (int) ((array) $answersgrouped[$option->id])['cnt'];
         }
 
-        return [$labels, $values];
-    }
+        $visualization = (int) self::get_tool_config($page, 'visualizationtype');
+        $colors = array_values(array_filter(array_map('trim', explode(',', (string) get_config('mod_mootimeter', 'chartcolors')))));
 
-    /**
-     * Get the result params for chartjs (webservice and first page load.)
-     * @param int|object $pageorid
-     * @return array
-     * @throws dml_exception
-     */
-    public function get_result_params_chartjs(int|object $pageorid): array {
-
-        if (!is_object($pageorid)) {
-            $page = $this->get_page($pageorid);
-        } else {
-            $page = $pageorid;
-        }
-
-        [$labels, $values] = $this->get_quiz_results_chartjs($page);
-
-        $visualizationtype = (self::get_tool_config($page->id, 'visualizationtype'))
-            ? self::get_tool_config($page->id, 'visualizationtype')
-            : self::VISUALIZATION_ID_CHART_BAR;
-        $chartsettings = $this->get_visualization_settings_charjs($visualizationtype, $page->id);
-
-        $params = [
-            'chartsettings' => json_encode($chartsettings),
-            'labels' => json_encode($labels),
-            'values' => json_encode($values),
-            'question' => self::get_tool_config($page, 'question'),
+        return [
+            'visible' => $visible,
+            'visualization' => $visualization ?: self::VISUALIZATION_ID_CHART_BAR,
+            'labels' => $labels,
+            'values' => $visible ? $values : [],
+            'colors' => $colors ?: [self::CHARTJS_DEFAULT_COLOR],
         ];
-
-        return $params;
-    }
-
-    /**
-     * Renders the result page of the quiz.
-     *
-     * @param object $page
-     * @param array $defaultparams
-     * @return array
-     * @throws dml_exception
-     */
-    public function get_tool_result_page_params(object $page, array $defaultparams = []): array {
-
-        $paramschart = $this->get_result_params_chartjs($page);
-        $params = array_merge($defaultparams, $paramschart);
-        $params['pageid'] = $page->id;
-        $params['template'] = "mootimetertool_quiz/view_results";
-
-        return $params;
     }
 
     /**
@@ -844,74 +528,45 @@ class quiz extends \mod_mootimeter\toolhelper {
     }
 
     /**
-     * Get the params for answer overview view.
+     * Export the answer overview for moderators, one row per participant.
      *
-     * @param object $cm
      * @param object $page
+     * @param \context_module $context
      * @return array
      */
-    public function get_tool_answer_overview_params(object $cm, object $page): array {
-        global $PAGE;
+    public function export_overview(object $page, \context_module $context): array {
+        $anonymous = !empty(self::get_tool_config($page, 'anonymousmode'));
 
+        $options = [];
+        foreach ($this->get_answer_options($page->id) as $option) {
+            $options[] = [
+                'id' => (int) $option->id,
+                'texthtml' => format_string((string) $option->optiontext, true, ['context' => $context]),
+            ];
+        }
+
+        $rows = [];
         $answers = $this->get_answers($this->get_answer_table(), $page->id, $this->get_answer_column());
-
-        $answeroptions = $this->get_answer_options($page->id);
-
-        $answeroptionstemp = [];
-        foreach ($answeroptions as $answeroption) {
-            $answeroptionstemp[$answeroption->id] = $answeroption->optiontext;
-        }
-
-        $params = [];
-        $params['template'] = 'mootimetertool_quiz/view_overview';
-        $i = 1;
-
-        $renderer = $PAGE->get_renderer('core');
-
-        $answers = $this->convert_answers_to_grouped_answers($answers);
-
-        foreach ($answers as $answer) {
-            $user = $this->get_user_by_id($answer->usermodified);
-
-            $userfullname = '';
-            if (!empty($user) && empty(self::get_tool_config($page->id, "anonymousmode"))) {
-                $userfullname = $user->firstname . " " . $user->lastname;
-            } else if (!empty(self::get_tool_config($page->id, "anonymousmode"))) {
-                $userfullname = get_string('anonymous_name', 'mod_mootimeter');
+        foreach ($this->convert_answers_to_grouped_answers($answers) as $answer) {
+            $fullname = get_string('anonymous_name', 'mod_mootimeter');
+            if (!$anonymous) {
+                $user = $this->get_user_by_id($answer->usermodified);
+                $fullname = $user ? fullname($user) : '';
             }
-
-            // Add delte button to answer.
-            $dataseticonrestart = [
-                'data-ajaxmethode = "mod_mootimeter_delete_answers_of_user"',
-                'data-pageid="' . $page->id . '"',
-                'data-answerid="' . $answer->id . '"',
-                'data-userid="' . $answer->usermodified . '"',
-                'data-confirmationtitlestr="' . get_string('delete_answers_of_user_dialog_title', 'mod_mootimeter') . '"',
-                'data-confirmationquestionstr="' . get_string('delete_answers_of_user_dialog_question', 'mod_mootimeter') . '"',
-                'data-confirmationtype="DELETE_CANCEL"',
+            $rows[] = [
+                'answerid' => (int) $answer->id,
+                'fullname' => $fullname,
+                'optionids' => array_map('intval', explode(';', $answer->optionid)),
+                'time' => userdate($answer->timecreated, get_string('strftimedatetimeshortaccurate', 'core_langconfig')),
             ];
-
-            $inplaceedit = new \mootimetertool_quiz\local\inplace_edit_answer($page, $answer);
-
-            $params['answers'][] = [
-                'nbr' => $i,
-                'userfullname' => $userfullname,
-                'answer' => $inplaceedit->export_for_template($renderer),
-                'datetime' => userdate($answer->timecreated, get_string('strftimedatetimeshortaccurate', 'core_langconfig')),
-                'options' => [
-                    [
-                        'icon' => 'fa-trash',
-                        'id' => 'mtmt_delete_answer_' . $answer->id,
-                        'iconid' => 'mtmt_delete_iconid_' . $answer->id,
-                        'dataset' => join(" ", $dataseticonrestart),
-                    ],
-                ],
-            ];
-
-            $i++;
         }
 
-        return $params;
+        return [
+            'anonymous' => $anonymous,
+            'maxanswers' => $this->get_max_answers($page),
+            'options' => $options,
+            'rows' => $rows,
+        ];
     }
 
     /**
@@ -936,32 +591,5 @@ class quiz extends \mod_mootimeter\toolhelper {
             $answers[$firstansweringroup->id] = $firstansweringroup;
         }
         return $answers;
-    }
-
-    /**
-     * Extracts the answer option names from an array of answer option objects.
-     *
-     * @param array $answeroptions Array of answer options
-     * @return array Array of strings with the names of the answer options
-     */
-    public static function extract_answer_option_strings(array $answeroptions): array {
-        $answeroptionsstrings = [];
-        foreach ($answeroptions as $answeroption) {
-            $answeroptionsstrings[$answeroption->id] = $answeroption->optiontext;
-        }
-        return $answeroptionsstrings;
-    }
-
-    /**
-     * Get the rendered answer overview view.
-     *
-     * @param object $cm
-     * @param object $page
-     * @return string
-     */
-    public function get_answer_overview(object $cm, object $page): string {
-        global $OUTPUT;
-        $params = $this->get_answer_overview($cm, $page);
-        return $OUTPUT->render_from_template("mod_mootimeter/answers_overview", $params);
     }
 }

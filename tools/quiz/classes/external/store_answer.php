@@ -15,11 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Web service to store a answer by the student.
+ * Web service to store the selected options of a participant.
  *
  * @package     mootimetertool_quiz
- * @copyright   2023, ISB Bayern
- * @author      Peter Mayer <peter.mayer@isb.bayern.de>
+ * @copyright   2026 ISB Bayern
+ * @author      Dr. Peter Mayer
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -27,16 +27,20 @@ namespace mootimetertool_quiz\external;
 
 use core_external\external_api;
 use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
-use dml_exception;
-use invalid_parameter_exception;
 use mod_mootimeter\helper;
+use mod_mootimeter\local\external_util;
+use mootimetertool_quiz\quiz;
 
 /**
- * Web service to store an option.
+ * Web service to store the selected options of a participant.
  *
  * @package     mootimetertool_quiz
+ * @copyright   2026 ISB Bayern
+ * @author      Dr. Peter Mayer
+ * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class store_answer extends external_api {
     /**
@@ -46,71 +50,69 @@ class store_answer extends external_api {
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'pageid' => new external_value(PARAM_INT, 'The page id to obtain results for.', VALUE_REQUIRED),
-            'aoids' => new external_value(PARAM_TEXT, 'The ids of the selected answer options in json format.', VALUE_REQUIRED),
+            'pageid' => new external_value(PARAM_INT, 'Page id'),
+            'optionids' => new external_multiple_structure(new external_value(PARAM_INT, 'Selected option id')),
         ]);
     }
 
     /**
-     * Execute the service.
+     * Store the answer.
+     *
      * @param int $pageid
-     * @param string $aoids answer option ids selected by the student
+     * @param int[] $optionids
      * @return array
-     * @throws invalid_parameter_exception
-     * @throws dml_exception
      */
-    public static function execute(int $pageid, string $aoids): array {
+    public static function execute(int $pageid, array $optionids): array {
+        ['pageid' => $pageid, 'optionids' => $optionids] = self::validate_parameters(
+            self::execute_parameters(),
+            ['pageid' => $pageid, 'optionids' => $optionids]
+        );
+        [$page] = external_util::validate_page($pageid);
+        $quiz = quiz::get_for_page($page);
 
-        [
-            'pageid' => $pageid,
-            'aoids' => $aoids,
-        ] = self::validate_parameters(self::execute_parameters(), [
-            'pageid' => $pageid,
-            'aoids' => $aoids,
-        ]);
-        $cm = helper::get_cm_by_pageid($pageid);
-        $cmcontext = \context_module::instance($cm->id);
-        self::validate_context($cmcontext);
-        require_capability('mod/mootimeter:view', $cmcontext);
-
-        try {
-            $aoids = json_decode($aoids);
-
-            $helper = new helper();
-            $page = $helper->get_page($pageid);
-
-            $maxanswersperuser = helper::get_tool_config($page->id, "maxanswersperuser");
-            if (count($aoids) > $maxanswersperuser && (int)$maxanswersperuser > 0) {
-                return ['code' => helper::ERRORCODE_TO_MANY_ANSWERS, 'string' => get_string(
-                    'error_to_many_answers',
-                    'mootimetertool_quiz',
-                    $maxanswersperuser
-                ), ];
-            }
-
-            $classname = "\mootimetertool_" . $page->tool . "\\" . $page->tool;
-            $toolhelper = new $classname();
-            $toolhelper->insert_answer($page, $aoids);
-
-            $return = ['code' => 200, 'string' => 'ok'];
-        } catch (\Exception $e) {
-            $return = ['code' => 500, 'string' => $e->getMessage()];
+        $optionids = array_values(array_intersect(
+            array_unique($optionids),
+            array_map('intval', array_keys($quiz->get_answer_options($page->id)))
+        ));
+        if (empty($optionids)) {
+            return [
+                'code' => helper::ERRORCODE_EMPTY_ANSWER,
+                'message' => get_string('atleastoneanswer', 'mootimetertool_quiz'),
+            ];
         }
-        return $return;
+
+        $maxanswers = $quiz->get_max_answers($page);
+        if ($maxanswers > 0 && count($optionids) > $maxanswers) {
+            return [
+                'code' => helper::ERRORCODE_TO_MANY_ANSWERS,
+                'message' => get_string('error_to_many_answers', 'mootimetertool_quiz', $maxanswers),
+            ];
+        }
+
+        if ($quiz->is_answer_correction_shown($page)) {
+            return [
+                'code' => helper::ERRORCODE_ANSWERING_CLOSED,
+                'message' => get_string('notification_warning_store_answer', 'mod_mootimeter'),
+            ];
+        }
+
+        $quiz->insert_answer($page, $optionids);
+
+        return [
+            'code' => helper::ERRORCODE_OK,
+            'message' => get_string('notification_success_store_answer', 'mod_mootimeter'),
+        ];
     }
 
     /**
-     * Describes the return structure of the service..
+     * Describes the return structure.
      *
      * @return external_single_structure
      */
     public static function execute_returns(): external_single_structure {
-        return new external_single_structure(
-            [
-                'code' => new external_value(PARAM_INT, 'Return code of storage process.'),
-                'string' => new external_value(PARAM_TEXT, 'Return string of storage process.'),
-            ],
-            'What to do after selecting an answer option'
-        );
+        return new external_single_structure([
+            'code' => new external_value(PARAM_INT, 'Result code, 200 on success'),
+            'message' => new external_value(PARAM_TEXT, 'Message for the participant'),
+        ]);
     }
 }

@@ -29,9 +29,9 @@ use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
-use dml_exception;
 use invalid_parameter_exception;
 use mod_mootimeter\helper;
+use mod_mootimeter\local\external_util;
 
 /**
  * Web service to store setting.
@@ -42,6 +42,13 @@ use mod_mootimeter\helper;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class store_setting extends external_api {
+    /** @var array Settings every tool supports, setting name => PARAM_* type. */
+    const COMMON_SETTINGS = [
+        'question' => PARAM_TEXT,
+        'anonymousmode' => PARAM_BOOL,
+        'showonteacherpermission' => PARAM_BOOL,
+    ];
+
     /**
      * Describes the parameters.
      *
@@ -49,10 +56,9 @@ class store_setting extends external_api {
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'pageid' => new external_value(PARAM_INT, 'The page id to obtain results for.', VALUE_REQUIRED),
-            'inputname' => new external_value(PARAM_TEXT, 'The name of the input to store.', VALUE_REQUIRED),
-            'inputvalue' => new external_value(PARAM_TEXT, 'The value of the input to store.', VALUE_REQUIRED),
-            'thisDataset' => new external_value(PARAM_RAW, 'The value of the input to store.', VALUE_REQUIRED),
+            'pageid' => new external_value(PARAM_INT, 'Page id'),
+            'name' => new external_value(PARAM_ALPHANUMEXT, 'Name of the setting'),
+            'value' => new external_value(PARAM_RAW, 'New value, cleaned according to the setting type'),
         ]);
     }
 
@@ -60,59 +66,42 @@ class store_setting extends external_api {
      * Execute the service.
      *
      * @param int $pageid
-     * @param string $inputname
-     * @param string $inputvalue
-     * @param string $datasetjson
+     * @param string $name
+     * @param string $value
      * @return array
-     * @throws invalid_parameter_exception
-     * @throws dml_exception
      */
-    public static function execute(int $pageid, string $inputname, string $inputvalue, string $datasetjson = ""): array {
+    public static function execute(int $pageid, string $name, string $value): array {
+        ['pageid' => $pageid, 'name' => $name, 'value' => $value] = self::validate_parameters(
+            self::execute_parameters(),
+            ['pageid' => $pageid, 'name' => $name, 'value' => $value]
+        );
+        [$page] = external_util::validate_page($pageid, true);
 
-        [
-            'pageid' => $pageid,
-            'inputname' => $inputname,
-            'inputvalue' => $inputvalue,
-            'thisDataset' => $datasetjson,
-        ] = self::validate_parameters(self::execute_parameters(), [
-            'pageid' => $pageid,
-            'inputname' => $inputname,
-            'inputvalue' => $inputvalue,
-            'thisDataset' => $datasetjson,
-        ]);
-
-        $cm = helper::get_cm_by_pageid($pageid);
-        $cmcontext = \context_module::instance($cm->id);
-        self::validate_context($cmcontext);
-
-        if (!has_capability('mod/mootimeter:moderator', $cmcontext)) {
-            return ['code' => 403, 'string' => 'Forbidden'];
+        $definitions = self::COMMON_SETTINGS + helper::get_toolhelper($page->tool)->get_setting_definitions();
+        if (!array_key_exists($name, $definitions)) {
+            throw new invalid_parameter_exception('Unknown setting: ' . $name);
         }
 
-        try {
-            $helper = new helper();
-            $helper->set_tool_config($pageid, $inputname, $inputvalue);
-            $return = ['code' => 200, 'string' => 'ok'];
-        } catch (\Exception $e) {
-            $return = ['code' => 500, 'string' => $e->getMessage()];
+        $value = clean_param($value, $definitions[$name]);
+        if ($definitions[$name] === PARAM_BOOL) {
+            $value = $value ? '1' : '0';
+        } else if ($definitions[$name] === PARAM_INT) {
+            $value = (string) max(0, (int) $value);
         }
 
-        return $return;
+        (new helper())->set_tool_config($page, $name, (string) $value);
+
+        return ['value' => (string) helper::get_tool_config($page, $name)];
     }
 
     /**
-     * Describes the return structure of the service..
+     * Describes the return structure.
      *
      * @return external_single_structure
      */
     public static function execute_returns(): external_single_structure {
-        return new external_single_structure(
-            [
-                'code' => new external_value(PARAM_INT, 'Return code of storage process.'),
-                'string' => new external_value(PARAM_TEXT, 'Return string of storage process.'),
-                'options' => new external_value(PARAM_TEXT, 'Additional options for js executions', VALUE_OPTIONAL, ""),
-            ],
-            'Set Setting State.'
-        );
+        return new external_single_structure([
+            'value' => new external_value(PARAM_RAW, 'The stored value, it may differ from the requested value'),
+        ]);
     }
 }

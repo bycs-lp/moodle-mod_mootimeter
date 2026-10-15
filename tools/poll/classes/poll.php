@@ -83,27 +83,33 @@ class poll extends \mootimetertool_quiz\quiz {
     }
 
     /**
-     * Handels inplace_edit.
+     * Polls have no correct options.
      *
-     * @param string $itemtype
-     * @param string $itemid
-     * @param mixed $newvalue
-     * @return mixed
+     * @return bool
      */
-    public function handle_inplace_edit(string $itemtype, string $itemid, mixed $newvalue) {
-        if ($itemtype === 'editanswerselect') {
-            return \mootimetertool_quiz\local\inplace_edit_answer::update($itemid, $newvalue);
-        }
+    public function supports_correct_options(): bool {
+        return false;
     }
 
     /**
-     * Get content menu bar params.
+     * Get the tool specific page settings that may be stored by moderators.
      *
-     * @param object $page
-     * @param array $params Defaultparams
-     * @return mixed
+     * @return array of setting name => PARAM_* type
      */
-    public function get_content_menu_tool_params(object $page, array $params) {
-        return $params;
+    public function get_setting_definitions(): array {
+        $definitions = parent::get_setting_definitions();
+        unset($definitions['showanswercorrection']);
+        return $definitions;
+    }
+
+    /**
+     * The poll reuses the React components of the quiz, but has no answer correction.
+     *
+     * @return array
+     */
+    public function get_react_components(): array {
+        $components = (new \mootimetertool_quiz\quiz())->get_react_components();
+        $components['menu'] = '';
+        return $components;
     }
 }

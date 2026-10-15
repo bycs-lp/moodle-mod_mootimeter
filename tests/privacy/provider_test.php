@@ -114,6 +114,7 @@ final class provider_test extends provider_testcase {
         $this->mootimeter[1]['pages'][1]['page'] = $helper->get_page($helper->store_page((object) $record));
         $pageid = $this->mootimeter[1]['pages'][1]['page']->id;
         $helper->toggle_state($this->mootimeter[1]['pages'][1]['page'], 'page_visibility');
+        $helper->set_tool_config($pageid, 'maxanswersperuser', '0');
 
         // Insert some answeroption text.
         $answeroptions = $mtmthelper->get_answer_options($pageid);
@@ -132,6 +133,7 @@ final class provider_test extends provider_testcase {
         $this->mootimeter[2]['pages'][1]['page'] = $helper->get_page($helper->store_page((object) $record));
         $pageid = $this->mootimeter[2]['pages'][1]['page']->id;
         $helper->toggle_state($this->mootimeter[2]['pages'][1]['page'], 'page_visibility');
+        $helper->set_tool_config($pageid, 'maxanswersperuser', '0');
 
         // Insert some answeroption text.
         $answeroptions = $mtmthelper->get_answer_options($pageid);

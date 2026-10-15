@@ -15,11 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Web service to get all answers.
+ * Web service returning the change timestamps for the frontend polling.
  *
  * @package     mod_mootimeter
- * @copyright   2023, ISB Bayern
- * @author      Peter Mayer <peter.mayer@isb.bayern.de>
+ * @copyright   2026 ISB Bayern
+ * @author      Dr. Peter Mayer
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -30,13 +30,15 @@ use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
 use mod_mootimeter\helper;
+use mod_mootimeter\local\exporter;
+use mod_mootimeter\local\external_util;
 
 /**
- * Web service to get a state.
+ * Web service returning the change timestamps for the frontend polling.
  *
  * @package     mod_mootimeter
- * @copyright   2023, ISB Bayern
- * @author      Peter Mayer <peter.mayer@isb.bayern.de>
+ * @copyright   2026 ISB Bayern
+ * @author      Dr. Peter Mayer
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class get_state extends external_api {
@@ -47,55 +49,46 @@ class get_state extends external_api {
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'pageid' => new external_value(PARAM_INT, 'The page id to obtain results for.', VALUE_REQUIRED),
-            'statename' => new external_value(PARAM_TEXT, 'The name of the state to be toggled', VALUE_REQUIRED),
+            'cmid' => new external_value(PARAM_INT, 'Course module id'),
+            'pageid' => new external_value(PARAM_INT, 'Currently selected page id, 0 for none', VALUE_DEFAULT, 0),
         ]);
     }
 
     /**
-     * Execute the service.
+     * Return the change timestamps of the page list and of the selected page.
      *
+     * A page that is not accessible (anymore) is reported with timestamps 0, the page list tells the client what to show.
+     *
+     * @param int $cmid
      * @param int $pageid
-     * @param string $statename
      * @return array
      */
-    public static function execute(int $pageid, string $statename): array {
-        [
-            'pageid' => $pageid,
-            'statename' => $statename,
-        ] = self::validate_parameters(self::execute_parameters(), [
-            'pageid' => $pageid,
-            'statename' => $statename,
-        ]);
-        $cm = helper::get_cm_by_pageid($pageid);
-        $cmcontext = \context_module::instance($cm->id);
-        self::validate_context($cmcontext);
-        require_capability('mod/mootimeter:view', $cmcontext);
+    public static function execute(int $cmid, int $pageid = 0): array {
+        global $DB;
 
-        try {
-            $mtmhelper = new helper();
-            $state = $mtmhelper->get_tool_config($pageid, $statename);
+        ['cmid' => $cmid, 'pageid' => $pageid] = self::validate_parameters(
+            self::execute_parameters(),
+            ['cmid' => $cmid, 'pageid' => $pageid]
+        );
+        [$cm, , $ismoderator] = external_util::validate_cm($cmid);
 
-            $return = ['code' => 200, 'string' => 'ok', 'state' => (int)$state];
-        } catch (\Exception $e) {
-            $return = ['code' => 500, 'string' => $e->getMessage(), 'state' => 0];
+        $page = null;
+        if ($pageid) {
+            $page = $DB->get_record('mootimeter_pages', ['id' => $pageid, 'instance' => $cm->instance]) ?: null;
+            if ($page && !$ismoderator && (int) $page->visible !== helper::PAGE_VISIBLE) {
+                $page = null;
+            }
         }
-        return $return;
+
+        return exporter::export_state($cm, $page);
     }
 
     /**
-     * Describes the return structure of the service..
+     * Describes the return structure.
      *
      * @return external_single_structure
      */
     public static function execute_returns(): external_single_structure {
-        return new external_single_structure(
-            [
-                'code' => new external_value(PARAM_INT, 'Return code of storage process.'),
-                'string' => new external_value(PARAM_TEXT, 'Return string of storage process.'),
-                'state' => new external_value(PARAM_INT, 'The state value'),
-            ],
-            'Information about state toggle process'
-        );
+        return exporter::state_structure();
     }
 }

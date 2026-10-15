@@ -29,16 +29,15 @@ require_once(__DIR__ . '/lib.php');
 // Course module id.
 $id = optional_param('id', 0, PARAM_INT);
 $action = optional_param('a', "", PARAM_ALPHA);
-$paramtool = optional_param('tool', "", PARAM_ALPHA);
 $pageid = optional_param('pageid', 0, PARAM_INT);
 $isresultpage = optional_param('r', false, PARAM_BOOL);
 $isansweroverview = optional_param('o', false, PARAM_BOOL);
+$isfullscreen = optional_param('f', false, PARAM_BOOL);
 $helper = new \mod_mootimeter\helper();
 
 // Set the pageid pageparam for $PAGE object.
 if ($pageid) {
     $pageparams['pageid'] = $pageid;
-    $page = $helper->get_page($pageid);
 }
 
 // Activity instance id.
@@ -61,7 +60,6 @@ $pageparams['id'] = $cm->id;
 require_login($course, true, $cm);
 $modulecontext = context_module::instance($cm->id);
 
-$mt = new \mod_mootimeter\plugininfo\mootimetertool();
 $pages = $helper->get_pages($cm->instance);
 
 // Check if this page is in the recent mootimeter instance.
@@ -84,16 +82,26 @@ $PAGE->set_title(format_string($moduleinstance->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($modulecontext);
 
-$pagehelper = new \mod_mootimeter\local\pagelist();
+$view = 'question';
+if ($action === 'addpage') {
+    $view = 'addpage';
+} else if ($isresultpage) {
+    $view = 'results';
+} else if ($isansweroverview) {
+    $view = 'overview';
+}
 
-$params = [
-    'cmid' => $cm->id,
+$props = [
+    'cmid' => (int) $cm->id,
+    'pageid' => (int) $pageid,
+    'view' => $view,
+    'fullscreen' => (bool) $isfullscreen,
+    'ismoderator' => has_capability('mod/mootimeter:moderator', $modulecontext),
     'isediting' => $PAGE->user_is_editing(),
-    'refreshinterval' => get_config('mod_mootimeter', 'refreshinterval'),
+    'refreshinterval' => (int) get_config('mod_mootimeter', 'refreshinterval'),
 ];
-$params['mootimeterstate-dataset'] = \mod_mootimeter\local\mootimeterstate::get_mootimeterstate_renderable();
 
 // START OUTPUT.
 echo $OUTPUT->header();
-echo $OUTPUT->render_from_template("mod_mootimeter/main_screen", $params);
+echo $OUTPUT->render_from_template('mod_mootimeter/main', ['props' => json_encode($props)]);
 echo $OUTPUT->footer();

@@ -212,39 +212,6 @@ function mootimeter_trigger_event_course_module_viewed(object $moduleinstance, o
 }
 
 /**
- * Routing the callbacks for inplace editing to the specific tools.
- *
- * @param mixed $itemtype
- * @param mixed $itemid
- * @param mixed $newvalue
- * @return string|void
- */
-function mootimeter_inplace_editable($itemtype, $itemid, $newvalue) {
-
-    [$pageid, $answerid] = explode("_", $itemid);
-    $instance = \mod_mootimeter\helper::get_instance_by_pageid($pageid);
-    $cm = \mod_mootimeter\helper::get_cm_by_instance($instance);
-    $modulecontext = \context_module::instance($cm->id);
-
-    \core_external\external_api::validate_context($modulecontext);
-
-    [$tool, $type] = explode("_", $itemtype);
-
-    $classname = "\mootimetertool_" . $tool . "\\" . $tool;
-
-    if (!class_exists($classname)) {
-        return "Class '" . $tool . "' is missing in tool " . $tool;
-    }
-
-    $toolhelper = new $classname();
-
-    $inplaceedit = $toolhelper->handle_inplace_edit($type, $itemid, $newvalue);
-    $helper = new \mod_mootimeter\helper();
-    $helper->notify_data_changed($helper->get_page($pageid), 'answers');
-    return $inplaceedit;
-}
-
-/**
  * Callback function for the form definition of the reset course functionality.
  *
  * @param MoodleQuickform $mform The mform object to use

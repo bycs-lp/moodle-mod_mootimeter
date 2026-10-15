@@ -26,68 +26,60 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
-    'mootimetertool_quiz_store_answeroption' => [
-        'classname'     => 'mootimetertool_quiz\external\store_answeroption',
-        'methodname'    => 'execute',
-        'description'   => 'Store an answer option of mootimetertool_quiz changed by the teacher',
-        'type'          => 'write',
+    'mootimetertool_quiz_get_page_data' => [
+        'classname'     => 'mootimetertool_quiz\external\get_page_data',
+        'description'   => 'Get the options, the own selection and the settings of a quiz or poll page.',
+        'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'mod/mootimeter:view',
     ],
     'mootimetertool_quiz_store_answer' => [
         'classname'     => 'mootimetertool_quiz\external\store_answer',
-        'methodname'    => 'execute',
-        'description'   => 'Store an answer of mootimetertool_quiz by the student',
+        'description'   => 'Store the selected options of the current user.',
         'type'          => 'write',
         'ajax'          => true,
         'capabilities'  => 'mod/mootimeter:view',
     ],
-    'mootimetertool_quiz_new_answeroption' => [
-        'classname'     => 'mootimetertool_quiz\external\new_answeroption',
-        'methodname'    => 'execute',
-        'description'   => 'Store new answer option of mootimetertool_quiz.',
-        'type'          => 'write',
+    'mootimetertool_quiz_get_results' => [
+        'classname'     => 'mootimetertool_quiz\external\get_results',
+        'description'   => 'Get the chart data of a quiz or poll page.',
+        'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'mod/mootimeter:view',
     ],
-    'mootimetertool_quiz_store_answeroption_text' => [
-        'classname'     => 'mootimetertool_quiz\external\store_answeroption_text',
-        'methodname'    => 'execute',
-        'description'   => 'Store new answer option text.',
+    'mootimetertool_quiz_add_option' => [
+        'classname'     => 'mootimetertool_quiz\external\add_option',
+        'description'   => 'Add an answer option.',
         'type'          => 'write',
         'ajax'          => true,
-        'capabilities'  => 'mod/mootimeter:view',
+        'capabilities'  => 'mod/mootimeter:moderator',
     ],
-    'mootimetertool_quiz_store_answeroption_is_correct' => [
-        'classname'     => 'mootimetertool_quiz\external\store_answeroption_is_correct',
-        'methodname'    => 'execute',
-        'description'   => 'Store new answer option is correct state.',
+    'mootimetertool_quiz_update_option' => [
+        'classname'     => 'mootimetertool_quiz\external\update_option',
+        'description'   => 'Change the text or the correctness of an answer option.',
         'type'          => 'write',
         'ajax'          => true,
-        'capabilities'  => 'mod/mootimeter:view',
+        'capabilities'  => 'mod/mootimeter:moderator',
     ],
-    'mootimetertool_quiz_remove_answeroption' => [
-        'classname'     => 'mootimetertool_quiz\external\remove_answeroption',
-        'methodname'    => 'execute',
-        'description'   => 'Store new answer option is correct state.',
+    'mootimetertool_quiz_delete_option' => [
+        'classname'     => 'mootimetertool_quiz\external\delete_option',
+        'description'   => 'Delete an answer option including its answers.',
         'type'          => 'write',
         'ajax'          => true,
-        'capabilities'  => 'mod/mootimeter:view',
+        'capabilities'  => 'mod/mootimeter:moderator',
     ],
-    'mootimetertool_quiz_store_visualizationtype' => [
-        'classname'     => 'mootimetertool_quiz\external\store_visualizationtype',
-        'methodname'    => 'execute',
-        'description'   => 'Store new answer option is correct state.',
-        'type'          => 'write',
+    'mootimetertool_quiz_get_overview' => [
+        'classname'     => 'mootimetertool_quiz\external\get_overview',
+        'description'   => 'Get the answers of all participants.',
+        'type'          => 'read',
         'ajax'          => true,
-        'capabilities'  => 'mod/mootimeter:view',
+        'capabilities'  => 'mod/mootimeter:moderator',
     ],
-    'mootimetertool_quiz_get_answers' => [
-        'classname'     => 'mootimetertool_quiz\external\get_answers',
-        'methodname'    => 'execute',
-        'description'   => 'Get Answers.',
+    'mootimetertool_quiz_update_user_answer' => [
+        'classname'     => 'mootimetertool_quiz\external\update_user_answer',
+        'description'   => 'Change the selection of a participant.',
         'type'          => 'write',
         'ajax'          => true,
-        'capabilities'  => 'mod/mootimeter:view',
+        'capabilities'  => 'mod/mootimeter:moderator',
     ],
 ];

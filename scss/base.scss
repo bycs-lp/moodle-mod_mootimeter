@@ -52,6 +52,7 @@ $feedback-success-100: #d9f6e0;
     width: 100%;
     max-width: unset;
     height: 100vh;
+    max-height: none;
     overflow: auto;
     background-color: $grey-100;
     z-index: 1051;
@@ -85,6 +86,11 @@ $feedback-success-100: #d9f6e0;
     display: flex;
     flex: 27.5rem 2 0;
     overflow-y: auto;
+
+    &.mootimeter-pagesonly {
+      flex: 0 0 auto;
+      width: auto;
+    }
   }
 }
 

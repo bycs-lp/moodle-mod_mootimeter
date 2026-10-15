@@ -26,20 +26,39 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
+    'mootimetertool_wordcloud_get_page_data' => [
+        'classname'     => 'mootimetertool_wordcloud\external\get_page_data',
+        'description'   => 'Get the own answers and the settings of a wordcloud page.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'mod/mootimeter:view',
+    ],
     'mootimetertool_wordcloud_store_answer' => [
         'classname'     => 'mootimetertool_wordcloud\external\store_answer',
-        'methodname'    => 'execute',
-        'description'   => 'Store answer of mootimetertool_wordcloud.',
+        'description'   => 'Store an answer of the current user.',
         'type'          => 'write',
         'ajax'          => true,
         'capabilities'  => 'mod/mootimeter:view',
     ],
-    'mootimetertool_wordcloud_get_answers' => [
-        'classname'     => 'mootimetertool_wordcloud\external\get_answers',
-        'methodname'    => 'execute',
-        'description'   => 'Store answer of mootimetertool_wordcloud.',
-        'type'          => 'write',
+    'mootimetertool_wordcloud_get_results' => [
+        'classname'     => 'mootimetertool_wordcloud\external\get_results',
+        'description'   => 'Get the counted answers for the wordcloud.',
+        'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'mod/mootimeter:view',
+    ],
+    'mootimetertool_wordcloud_get_overview' => [
+        'classname'     => 'mootimetertool_wordcloud\external\get_overview',
+        'description'   => 'Get the answers of all participants.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'mod/mootimeter:moderator',
+    ],
+    'mootimetertool_wordcloud_update_answer' => [
+        'classname'     => 'mootimetertool_wordcloud\external\update_answer',
+        'description'   => 'Change an answer of a participant.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'mod/mootimeter:moderator',
     ],
 ];

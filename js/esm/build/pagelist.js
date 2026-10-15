@@ -1,0 +1,10 @@
+import{useState as f}from"react";import{useStrings as _}from"./lib/hooks";import{Fragment as y,jsx as a,jsxs as u}from"react/jsx-runtime";function v({pages:r,selected:d,isediting:i,onSelect:p,onAddPage:b,onMove:m}){let l=_("mod_mootimeter",["addpage","dialogue_move_pagelistelement"]),[n,s]=f(null),c=(e,o,t)=>{e.stopPropagation(),e.key==="ArrowUp"&&t>0?(e.preventDefault(),m(o.id,t-1)):e.key==="ArrowDown"&&t<r.length-1&&(e.preventDefault(),m(o.id,t+1))},g=e=>{n!==null&&r[e]?.id!==n&&m(n,e),s(null)};return u(y,{children:[a("ul",{id:"mootimeter-pages-list",children:r.map((e,o)=>u("li",{className:"mootimeter_pages_li d-flex"+(e.id===d?" active":"")+(e.visible?"":" pageunvisible"),title:e.title,"data-pageid":e.id,draggable:i,onDragStart:()=>s(e.id),onDragOver:t=>i&&t.preventDefault(),onDrop:t=>{t.preventDefault(),g(o)},onDragEnd:()=>s(null),children:[i&&a("button",{type:"button",className:"mootimeter_page_move",title:l.dialogue_move_pagelistelement,"aria-label":`${l.dialogue_move_pagelistelement} ${e.number}`,onKeyDown:t=>c(t,e,o),children:a("i",{className:"fa fa-arrows","aria-hidden":"true"})}),u("button",{type:"button",className:"mootimeter_page_select","aria-label":`${e.number} ${e.title}`,"aria-current":e.id===d?"page":void 0,onClick:()=>p(e.id),children:[a("span",{className:"mootimeter_pages_count",children:e.number}),a("img",{src:e.iconurl,width:"35px",className:"m-1",alt:""})]})]},e.id))}),i&&a("ul",{id:"mootimeter-addpage-button",children:a("li",{className:"d-flex mootimeter_addpage",title:l.addpage,children:a("button",{type:"button",className:"mootimeter_page_select","aria-label":l.addpage,onClick:b,children:a("i",{className:"fa fa-plus p-1 mx-1 my-auto","aria-hidden":"true"})})})})]})}export{v as default};
+/**
+ * Sortable list of the pages of a mootimeter instance.
+ *
+ * @module     mod_mootimeter/pagelist
+ * @copyright  2026 ISB Bayern
+ * @author     Dr. Peter Mayer
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+//# sourceMappingURL=pagelist.js.map

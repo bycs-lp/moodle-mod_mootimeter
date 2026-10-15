@@ -79,23 +79,6 @@ abstract class toolhelper extends helper {
     abstract public function delete_page_tool(object $page);
 
     /**
-     * Get all parameters that are necessary for rendering the tools view.
-     *
-     * @param object $page
-     * @return array
-     */
-    abstract public function get_renderer_params(object $page);
-
-    /**
-     * Get the settings column.
-     *
-     * @param object $page
-     * @param array $defaultparams
-     * @return mixed
-     */
-    abstract public function get_col_settings_tool_params(object $page, array $defaultparams);
-
-    /**
      * Will be executed after the page is created.
      * @param object $page
      * @return void
@@ -103,22 +86,41 @@ abstract class toolhelper extends helper {
     abstract public function hook_after_new_page_created(object $page);
 
     /**
-     * Handels inplace_edit.
-     * @param string $itemtype
-     * @param string $itemid
-     * @param mixed $newvalue
-     * @return mixed
-     */
-    abstract public function handle_inplace_edit(string $itemtype, string $itemid, mixed $newvalue);
-
-    /**
-     * Get the rendered answer overview view.
+     * Get the short name of the tool, e.g. "quiz".
      *
-     * @param object $cm
-     * @param object $page
      * @return string
      */
-    abstract public function get_answer_overview(object $cm, object $page): string;
+    public function get_toolname(): string {
+        return preg_replace('/.*\\\\/', '', get_class($this));
+    }
+
+    /**
+     * Get the ESM specifiers of the React components rendering the tool.
+     *
+     * Each component is mounted by mod_mootimeter with the props described in mod_mootimeter/lib/types.
+     * The optional menu component adds tool specific buttons to the content menu of moderators.
+     *
+     * @return array with the keys content, settings, results, overview and menu (empty string for none)
+     */
+    public function get_react_components(): array {
+        $prefix = '@moodle/lms/mootimetertool_' . $this->get_toolname() . '/';
+        return [
+            'content' => $prefix . 'content',
+            'settings' => $prefix . 'settings',
+            'results' => $prefix . 'results',
+            'overview' => $prefix . 'overview',
+            'menu' => '',
+        ];
+    }
+
+    /**
+     * Get the tool specific page settings that may be stored by moderators.
+     *
+     * @return array of setting name => PARAM_* type
+     */
+    public function get_setting_definitions(): array {
+        return [];
+    }
 
     /**
      * Checks if a select option is selected.

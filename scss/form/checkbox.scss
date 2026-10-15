@@ -5,6 +5,11 @@
     cursor: pointer;
     margin: 0;
 
+    &:has(input:disabled) {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
     .checkbox-icon-wrapper {
       @include flex-center-all;
       position: relative;
