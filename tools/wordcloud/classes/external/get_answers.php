@@ -70,8 +70,14 @@ class get_answers extends external_api {
         self::validate_context($cmcontext);
         require_capability('mod/mootimeter:view', $cmcontext);
 
+        $helper = new helper();
+        $page = $helper->get_page($pageid);
+        if (empty($page)) {
+            throw new \moodle_exception('invalidaccess', 'error');
+        }
+
         $wordcloud = new wordcloud();
-        $answerlist = $wordcloud->get_answerlist_wordcloud($pageid);
+        $answerlist = $wordcloud->get_answerlist_wordcloud($page->id);
 
         return ['answerlist' => $answerlist];
     }
