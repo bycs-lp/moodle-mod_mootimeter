@@ -170,6 +170,42 @@ class wordcloud extends \mod_mootimeter\toolhelper {
     }
 
     /**
+     * Get the results of a page for the CSV download: the counts per term and all answers.
+     *
+     * @param object $page
+     * @param \context_module $context
+     * @return array
+     */
+    public function export_results_csv(object $page, \context_module $context): array {
+        $summary = [];
+        foreach ($this->get_answers_grouped(self::ANSWER_TABLE, ['pageid' => $page->id]) as $row) {
+            $row = (array) $row;
+            $summary[] = [(string) $row['answer'], (int) $row['cnt']];
+        }
+        usort($summary, fn(array $a, array $b): int => $b[1] <=> $a[1] ?: strcmp($a[0], $b[0]));
+
+        $answers = [];
+        foreach ($this->export_overview($page)['rows'] as $row) {
+            $answers[] = [$row['fullname'], $row['text'], $row['time']];
+        }
+
+        return [
+            [
+                'columns' => [get_string('csv_term', 'mootimetertool_wordcloud'), get_string('csv_count', 'mod_mootimeter')],
+                'rows' => $summary,
+            ],
+            [
+                'columns' => [
+                    get_string('csv_participant', 'mod_mootimeter'),
+                    get_string('csv_answer', 'mod_mootimeter'),
+                    get_string('csv_time', 'mod_mootimeter'),
+                ],
+                'rows' => $answers,
+            ],
+        ];
+    }
+
+    /**
      * Change the text of an answer. Only moderators may change answers.
      *
      * @param object $page

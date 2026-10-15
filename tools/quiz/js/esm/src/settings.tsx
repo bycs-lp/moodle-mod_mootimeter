@@ -32,8 +32,16 @@ import {
     TransparentButton,
 } from '@moodle/lms/mod_mootimeter/lib/components';
 import {useStrings, useWebservice} from '@moodle/lms/mod_mootimeter/lib/hooks';
-import {callWs, displayException, storeSetting, wwwroot} from '@moodle/lms/mod_mootimeter/lib/moodle';
-import type {ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
+import {
+    addToast,
+    callWs,
+    displayException,
+    getString,
+    requireAmd,
+    storeSetting,
+    wwwroot,
+} from '@moodle/lms/mod_mootimeter/lib/moodle';
+import type {PageInfo, ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
 import {VISUALIZATION_BAR, VISUALIZATION_PIE, VISUALIZATION_PILLAR} from './types';
 import type {QuizData, QuizOption} from './types';
 
@@ -118,6 +126,47 @@ function OptionEditor(props: OptionEditorProps): React.JSX.Element {
     );
 }
 
+type ImportOptionsProps = {
+    page: PageInfo;
+    onImported: () => void;
+};
+
+/**
+ * Opens the modal form that imports answer options from a CSV file.
+ *
+ * @param {ImportOptionsProps} props
+ * @returns {React.JSX.Element}
+ */
+function ImportOptions({page, onImported}: ImportOptionsProps): React.JSX.Element {
+    const s = useStrings('mootimetertool_quiz', ['import_options', 'import_options_submit']);
+
+    const openForm = async() => {
+        try {
+            const ModalForm = await requireAmd('core_form/modalform');
+            const form = new ModalForm({
+                formClass: 'mootimetertool_quiz\\form\\import_options',
+                args: {pageid: page.id},
+                modalConfig: {title: s.import_options},
+                saveButtonText: s.import_options_submit,
+            });
+            form.addEventListener(form.events.FORM_SUBMITTED, async(e: CustomEvent<{count: number}>) => {
+                addToast(await getString('import_options_success', 'mootimetertool_quiz', e.detail.count));
+                onImported();
+            });
+            form.show();
+        } catch (error) {
+            displayException(error);
+        }
+    };
+
+    return (
+        <div className="button-icon-with-text" onClick={openForm}>
+            <TransparentButton icon="fa-file-csv" title={s.import_options} className="mtmt-import-options" />
+            <p>{s.import_options}</p>
+        </div>
+    );
+}
+
 /**
  * Answer options, visualization and further settings.
  *
@@ -176,10 +225,11 @@ export default function Settings({page, settingsVersion, refresh}: ToolViewProps
                 ))}
             </div>
 
-            <div className="button-icon-with-text">
-                <TransparentButton icon="fa-plus" title={s.add_question_option} onClick={addOption} />
+            <div className="button-icon-with-text" onClick={addOption}>
+                <TransparentButton icon="fa-plus" title={s.add_question_option} />
                 <p>{s.add_question_option}</p>
             </div>
+            <ImportOptions page={page} onImported={refresh} />
 
             <Divider />
 

@@ -104,6 +104,21 @@ final class wordcloud_services_test extends advanced_testcase {
     }
 
     /**
+     * The CSV export contains the counted terms and all answers.
+     */
+    public function test_export_results_csv(): void {
+        [$page, $student, $teacher] = $this->setup_page(helper::PAGE_VISIBLE);
+        $this->toolgenerator->create_answer($page->id, $student->id, 'secretword');
+        $this->toolgenerator->create_answer($page->id, $student->id, 'other');
+
+        $sections = (new \mootimetertool_wordcloud\wordcloud())->export_results_csv($page, \context_module::instance($page->cmid));
+
+        $this->assertEquals([['secretword', 2], ['other', 1]], $sections[0]['rows']);
+        $this->assertCount(3, $sections[1]['rows']);
+        $this->assertContains(fullname($teacher), array_column($sections[1]['rows'], 0));
+    }
+
+    /**
      * Only moderators of the page may change an answer.
      */
     public function test_update_answer_requires_moderator(): void {

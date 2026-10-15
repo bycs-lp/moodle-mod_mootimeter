@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['allowduplicateanswers'] = 'Allow students to submit the same answer multiple times';
 $string['answers_max_number'] = 'Maximum number of answers per participant (0: unlimited)';
+$string['csv_term'] = 'Term';
 $string['error_empty_answers'] = 'Empty answers are not allowed';
 $string['error_no_duplicate_answers'] = 'Duplicate answers are not allowed';
 $string['error_to_many_answers'] = 'You reached the maximum amount of answers';

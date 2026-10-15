@@ -63,7 +63,8 @@ export function IconButton({icon, title, onClick, active = false, disabled = fal
 type TransparentButtonProps = {
     icon: string;
     title: string;
-    onClick: () => void;
+    // Omitted when a surrounding element handles the click.
+    onClick?: () => void;
     className?: string;
 };
 

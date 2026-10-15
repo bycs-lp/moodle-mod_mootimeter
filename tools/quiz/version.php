@@ -25,6 +25,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026101500;
+$plugin->version   = 2026101502;
 $plugin->requires  = 2026042000;
 $plugin->component = 'mootimetertool_quiz';

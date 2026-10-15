@@ -123,6 +123,19 @@ abstract class toolhelper extends helper {
     }
 
     /**
+     * Get the results of a page for the CSV download.
+     *
+     * Each section is written as a header row followed by its rows, sections are separated by an empty row.
+     *
+     * @param object $page
+     * @param \context_module $context
+     * @return array list of sections with the keys columns (string[]) and rows (array[])
+     */
+    public function export_results_csv(object $page, \context_module $context): array {
+        return [];
+    }
+
+    /**
      * Checks if a select option is selected.
      *
      * @param int $optionid

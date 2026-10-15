@@ -1,6 +1,5 @@
 .mootimetercontainer {
   max-width: 1400px;
-  max-height: 850px;
   overflow: auto;
 }
 .mootimetercontainer *:focus {
@@ -36,6 +35,12 @@
   .mootimetercontainer .mootimetercolpages,
   .mootimetercontainer .mootimetercolcontent {
     min-height: 646px;
+  }
+}
+@media screen and (min-width: 680px) {
+  .mootimetercontainer .mootimetercolpages {
+    contain: size;
+    overflow-y: auto;
   }
 }
 .mootimetercontainer #mootimeter-col-left {
@@ -839,15 +844,17 @@
   border: 0.0938rem solid #d33f01;
   border-radius: 0.125rem;
   width: 1.25rem !important;
+  min-width: 1.25rem;
+  flex-shrink: 0;
   height: 1.25rem;
   margin-right: 0.625rem;
-  padding: 0.125rem;
+  padding: 0;
 }
 .mootimeter-checkbox label .checkbox-icon-wrapper .checkbox-icon {
-  font-size: 1rem;
+  font-size: 0.875rem;
   margin: 0;
-  width: 1rem;
-  height: 1rem;
+  width: 0.875rem;
+  height: 0.875rem;
 }
 .mootimeter-checkbox label input[type=checkbox] {
   display: none;
@@ -888,16 +895,18 @@
   position: relative;
   border: 0.0938rem solid #d33f01;
   border-radius: 3.125rem;
-  width: 1.25rem;
+  width: 1.25rem !important;
+  min-width: 1.25rem;
+  flex-shrink: 0;
   height: 1.25rem;
   margin-right: 0.625rem;
-  padding: 0.125rem;
+  padding: 0;
 }
 .mootimeter-radio-btn label .radio-btn-icon-wrapper .radio-btn-icon {
-  font-size: 1rem;
+  font-size: 0.875rem;
   margin: 0;
-  width: 1rem;
-  height: 1rem;
+  width: 0.875rem;
+  height: 0.875rem;
 }
 .mootimeter-radio-btn label input[type=radio] {
   display: none;

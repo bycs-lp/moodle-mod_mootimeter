@@ -66,7 +66,12 @@ export function useWebservice<T>(methodname: string, args: Record<string, unknow
         let active = true;
         callWs<T>(methodname, args)
             .then((response) => active && setData(response))
-            .catch(displayException);
+            .catch((error) => {
+                // The app shows a notice when the page is hidden for participants.
+                if (error?.errorcode !== 'pagelocked') {
+                    displayException(error);
+                }
+            });
         return () => {
             active = false;
         };

@@ -78,7 +78,7 @@ class external_util {
         $ismoderator = has_capability('mod/mootimeter:moderator', $context);
 
         if (!$ismoderator && (int) $page->visible !== helper::PAGE_VISIBLE) {
-            throw new moodle_exception('pageaccessexception', 'mod_mootimeter');
+            throw new moodle_exception('pagelocked', 'mod_mootimeter');
         }
 
         return [$page, $cm, $context, $ismoderator];

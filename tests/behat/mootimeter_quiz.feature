@@ -42,6 +42,41 @@ Feature: Run a quiz in a mootimeter
     And I should see "Answer stored successfully"
     And I click on "Show results page." "button"
     And "#mtmt_quiz_results_wrapper canvas" "css_element" should exist
+    And I log out
+    And I am on the "Mootimeter 1" "mootimeter activity" page logged in as "teacher1"
+    And "Download results as CSV" "button" should not exist
+    And I click on "Answer overview" "button"
+    And "Download results as CSV" "button" should exist
+    And I click on "Show results page." "button"
+    And I click on "Download results as CSV" "button"
+    And I should see "\"Answer option\",Count,\"Correct answer\""
+    And I should see "\"Student One\",4,"
+
+  @_file_upload
+  Scenario: Teacher imports answer options from a CSV file
+    Given I am on the "Mootimeter 1" "mootimeter activity" page logged in as "teacher1"
+    And I click on ".mootimeter-radio-card[data-name='quiz']" "css_element"
+    When I click on "Import answer options" "button"
+    Then I should see "one answer option per line" in the ".modal.show .modal-dialog" "css_element"
+    And I should see "Download example file" in the ".modal.show .modal-dialog" "css_element"
+    And I should not see "Existing answer options" in the ".modal.show .modal-dialog" "css_element"
+    And I upload "mod/mootimeter/tools/quiz/tests/fixtures/answeroptions.csv" file to "CSV file" filemanager
+    And I click on "Import" "button" in the ".modal.show .modal-dialog" "css_element"
+    And I should see "3 answer options imported."
+    And "(//input[@aria-label='Please enter an answer option.'])[3]" "xpath_element" should exist
+    And "(//input[@aria-label='Please enter an answer option.'])[4]" "xpath_element" should not exist
+    And the field with xpath "(//input[@aria-label='Please enter an answer option.'])[1]" matches value "Berlin"
+    And the field with xpath "(//input[@aria-label='Please enter an answer option.'])[3]" matches value "Hamburg, port"
+    And I click on "Import answer options" "button"
+    And I upload "mod/mootimeter/tools/quiz/tests/fixtures/answeroptions.csv" file to "CSV file" filemanager
+    And I click on "Import" "button" in the ".modal.show .modal-dialog" "css_element"
+    And "(//input[@aria-label='Please enter an answer option.'])[6]" "xpath_element" should exist
+    And I click on "Import answer options" "button"
+    And I upload "mod/mootimeter/tools/quiz/tests/fixtures/answeroptions.csv" file to "CSV file" filemanager
+    And I click on "Replace them; all answers given so far are deleted" "radio"
+    And I click on "Import" "button" in the ".modal.show .modal-dialog" "css_element"
+    And "(//input[@aria-label='Please enter an answer option.'])[3]" "xpath_element" should exist
+    And "(//input[@aria-label='Please enter an answer option.'])[4]" "xpath_element" should not exist
 
   Scenario: Results are hidden until the teacher releases them
     Given I am on the "Mootimeter 1" "mootimeter activity" page logged in as "teacher1"

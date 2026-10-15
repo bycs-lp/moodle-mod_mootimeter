@@ -71,6 +71,17 @@ const updateUrl = (pageid: number, view: View, fullscreen: boolean) => {
 const sameState = (a: ChangeState, b: ChangeState): boolean =>
     a.pagelist === b.pagelist && a.settings === b.settings && a.answers === b.answers;
 
+/**
+ * Whether the selected page has been hidden from a participant.
+ *
+ * @param {boolean} ismoderator
+ * @param {number} pageid
+ * @param {PageListItem[]|null} pages
+ * @returns {boolean}
+ */
+const isLocked = (ismoderator: boolean, pageid: number, pages: PageListItem[] | null): boolean =>
+    !ismoderator && pageid > 0 && pages !== null && !pages.some((p) => p.id === pageid);
+
 /* eslint-disable no-unused-vars -- the core rule reports the parameter names of TypeScript function types. */
 type ContentProps = {
     pages: PageListItem[] | null;
@@ -78,6 +89,7 @@ type ContentProps = {
     pageid: number;
     view: View;
     ismoderator: boolean;
+    locked: boolean;
     toolprops: ToolViewProps | null;
     onAddPage: (tool: string) => void;
 };
@@ -88,8 +100,8 @@ type ContentProps = {
  * @param {ContentProps} props
  * @returns {React.JSX.Element}
  */
-function Content({pages, tools, pageid, view, ismoderator, toolprops, onAddPage}: ContentProps): React.JSX.Element {
-    const s = useStrings('mod_mootimeter', ['please_select_a_page', 'no_pages_header']);
+function Content({pages, tools, pageid, view, ismoderator, locked, toolprops, onAddPage}: ContentProps): React.JSX.Element {
+    const s = useStrings('mod_mootimeter', ['please_select_a_page', 'no_pages_header', 'pagelocked']);
 
     if (!pages) {
         return <Loading />;
@@ -97,10 +109,14 @@ function Content({pages, tools, pageid, view, ismoderator, toolprops, onAddPage}
     if (ismoderator && (view === 'addpage' || !pageid)) {
         return <AddPage tools={tools} onAdd={onAddPage} />;
     }
-    if (!pageid) {
+    if (!pageid || locked) {
+        let message = pages.length ? s.please_select_a_page : s.no_pages_header;
+        if (locked) {
+            message = s.pagelocked;
+        }
         return (
             <div className="mootimeter-colcontent-preview mootimeter-width-s">
-                <h4>{pages.length ? s.please_select_a_page : s.no_pages_header}</h4>
+                <h4>{message}</h4>
             </div>
         );
     }
@@ -188,21 +204,24 @@ export default function App(props: AppProps): React.JSX.Element {
     }, [cmid, state.pagelist, localversion, pagesreload]);
 
     // Select another page if the selected one disappeared, or the only one if nothing is selected.
+    // Participants keep a page the teacher has hidden and see a notice until it is shown again.
     useEffect(() => {
         if (!pages) {
             return;
         }
-        if (pageid && !pages.some((p) => p.id === pageid)) {
+        if (ismoderator && pageid && !pages.some((p) => p.id === pageid)) {
             setPageid(pages.length ? pages[0].id : 0);
             setView('question');
         } else if (!pageid && pages.length === 1 && view !== 'addpage') {
             setPageid(pages[0].id);
         }
-    }, [pages, pageid, view]);
+    }, [pages, pageid, view, ismoderator]);
+
+    const locked = isLocked(ismoderator, pageid, pages);
 
     const pageversion = `${state.settings}:${ismoderator ? state.answers : 0}:${localversion}`;
     useEffect(() => {
-        if (!pageid) {
+        if (!pageid || locked) {
             setPage(null);
             return undefined;
         }
@@ -212,7 +231,9 @@ export default function App(props: AppProps): React.JSX.Element {
             .catch((error) => {
                 // Most likely the page has been deleted or hidden, the reloaded page list selects another one.
                 if (active) {
-                    window.console.error(error);
+                    if (error?.errorcode !== 'pagelocked') {
+                        window.console.error(error);
+                    }
                     setPage(null);
                     setPagesreload((count) => count + 1);
                 }
@@ -220,7 +241,7 @@ export default function App(props: AppProps): React.JSX.Element {
         return () => {
             active = false;
         };
-    }, [pageid, pageversion]);
+    }, [pageid, pageversion, locked]);
 
     const selectPage = (id: number) => {
         setPageid(id);
@@ -251,7 +272,7 @@ export default function App(props: AppProps): React.JSX.Element {
         callWs('mod_mootimeter_reorder_page', {pageid: id, position}).then(refresh).catch(displayException);
     };
 
-    const currentpage = page && page.id === pageid ? page : null;
+    const currentpage = page?.id === pageid && !locked ? page : null;
     const toolprops: ToolViewProps | null = currentpage ? {
         page: currentpage,
         ismoderator,
@@ -316,6 +337,7 @@ export default function App(props: AppProps): React.JSX.Element {
                             pageid={pageid}
                             view={view}
                             ismoderator={ismoderator}
+                            locked={locked}
                             toolprops={toolprops}
                             onAddPage={addPage}
                         />

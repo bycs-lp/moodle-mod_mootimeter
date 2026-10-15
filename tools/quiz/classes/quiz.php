@@ -80,6 +80,9 @@ class quiz extends \mod_mootimeter\toolhelper {
     /** @var int Default value of maximum count of answers */
     const MAXANSWERSDEFAULT = 1;
 
+    /** @var int Maximum number of answer options that can be imported at once */
+    const MAX_IMPORT_OPTIONS = 100;
+
     /** @var Answer cloum */
     const MTMT_VIEW_RESULT_TEACHERPERMISSION = 2;
 
@@ -380,6 +383,52 @@ class quiz extends \mod_mootimeter\toolhelper {
     }
 
     /**
+     * Import answer options, e.g. from a CSV file.
+     *
+     * @param object $page
+     * @param string[] $texts option texts, empty texts are skipped
+     * @param bool $replace whether the existing options and all answers to them are deleted first
+     * @return int number of imported options
+     * @throws moodle_exception if too many options are given
+     */
+    public function import_answer_options(object $page, array $texts, bool $replace): int {
+        global $DB, $USER;
+
+        require_capability('mod/mootimeter:moderator', \context_module::instance(self::get_cm_by_pageid($page->id)->id));
+
+        $texts = array_map(fn(string $text): string => trim(clean_param($text, PARAM_TEXT)), $texts);
+        $texts = array_values(array_filter($texts, fn(string $text): bool => $text !== ''));
+        if (count($texts) > self::MAX_IMPORT_OPTIONS) {
+            throw new moodle_exception('import_options_toomany', 'mootimetertool_quiz', '', self::MAX_IMPORT_OPTIONS);
+        }
+
+        $transaction = $DB->start_delegated_transaction();
+        if ($replace) {
+            $DB->delete_records($this->get_answer_table(), ['pageid' => $page->id]);
+            $DB->delete_records($this->get_answer_option_table(), ['pageid' => $page->id]);
+        }
+        foreach ($texts as $text) {
+            $record = (object) [
+                'pageid' => $page->id,
+                'usermodified' => $USER->id,
+                'optiontext' => $text,
+                'timecreated' => time(),
+                'timemodified' => 0,
+            ];
+            if ($this->supports_correct_options()) {
+                $record->optioniscorrect = 0;
+            }
+            $DB->insert_record($this->get_answer_option_table(), $record);
+        }
+        $transaction->allow_commit();
+
+        $this->clear_caches($page->id);
+        $this->notify_data_changed($page, 'settings');
+        $this->notify_data_changed($page, 'answers');
+        return count($texts);
+    }
+
+    /**
      * Export the data the question view and the settings view need.
      *
      * The correct options are only exported to moderators or once the answer correction is shown.
@@ -443,7 +492,7 @@ class quiz extends \mod_mootimeter\toolhelper {
      */
     public function get_answer_options(int $pageid): array {
         global $DB;
-        return $DB->get_records($this->get_answer_option_table(), ['pageid' => $pageid]);
+        return $DB->get_records($this->get_answer_option_table(), ['pageid' => $pageid], 'id ASC');
     }
 
     /**
@@ -566,6 +615,56 @@ class quiz extends \mod_mootimeter\toolhelper {
             'maxanswers' => $this->get_max_answers($page),
             'options' => $options,
             'rows' => $rows,
+        ];
+    }
+
+    /**
+     * Get the results of a page for the CSV download: the counts per option and the answers of each participant.
+     *
+     * @param object $page
+     * @param \context_module $context
+     * @return array
+     */
+    public function export_results_csv(object $page, \context_module $context): array {
+        $grouped = (array) $this->get_answers_grouped(
+            $this->get_answer_table(),
+            ['pageid' => $page->id],
+            $this->get_answer_column()
+        );
+
+        $summarycolumns = [get_string('csv_answeroption', 'mootimetertool_quiz'), get_string('csv_count', 'mod_mootimeter')];
+        if ($this->supports_correct_options()) {
+            $summarycolumns[] = get_string('correct_answer', 'mootimetertool_quiz');
+        }
+
+        $optiontexts = [];
+        $summary = [];
+        foreach ($this->get_answer_options($page->id) as $option) {
+            $text = format_string((string) $option->optiontext, true, ['context' => $context, 'escape' => false]);
+            $optiontexts[(int) $option->id] = $text;
+            $row = [$text, empty($grouped[$option->id]) ? 0 : (int) ((array) $grouped[$option->id])['cnt']];
+            if ($this->supports_correct_options()) {
+                $row[] = get_string(empty($option->optioniscorrect) ? 'no' : 'yes');
+            }
+            $summary[] = $row;
+        }
+
+        $answers = [];
+        foreach ($this->export_overview($page, $context)['rows'] as $row) {
+            $texts = array_map(fn(int $optionid): string => $optiontexts[$optionid] ?? '', $row['optionids']);
+            $answers[] = [$row['fullname'], implode(' | ', $texts), $row['time']];
+        }
+
+        return [
+            ['columns' => $summarycolumns, 'rows' => $summary],
+            [
+                'columns' => [
+                    get_string('csv_participant', 'mod_mootimeter'),
+                    get_string('csv_answer', 'mod_mootimeter'),
+                    get_string('csv_time', 'mod_mootimeter'),
+                ],
+                'rows' => $answers,
+            ],
         ];
     }
 

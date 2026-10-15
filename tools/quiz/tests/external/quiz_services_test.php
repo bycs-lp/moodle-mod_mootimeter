@@ -33,6 +33,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(update_user_answer::class)]
 #[CoversClass(get_page_data::class)]
 #[CoversClass(get_results::class)]
+#[CoversClass(\mootimetertool_quiz\quiz::class)]
+#[CoversClass(\mootimetertool_quiz\form\import_options::class)]
 final class quiz_services_test extends advanced_testcase {
     /** @var \mootimetertool_quiz_generator */
     private $toolgenerator;
@@ -179,6 +181,99 @@ final class quiz_services_test extends advanced_testcase {
         $after = $DB->get_record('mootimetertool_quiz_options', ['id' => $optionid]);
         $this->assertEquals('Renamed', $after->optiontext);
         $this->assertEquals(1, $after->optioniscorrect);
+    }
+
+    /**
+     * The CSV export contains the counts per option and the answers of the participants.
+     */
+    public function test_export_results_csv(): void {
+        global $DB;
+        $this->setAdminUser();
+        $course = $this->getDataGenerator()->create_course();
+        $page = $this->toolgenerator->create_quiz_page($course);
+        [$first, $second] = $this->toolgenerator->get_answer_option_ids($page->id);
+        $DB->set_field('mootimetertool_quiz_options', 'optiontext', 'Yes', ['id' => $first]);
+        $DB->set_field('mootimetertool_quiz_options', 'optiontext', '=No', ['id' => $second]);
+        $DB->set_field('mootimetertool_quiz_options', 'optioniscorrect', 1, ['id' => $first]);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student', ['firstname' => 'Eva', 'lastname' => 'Example']);
+        $this->toolgenerator->create_answer($page->id, $student->id, $second);
+
+        $context = \context_module::instance($page->cmid);
+        $sections = (new \mootimetertool_quiz\quiz())->export_results_csv($page, $context);
+
+        $this->assertCount(2, $sections);
+        $this->assertEquals([['Yes', 0, get_string('yes')], ['=No', 1, get_string('no')]], $sections[0]['rows']);
+        $this->assertEquals('Eva Example', $sections[1]['rows'][0][0]);
+        $this->assertEquals('=No', $sections[1]['rows'][0][1]);
+
+        // The setting is locked once answers exist, so it is written directly.
+        $DB->insert_record('mootimeter_tool_settings', (object) [
+            'tool' => 'quiz',
+            'pageid' => $page->id,
+            'name' => 'anonymousmode',
+            'value' => '1',
+            'timemodified' => time(),
+        ]);
+        $sections = (new \mootimetertool_quiz\quiz())->export_results_csv($page, $context);
+        $this->assertEquals(get_string('anonymous_name', 'mod_mootimeter'), $sections[1]['rows'][0][0]);
+    }
+
+    /**
+     * Imported options replace the existing options and their answers or are appended to them.
+     */
+    public function test_import_options(): void {
+        global $DB;
+        $this->setAdminUser();
+        $course = $this->getDataGenerator()->create_course();
+        $page = $this->toolgenerator->create_quiz_page($course);
+        $first = $this->toolgenerator->get_answer_option_ids($page->id)[0];
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->toolgenerator->create_answer($page->id, $student->id, $first);
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        $quiz = new \mootimetertool_quiz\quiz();
+
+        $this->setUser($student);
+        try {
+            $quiz->import_answer_options($page, ['A'], true);
+            $this->fail('A participant was allowed to import answer options.');
+        } catch (\required_capability_exception $e) {
+            $this->assertInstanceOf(\required_capability_exception::class, $e);
+        }
+
+        $this->setUser($teacher);
+        $this->assertEquals(2, $quiz->import_answer_options($page, ['A', ' ', '<b>B</b>'], false));
+        $this->assertEquals(4, $DB->count_records('mootimetertool_quiz_options', ['pageid' => $page->id]));
+        $this->assertEquals(1, $DB->count_records('mootimetertool_quiz_answers', ['pageid' => $page->id]));
+
+        $this->assertEquals(1, $quiz->import_answer_options($page, ['C'], true));
+        $this->assertEquals(
+            ['C'],
+            array_values($DB->get_fieldset('mootimetertool_quiz_options', 'optiontext', ['pageid' => $page->id]))
+        );
+        $this->assertEquals(0, $DB->count_records('mootimetertool_quiz_answers', ['pageid' => $page->id]));
+
+        $this->expectException(\moodle_exception::class);
+        $quiz->import_answer_options($page, array_fill(0, \mootimetertool_quiz\quiz::MAX_IMPORT_OPTIONS + 1, 'X'), true);
+    }
+
+    /**
+     * The first non-empty cell of each line is an answer option, the delimiter is guessed.
+     */
+    public function test_parse_import_file(): void {
+        global $CFG;
+        $parse = [\mootimetertool_quiz\form\import_options::class, 'parse_options'];
+
+        $this->assertEquals(
+            ['Berlin', 'Munich', 'Hamburg, port'],
+            $parse(file_get_contents($CFG->dirroot . '/mod/mootimeter/tools/quiz/tests/fixtures/answeroptions.csv'))
+        );
+        $this->assertEquals(
+            ['Berlin', 'München', 'Hamburg, Hafen'],
+            $parse(file_get_contents($CFG->dirroot . '/mod/mootimeter/tools/quiz/example/answeroptions.csv'))
+        );
+        $this->assertEquals(['A, B', 'C'], $parse("\"A, B\";x\n;C\n"));
+        $this->assertEquals(['Käse'], $parse(\core_text::convert('Käse', 'utf-8', 'windows-1252')));
+        $this->assertEquals([], $parse("\n ; \n"));
     }
 
     /**

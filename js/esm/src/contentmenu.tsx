@@ -25,7 +25,7 @@
 import React from 'react';
 import {IconButton} from './lib/components';
 import {useStrings} from './lib/hooks';
-import {callWs, confirmDelete, displayException, storeSetting} from './lib/moodle';
+import {callWs, confirmDelete, displayException, storeSetting, wwwroot} from './lib/moodle';
 import type {ToolViewProps, View} from './lib/types';
 import ToolComponent from './toolcomponent';
 
@@ -56,6 +56,7 @@ export default function ContentMenu(props: ContentMenuProps): React.JSX.Element 
         'tooltip_show_results_page',
         'tooltip_fullscreen_expand',
         'tooltip_fullscreen_compress',
+        'download_results',
     ]);
 
     const toggleResultsVisibility = () => {
@@ -95,6 +96,13 @@ export default function ContentMenu(props: ContentMenuProps): React.JSX.Element 
                 title={view === 'results' ? s.tooltip_show_question_page : s.tooltip_show_results_page}
                 onClick={() => onView(view === 'results' ? 'question' : 'results')}
             />
+            {ismoderator && (view === 'results' || view === 'overview') && (
+                <IconButton
+                    icon="fa-download"
+                    title={s.download_results}
+                    onClick={() => window.location.assign(`${wwwroot}/mod/mootimeter/download.php?pageid=${page.id}`)}
+                />
+            )}
             <IconButton
                 icon={fullscreen ? 'fa-compress' : 'fa-expand'}
                 title={fullscreen ? s.tooltip_fullscreen_compress : s.tooltip_fullscreen_expand}
