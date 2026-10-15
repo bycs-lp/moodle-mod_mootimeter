@@ -27,7 +27,7 @@ import AddPage from './addpage';
 import ContentMenu from './contentmenu';
 import {Loading} from './lib/components';
 import {useStrings} from './lib/hooks';
-import {callWs, displayException} from './lib/moodle';
+import {addToast, callWs, displayException, getString} from './lib/moodle';
 import type {AppProps, ChangeState, PageInfo, PageListItem, ToolInfo, ToolViewProps, View} from './lib/types';
 import PageList from './pagelist';
 import SettingsPanel from './settingspanel';
@@ -82,6 +82,20 @@ const sameState = (a: ChangeState, b: ChangeState): boolean =>
 const isLocked = (ismoderator: boolean, pageid: number, pages: PageListItem[] | null): boolean =>
     !ismoderator && pageid > 0 && pages !== null && !pages.some((p) => p.id === pageid);
 
+/**
+ * Whether the settings column and the strip to unfold it are shown.
+ *
+ * @param {boolean} cansettings whether the current view has settings for the user
+ * @param {boolean} isediting
+ * @param {boolean} settingsopen whether the settings were unfolded outside the editing mode
+ * @param {boolean} fullscreen
+ * @returns {{show: boolean, toggle: boolean}}
+ */
+const settingsVisibility = (cansettings: boolean, isediting: boolean, settingsopen: boolean, fullscreen: boolean) => ({
+    show: cansettings && (isediting || settingsopen),
+    toggle: cansettings && !isediting && !fullscreen,
+});
+
 /* eslint-disable no-unused-vars -- the core rule reports the parameter names of TypeScript function types. */
 type ContentProps = {
     pages: PageListItem[] | null;
@@ -132,6 +146,38 @@ function Content({pages, tools, pageid, view, ismoderator, locked, toolprops, on
     return <ToolComponent key={`${specifier}-${pageid}`} specifier={specifier} {...toolprops} />;
 }
 
+type SettingsToggleProps = {
+    open: boolean;
+    onToggle: () => void;
+};
+
+/**
+ * Narrow strip that unfolds the settings column outside the editing mode.
+ *
+ * @param {SettingsToggleProps} props
+ * @returns {React.JSX.Element}
+ */
+function SettingsToggle({open, onToggle}: SettingsToggleProps): React.JSX.Element {
+    const s = useStrings('core', ['settings', 'showsettings', 'hidesettings']);
+    const title = open ? s.hidesettings : s.showsettings;
+
+    return (
+        <button
+            type="button"
+            className="mootimeter-settings-toggle"
+            title={title}
+            aria-label={title}
+            aria-expanded={open}
+            aria-controls="mootimeter-col-settings"
+            onClick={onToggle}
+        >
+            <i className="icon fa fa-gear fa-light" aria-hidden="true"></i>
+            <span className="mootimeter-settings-toggle-label">{s.settings}</span>
+            <i className={`icon fa ${open ? 'fa-angle-double-left' : 'fa-angle-double-right'} fa-light`} aria-hidden="true"></i>
+        </button>
+    );
+}
+
 
 /**
  * Root component, mounted by view.php.
@@ -148,6 +194,8 @@ export default function App(props: AppProps): React.JSX.Element {
     const [pageid, setPageid] = useState(props.pageid);
     const [view, setView] = useState<View>(props.view);
     const [fullscreen, setFullscreen] = useState(props.fullscreen);
+    // Outside the editing mode moderators can unfold the settings without switching the mode.
+    const [settingsopen, setSettingsopen] = useState(false);
     const [page, setPage] = useState<PageInfo | null>(null);
     const [state, setState] = useState<ChangeState>({pagelist: 0, settings: 0, answers: 0});
     // Incremented by own actions so that the data is reloaded immediately.
@@ -256,6 +304,10 @@ export default function App(props: AppProps): React.JSX.Element {
             setTools(result.tools);
             // The server switched into the editing mode, so that the new page can be configured.
             setIsediting(true);
+            const editswitch = document.querySelector<HTMLInputElement>('.editmode-switch-form input[name="setmode"]');
+            if (editswitch) {
+                editswitch.checked = true;
+            }
             setPageid(newpageid);
             setView('question');
         } catch (error) {
@@ -272,6 +324,19 @@ export default function App(props: AppProps): React.JSX.Element {
         callWs('mod_mootimeter_reorder_page', {pageid: id, position}).then(refresh).catch(displayException);
     };
 
+    const toggleVisibility = async(item: PageListItem) => {
+        try {
+            const {visible} = await callWs<{visible: boolean}>(
+                'mod_mootimeter_set_page_visibility',
+                {pageid: item.id, visible: !item.visible}
+            );
+            refresh();
+            addToast(await getString(visible ? 'page_shown' : 'page_hidden', 'mod_mootimeter', item.number));
+        } catch (error) {
+            displayException(error);
+        }
+    };
+
     const currentpage = page?.id === pageid && !locked ? page : null;
     const toolprops: ToolViewProps | null = currentpage ? {
         page: currentpage,
@@ -282,7 +347,8 @@ export default function App(props: AppProps): React.JSX.Element {
         refresh,
     } : null;
 
-    const showsettings = ismoderator && isediting && toolprops && view !== 'addpage';
+    const cansettings = ismoderator && toolprops !== null && view !== 'addpage';
+    const settings = settingsVisibility(cansettings, isediting, settingsopen, fullscreen);
     const showcontentmenu = toolprops && !(ismoderator && view === 'addpage');
 
     return (
@@ -291,7 +357,7 @@ export default function App(props: AppProps): React.JSX.Element {
             id="mootimeter-main-container"
         >
             <div className="row g-0">
-                <div id="mootimeter-col-left" className={showsettings ? '' : 'mootimeter-pagesonly'}>
+                <div id="mootimeter-col-left" className={settings.show ? '' : 'mootimeter-pagesonly'}>
                     <div className="mootimetercol mootimetercolpages" id="mootimeter-pages-col">
                         {pages ? (
                             <PageList
@@ -301,10 +367,11 @@ export default function App(props: AppProps): React.JSX.Element {
                                 onSelect={selectPage}
                                 onAddPage={() => setView('addpage')}
                                 onMove={movePage}
+                                onToggleVisibility={ismoderator ? toggleVisibility : undefined}
                             />
                         ) : <Loading />}
                     </div>
-                    {showsettings && toolprops && (
+                    {settings.show && toolprops && (
                         <div className="mootimetercol mootimetercoledit" id="mootimeter-col-settings">
                             <SettingsPanel
                                 key={`settings-${pageid}`}
@@ -318,6 +385,9 @@ export default function App(props: AppProps): React.JSX.Element {
                                 }}
                             />
                         </div>
+                    )}
+                    {settings.toggle && (
+                        <SettingsToggle open={settingsopen} onToggle={() => setSettingsopen(!settingsopen)} />
                     )}
                 </div>
                 <div className="mootimetercol mootimetercolcontent">

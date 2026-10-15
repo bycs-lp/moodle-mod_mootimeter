@@ -22,9 +22,11 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useStrings} from './lib/hooks';
 import type {PageListItem} from './lib/types';
+
+const LONGPRESS_MS = 600;
 
 /* eslint-disable no-unused-vars -- the core rule reports the parameter names of TypeScript function types. */
 type PageListProps = {
@@ -34,19 +36,55 @@ type PageListProps = {
     onSelect: (pageid: number) => void;
     onAddPage: () => void;
     onMove: (pageid: number, position: number) => void;
+    // Only passed for moderators.
+    onToggleVisibility?: (page: PageListItem) => void;
 };
 
 /**
  * The page list in the left column.
  *
  * Pages can be moved by drag and drop or with the arrow keys on the move handle while editing.
+ * Moderators toggle the visibility of a page with a long press on it.
  *
  * @param {PageListProps} props
  * @returns {React.JSX.Element}
  */
-export default function PageList({pages, selected, isediting, onSelect, onAddPage, onMove}: PageListProps): React.JSX.Element {
-    const s = useStrings('mod_mootimeter', ['addpage', 'dialogue_move_pagelistelement']);
+export default function PageList(props: PageListProps): React.JSX.Element {
+    const {pages, selected, isediting, onSelect, onAddPage, onMove, onToggleVisibility} = props;
+    const s = useStrings('mod_mootimeter', ['addpage', 'dialogue_move_pagelistelement', 'longpress_toggle_visibility']);
     const [dragged, setDragged] = useState<number | null>(null);
+    const [pressing, setPressing] = useState<number | null>(null);
+    const presstimer = useRef<number | undefined>(undefined);
+    // Suppresses the click that follows a long press.
+    const longpressed = useRef(false);
+
+    useEffect(() => () => window.clearTimeout(presstimer.current), []);
+
+    const startPress = (e: React.PointerEvent, page: PageListItem) => {
+        if (!onToggleVisibility || e.button !== 0) {
+            return;
+        }
+        longpressed.current = false;
+        setPressing(page.id);
+        presstimer.current = window.setTimeout(() => {
+            longpressed.current = true;
+            setPressing(null);
+            onToggleVisibility(page);
+        }, LONGPRESS_MS);
+    };
+
+    const cancelPress = () => {
+        window.clearTimeout(presstimer.current);
+        setPressing(null);
+    };
+
+    const select = (pageid: number) => {
+        if (longpressed.current) {
+            longpressed.current = false;
+            return;
+        }
+        onSelect(pageid);
+    };
 
     const moveByKey = (e: React.KeyboardEvent, page: PageListItem, index: number) => {
         e.stopPropagation();
@@ -76,11 +114,16 @@ export default function PageList({pages, selected, isediting, onSelect, onAddPag
                             'mootimeter_pages_li d-flex'
                             + (page.id === selected ? ' active' : '')
                             + (page.visible ? '' : ' pageunvisible')
+                            + (page.id === pressing ? ' mootimeter-longpress' : '')
                         }
-                        title={page.title}
+                        title={onToggleVisibility ? [page.title, s.longpress_toggle_visibility].filter(Boolean).join(' – ')
+                            : page.title}
                         data-pageid={page.id}
                         draggable={isediting}
-                        onDragStart={() => setDragged(page.id)}
+                        onDragStart={() => {
+                            cancelPress();
+                            setDragged(page.id);
+                        }}
                         onDragOver={(e) => isediting && e.preventDefault()}
                         onDrop={(e) => {
                             e.preventDefault();
@@ -104,7 +147,12 @@ export default function PageList({pages, selected, isediting, onSelect, onAddPag
                             className="mootimeter_page_select"
                             aria-label={`${page.number} ${page.title}`}
                             aria-current={page.id === selected ? 'page' : undefined}
-                            onClick={() => onSelect(page.id)}
+                            onClick={() => select(page.id)}
+                            onPointerDown={(e) => startPress(e, page)}
+                            onPointerUp={cancelPress}
+                            onPointerLeave={cancelPress}
+                            onPointerCancel={cancelPress}
+                            onContextMenu={(e) => onToggleVisibility && e.preventDefault()}
                         >
                             <span className="mootimeter_pages_count">{page.number}</span>
                             <img src={page.iconurl} width="35px" className="m-1" alt="" />

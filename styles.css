@@ -225,6 +225,11 @@
 .mootimetercontainer .mootimetercolpages ul li.active {
   border-color: #dc6534;
 }
+.mootimetercontainer .mootimetercolpages ul li.mootimeter-longpress {
+  transform: scale(0.9);
+  border-color: #d33f01;
+  transition: transform 0.6s linear, border-color 0.6s linear;
+}
 .mootimetercontainer .mootimetercolpages ul li.pageunvisible {
   background: linear-gradient(to top left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) calc(50% - 0.8px), rgb(255, 255, 255) 50%, rgba(255, 255, 255, 0) calc(50% + 0.8px), rgba(255, 255, 255, 0) 100%);
 }
@@ -436,6 +441,48 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+.mootimetercontainer .mootimeter-settings-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 0 2.5rem;
+  padding: 1.25rem 0;
+  border: 0;
+  border-left: 1px solid #60616d;
+  background-color: #303142;
+  color: #fff;
+  cursor: pointer;
+}
+.mootimetercontainer .mootimeter-settings-toggle:hover {
+  background-color: #60616d;
+}
+.mootimetercontainer .mootimeter-settings-toggle:focus-visible {
+  outline: 2px solid #d33f01;
+  outline-offset: -2px;
+}
+.mootimetercontainer .mootimeter-settings-toggle .icon {
+  margin: 0;
+}
+.mootimetercontainer .mootimeter-settings-toggle .mootimeter-settings-toggle-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+@media screen and (max-width: 680px) {
+  .mootimetercontainer .mootimeter-settings-toggle {
+    flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: center;
+    padding: 0.5rem;
+    border-left: 0;
+    border-top: 1px solid #60616d;
+  }
+  .mootimetercontainer .mootimeter-settings-toggle .mootimeter-settings-toggle-label {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
 }
 
 .dark .mootimetercoledit {

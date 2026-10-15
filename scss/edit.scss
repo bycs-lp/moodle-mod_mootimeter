@@ -82,6 +82,53 @@
       }
     }
   }
+
+  .mootimeter-settings-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 0 0 2.5rem;
+    padding: 1.25rem 0;
+    border: 0;
+    border-left: 1px solid $grey-300;
+    background-color: $grey-400;
+    color: $white-standard;
+    cursor: pointer;
+
+    &:hover {
+      background-color: $grey-300;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $lernplatform-400;
+      outline-offset: -2px;
+    }
+
+    .icon {
+      margin: 0;
+    }
+
+    .mootimeter-settings-toggle-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      white-space: nowrap;
+    }
+
+    @media screen and (max-width: 680px) {
+      flex: 0 0 auto;
+      flex-direction: row;
+      justify-content: center;
+      padding: 0.5rem;
+      border-left: 0;
+      border-top: 1px solid $grey-300;
+
+      .mootimeter-settings-toggle-label {
+        writing-mode: horizontal-tb;
+        transform: none;
+      }
+    }
+  }
 }
 
 .dark {

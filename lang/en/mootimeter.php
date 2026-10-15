@@ -55,6 +55,7 @@ $string['dialogue_move_pagelistelement'] = 'Move question page';
 $string['download_results'] = 'Download results as CSV';
 $string['enter_question'] = 'Please enter a question.';
 $string['loading'] = 'Loading! Please wait...';
+$string['longpress_toggle_visibility'] = 'Long press to show or hide the page for participants';
 $string['modulename'] = 'Mootimeter';
 $string['modulename_help'] = 'The Mootimeter activity allows your students to participate live in class in a variety of ways.
 <ul>
@@ -74,6 +75,8 @@ $string['no_pages_header'] = 'Recently there are no questions to answer.';
 $string['notification_success_store_answer'] = 'Answer stored successfully';
 $string['notification_warning_store_answer'] = 'Answer NOT stored.';
 $string['page_detail_could_not_be_store'] = 'Content couldn\'t be stored';
+$string['page_hidden'] = 'Page {$a} is now hidden from participants.';
+$string['page_shown'] = 'Page {$a} is now visible to participants.';
 $string['pageaccessexception'] = 'The provided pageid is not part of Mootimeter instance.';
 $string['pagelocked'] = 'This page has been locked.';
 $string['pagetype'] = 'Page Type';

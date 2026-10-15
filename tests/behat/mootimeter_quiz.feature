@@ -78,6 +78,18 @@ Feature: Run a quiz in a mootimeter
     And "(//input[@aria-label='Please enter an answer option.'])[3]" "xpath_element" should exist
     And "(//input[@aria-label='Please enter an answer option.'])[4]" "xpath_element" should not exist
 
+  Scenario: Teacher unfolds the settings outside the editing mode
+    Given I am on the "Mootimeter 1" "mootimeter activity" page logged in as "teacher1"
+    And I click on ".mootimeter-radio-card[data-name='quiz']" "css_element"
+    And I set the field with xpath "//input[@aria-label='Question']" to "Which colour?"
+    And I press the tab key
+    When I turn editing mode off
+    Then "//input[@aria-label='Question']" "xpath_element" should not exist
+    And I click on "Show settings" "button"
+    And the field with xpath "//input[@aria-label='Question']" matches value "Which colour?"
+    And I click on "Hide settings" "button"
+    And "//input[@aria-label='Question']" "xpath_element" should not exist
+
   Scenario: Results are hidden until the teacher releases them
     Given I am on the "Mootimeter 1" "mootimeter activity" page logged in as "teacher1"
     And I click on ".mootimeter-radio-card[data-name='poll']" "css_element"
