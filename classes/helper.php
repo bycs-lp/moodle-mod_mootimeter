@@ -59,11 +59,12 @@ class helper {
      * Get all tools of instance.#
      *
      * @param int|object $instanceorid
+     * @param bool $checkvisible - if true, only visible pages are returned when the user has no moderator capability
      * @return array
      * @throws dml_exception
      * @throws coding_exception
      */
-    public function get_all_tools_of_instance(int|object $instanceorid) {
+    public function get_all_tools_of_instance(int|object $instanceorid, bool $checkvisible = true) {
 
         if (is_object($instanceorid)) {
             $instanceid = $instanceorid->id;
@@ -71,7 +72,7 @@ class helper {
             $instanceid = $instanceorid;
         }
 
-        $pages = $this->get_pages($instanceid);
+        $pages = $this->get_pages($instanceid, 'id ASC', $checkvisible);
 
         $toolpages = [];
         foreach ($pages as $page) {
@@ -221,14 +222,16 @@ class helper {
      *
      * @param int $instanceid
      * @param string $sort
+     * @param bool $checkvisible - if true, only visible pages are returned when the user has no moderator capability
      * @return mixed
      */
-    public function get_pages(int $instanceid, string $sort = 'id ASC') {
+    public function get_pages(int $instanceid, string $sort = 'id ASC', bool $checkvisible = true) {
         global $DB;
 
         $params = ['instance' => $instanceid];
 
         if (
+            $checkvisible &&
             empty(has_capability(
                 'mod/mootimeter:moderator',
                 \context_module::instance(self::get_cm_by_instance($instanceid)->id)
@@ -1230,7 +1233,8 @@ class helper {
      * @throws coding_exception in case that the current tool does not have user information in the answers table
      */
     public function get_user_answers(string $table, int $pageid, string $answercolumn = 'answer', int $userid = 0): array {
-        $page = $this->get_page($pageid);
+        // The page is only needed to resolve the tool, so hidden pages must not break privacy exports.
+        $page = $this->get_page($pageid, false);
         $classname = "\mootimetertool_" . $page->tool . "\\" . $page->tool;
         /** @var \mod_mootimeter\toolhelper $toolhelper */
         $toolhelper = new $classname();

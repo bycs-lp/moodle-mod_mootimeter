@@ -402,6 +402,53 @@ final class provider_test extends provider_testcase {
         $this->assertEquals("Answer 2", $writer->get_data($path)->scalar);
     }
 
+    #[\PHPUnit\Framework\Attributes\Group('baseline')]
+    /**
+     * Answers on a hidden page are exported when the export runs as the data subject.
+     *
+     * @covers \mod_mootimeter\privacy\provider::export_user_data
+     */
+    public function test_export_user_data_of_hidden_page(): void {
+        $this->resetAfterTest();
+
+        $page = $this->mootimeter[3]['pages'][1]['page'];
+        $this->setUser($this->users['student1']);
+        (new \mootimetertool_wordcloud\wordcloud())->insert_answer($page, 'Hidden answer');
+
+        $this->setUser($this->users['teacher']);
+        (new helper())->toggle_state($page, 'page_visibility');
+
+        // Export requests run as the data subject.
+        $this->setUser($this->users['student1']);
+        $context = \context_module::instance($this->mootimeter[3]['instance']->cmid);
+        provider::export_user_data(new approved_contextlist($this->users['student1'], 'mod_mootimeter', [$context->id]));
+
+        $path = [
+            'Path of page with id: ' . $page->id,
+            get_string('privacy:answerspath', 'mootimetertool_wordcloud') . '_1',
+        ];
+        $this->assertEquals('Hidden answer', writer::with_context($context)->get_data($path)->scalar);
+    }
+
+    #[\PHPUnit\Framework\Attributes\Group('baseline')]
+    /**
+     * Participants still only get visible pages from the default page listing.
+     *
+     * @covers \mod_mootimeter\helper::get_pages
+     */
+    public function test_get_pages_hides_hidden_page_for_participant(): void {
+        $this->resetAfterTest();
+
+        $page = $this->mootimeter[3]['pages'][1]['page'];
+        $this->setUser($this->users['teacher']);
+        $helper = new helper();
+        $helper->toggle_state($page, 'page_visibility');
+
+        $this->setUser($this->users['student1']);
+        $this->assertEmpty($helper->get_pages($page->instance));
+        $this->assertCount(1, $helper->get_pages($page->instance, 'id ASC', false));
+    }
+
     /**
      * A test for deleting all user data for a given context.
      * @covers \provider::delete_data_for_all_users_in_context
