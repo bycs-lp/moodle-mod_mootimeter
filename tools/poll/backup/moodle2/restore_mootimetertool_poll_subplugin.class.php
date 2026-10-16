@@ -31,8 +31,11 @@ class restore_mootimetertool_poll_subplugin extends restore_subplugin {
 
         $elepath = $this->get_pathfor('/mootimetertool_poll_options');
         $paths[] = new restore_path_element('poll_options', $elepath);
-        $elepath = $this->get_pathfor('/mootimetertool_poll_answers');
-        $paths[] = new restore_path_element('poll_answers', $elepath);
+
+        if ($this->get_setting_value('userinfo')) {
+            $elepath = $this->get_pathfor('/mootimetertool_poll_answers');
+            $paths[] = new restore_path_element('poll_answers', $elepath);
+        }
 
         return $paths;
     }
