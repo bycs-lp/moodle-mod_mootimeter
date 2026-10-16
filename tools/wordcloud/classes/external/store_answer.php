@@ -60,7 +60,7 @@ class store_answer extends external_api {
      * @return array
      */
     public static function execute(int $pageid, string $answer): array {
-        global $USER;
+        global $DB, $USER;
 
         [
             'pageid' => $pageid,
@@ -86,18 +86,24 @@ class store_answer extends external_api {
 
         $maxnumberofanswers = helper::get_tool_config($page->id, "maxinputsperuser");
         $wordcloud = new \mootimetertool_wordcloud\wordcloud();
-        $submittedanswers = $wordcloud->get_user_answers('mootimetertool_wordcloud_answers', $page->id, 'answer', $USER->id);
+        $submittedcount = $DB->count_records(
+            \mootimetertool_wordcloud\wordcloud::ANSWER_TABLE,
+            ['pageid' => $page->id, 'usermodified' => $USER->id]
+        );
 
-        if (count($submittedanswers) >= $maxnumberofanswers && $maxnumberofanswers > 0) {
+        if ($submittedcount >= $maxnumberofanswers && $maxnumberofanswers > 0) {
             return [
                 'code' => helper::ERRORCODE_TO_MANY_ANSWERS,
                 'string' => get_string('error_to_many_answers', 'mootimetertool_wordcloud'),
             ];
         }
 
-        $submittedanswers = $wordcloud->get_answer_list_array($page->id, $USER->id);
+        $submittedanswers = array_map('core_text::strtolower', $wordcloud->get_answer_list_array($page->id, $USER->id));
         // Use strtolower in order to ignore case sensitive inputs of users. This makes the result more precise.
-        if (!helper::get_tool_config($page->id, "allowduplicateanswers") && in_array(strtolower($answer), $submittedanswers)) {
+        if (
+            !helper::get_tool_config($page->id, "allowduplicateanswers")
+            && in_array(\core_text::strtolower($answer), $submittedanswers, true)
+        ) {
             return [
                 'code' => helper::ERRORCODE_DUPLICATE_ANSWER,
                 'string' => get_string('error_no_duplicate_answers', 'mootimetertool_wordcloud'),
