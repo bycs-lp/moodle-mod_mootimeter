@@ -1,9 +1,0 @@
-{
-  "name": "moodle-mod_mootimeter",
-  "scripts": {
-    "compile-sass": "sass --no-source-map styles.scss styles.css"
-  },
-  "devDependencies": {
-    "sass": "^1.105.1"
-  }
-}

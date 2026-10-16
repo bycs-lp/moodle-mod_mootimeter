@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Bridge from the ESM/React world to the Moodle AMD APIs.
+ * Moodle user interface services that are not available as ESM modules yet: dialogues, toasts, filters and the edit mode.
  *
  * @module     mod_mootimeter/lib/moodle
  * @copyright  2026 ISB Bayern
@@ -22,95 +22,73 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-/* eslint-disable no-unused-vars -- the core rule reports the parameter names of TypeScript function types. */
-declare const require: (deps: string[], resolve: (...modules: any[]) => void, reject: (error: unknown) => void) => void;
+import {requireAsync} from '@moodle/lms/core/amd';
+import {getString} from '@moodle/lms/core/stringUtils';
+import {ApiError} from './api';
+
+type NotificationModule = {
+    exception: (error: unknown) => void;
+    deleteCancelPromise: (title: string, question: string, deletelabel?: string) => Promise<unknown>;
+};
+
+type ToastModule = {
+    add: (message: string, options?: {type?: string}) => Promise<void>;
+};
+
+type FilterEventsModule = {
+    notifyFilterContentUpdated: (nodes: HTMLElement[]) => void;
+};
+
+type AjaxModule = {
+    call: (requests: {methodname: string; args: Record<string, unknown>}[]) => Promise<unknown>[];
+};
+
+type UserDateModule = {
+    get: (requests: {timestamp: number; format: string}[]) => Promise<string[]>;
+};
 
 /**
- * Load an AMD module.
+ * Format timestamps with the date and time format of the user, like userdate() on the server.
  *
- * @param {string} name AMD module name, e.g. core/ajax
- * @returns {Promise<any>}
+ * @param timestamps
+ * @returns The formatted dates.
  */
-export function requireAmd<T = any>(name: string): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-        require([name], resolve, reject);
-    });
-}
-
-const [Ajax, Str, Notification, Toast, Config, FilterEvents] = await Promise.all([
-    requireAmd('core/ajax'),
-    requireAmd('core/str'),
-    requireAmd('core/notification'),
-    requireAmd('core/toast'),
-    requireAmd('core/config'),
-    requireAmd('core_filters/events'),
-]);
-
-export const wwwroot: string = Config.wwwroot;
-
-/**
- * Call an external function.
- *
- * @param {string} methodname
- * @param {object} args
- * @returns {Promise<any>}
- */
-export function callWs<T = any>(methodname: string, args: Record<string, unknown>): Promise<T> {
-    return Promise.resolve(Ajax.call([{methodname, args}])[0]);
-}
-
-const stringCache = new Map<string, Promise<string>>();
-
-/**
- * Load language strings of one component.
- *
- * @param {string} component
- * @param {string[]} keys
- * @returns {Promise<Record<string, string>>} strings keyed by their identifier
- */
-export async function loadStrings(component: string, keys: readonly string[]): Promise<Record<string, string>> {
-    const missing = keys.filter((key) => !stringCache.has(`${component}/${key}`));
-    if (missing.length) {
-        const request: Promise<string[]> = Promise.resolve(Str.get_strings(missing.map((key) => ({key, component}))));
-        missing.forEach((key, index) => {
-            stringCache.set(`${component}/${key}`, request.then((strings) => strings[index]));
-        });
+export async function formatUserDates(timestamps: number[]): Promise<string[]> {
+    if (!timestamps.length) {
+        return [];
     }
-    const values = await Promise.all(keys.map((key) => stringCache.get(`${component}/${key}`) as Promise<string>));
-    return Object.fromEntries(keys.map((key, index) => [key, values[index]]));
+    const [UserDate, format] = await Promise.all([
+        requireAsync<UserDateModule>('core/user_date'),
+        getString('strftimedatetimeshortaccurate', 'core_langconfig'),
+    ]);
+    return UserDate.get(timestamps.map((timestamp) => ({timestamp, format})));
 }
 
 /**
- * Get a single language string.
+ * Show an error. Problems reported by the API are shown as toast, unexpected errors as exception dialogue.
  *
- * @param {string} key
- * @param {string} component
- * @param {any} param
- * @returns {Promise<string>}
+ * @param error
  */
-export function getString(key: string, component: string, param?: unknown): Promise<string> {
-    return Promise.resolve(Str.get_string(key, component, param));
-}
-
-/**
- * Show an exception in the Moodle way.
- *
- * @param {unknown} error
- */
-export function displayException(error: unknown): void {
+export async function displayError(error: unknown): Promise<void> {
+    if (error instanceof ApiError) {
+        await addToast(error.message, 'danger');
+        return;
+    }
+    const Notification = await requireAsync<NotificationModule>('core/notification');
     Notification.exception(error);
 }
 
 /**
- * Ask for confirmation of a deletion.
+ * Ask for the confirmation of a deletion.
  *
- * @param {string} title
- * @param {string} question
- * @returns {Promise<boolean>} true if the user confirmed
+ * @param title
+ * @param question
+ * @returns Whether the user confirmed.
  */
 export async function confirmDelete(title: string, question: string): Promise<boolean> {
+    const Notification = await requireAsync<NotificationModule>('core/notification');
     try {
-        await Notification.deleteCancelPromise(title, question, getString('delete', 'core'));
+        await Notification.deleteCancelPromise(title, question, await getString('delete', 'core'));
         return true;
     } catch {
         return false;
@@ -120,37 +98,42 @@ export async function confirmDelete(title: string, question: string): Promise<bo
 /**
  * Show a toast.
  *
- * @param {string} message
- * @param {string} type success, info, warning or danger
+ * @param message
+ * @param type success, info, warning or danger
  */
-export function addToast(message: string, type = 'success'): void {
-    Toast.add(message, {type});
+export async function addToast(message: string, type = 'success'): Promise<void> {
+    const Toast = await requireAsync<ToastModule>('core/toast');
+    await Toast.add(message, {type});
 }
 
 /**
- * Tell the filters (e.g. MathJax) that content changed.
+ * Switch the edit mode of Moodle on without reloading the page, like the edit mode switch of the navigation does.
  *
- * @param {HTMLElement|null} node
+ * The edit mode is a setting of the user session owned by Moodle, so it is changed through the core API and the
+ * switch in the navigation is updated to match.
  */
-export function notifyFilterContentUpdated(node: HTMLElement | null): void {
+export async function enableEditMode(): Promise<void> {
+    const editswitch = document.querySelector<HTMLInputElement>('input[name="setmode"][data-context]');
+    if (!editswitch || editswitch.checked) {
+        return;
+    }
+    const Ajax = await requireAsync<AjaxModule>('core/ajax');
+    await Ajax.call([{
+        methodname: 'core_change_editmode',
+        args: {context: Number(editswitch.dataset.context), setmode: true},
+    }])[0];
+    editswitch.checked = true;
+    editswitch.setAttribute('aria-checked', 'true');
+}
+
+/**
+ * Tell the filters, e.g. MathJax, that content changed.
+ *
+ * @param node
+ */
+export async function notifyFilterContentUpdated(node: HTMLElement | null): Promise<void> {
     if (node) {
+        const FilterEvents = await requireAsync<FilterEventsModule>('core_filters/events');
         FilterEvents.notifyFilterContentUpdated([node]);
     }
-}
-
-/**
- * Store a page setting.
- *
- * @param {number} pageid
- * @param {string} name
- * @param {string|number|boolean} value
- * @returns {Promise<string>} the stored value
- */
-export async function storeSetting(pageid: number, name: string, value: string | number | boolean): Promise<string> {
-    let stored = String(value);
-    if (typeof value === 'boolean') {
-        stored = value ? '1' : '0';
-    }
-    const result = await callWs<{value: string}>('mod_mootimeter_store_setting', {pageid, name, value: stored});
-    return result.value;
 }

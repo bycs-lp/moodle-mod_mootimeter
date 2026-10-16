@@ -24,7 +24,7 @@
 
 import React, {useEffect, useState, ComponentType} from 'react';
 import {Loading} from './lib/components';
-import {displayException} from './lib/moodle';
+import {displayError} from './lib/moodle';
 import type {ToolViewProps} from './lib/types';
 
 type ToolComponentProps = ToolViewProps & {
@@ -47,7 +47,7 @@ export default function ToolComponent({specifier, ...props}: ToolComponentProps)
         let active = true;
         import(specifier)
             .then((module) => active && setComponent({specifier, Component: module.default}))
-            .catch(displayException);
+            .catch(displayError);
         return () => {
             active = false;
         };

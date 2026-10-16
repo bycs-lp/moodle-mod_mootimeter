@@ -23,6 +23,10 @@
  */
 
 import React, {useEffect, useState} from 'react';
+import {requireAsync} from '@moodle/lms/core/amd';
+import config from '@moodle/lms/core/config';
+import {getString} from '@moodle/lms/core/stringUtils';
+import {patch, post, remove} from '@moodle/lms/mod_mootimeter/lib/api';
 import {
     AnonymousModeSetting,
     Divider,
@@ -31,28 +35,27 @@ import {
     NumberSetting,
     TransparentButton,
 } from '@moodle/lms/mod_mootimeter/lib/components';
-import {useStrings, useWebservice} from '@moodle/lms/mod_mootimeter/lib/hooks';
-import {
-    addToast,
-    callWs,
-    displayException,
-    getString,
-    requireAmd,
-    storeSetting,
-    wwwroot,
-} from '@moodle/lms/mod_mootimeter/lib/moodle';
+import {useResource, useStrings} from '@moodle/lms/mod_mootimeter/lib/hooks';
+import {addToast, displayError} from '@moodle/lms/mod_mootimeter/lib/moodle';
 import type {PageInfo, ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
-import {VISUALIZATION_BAR, VISUALIZATION_PIE, VISUALIZATION_PILLAR} from './types';
-import type {QuizData, QuizOption} from './types';
+import {componentOf, type QuizData, type QuizOption, type Visualization} from './types';
 
-const VISUALIZATIONS = [
-    {id: VISUALIZATION_PILLAR, icon: 'chart-pillar', string: 'visualization_pillar'},
-    {id: VISUALIZATION_BAR, icon: 'chart-bar', string: 'visualization_bar'},
-    {id: VISUALIZATION_PIE, icon: 'chart-pie', string: 'visualization_pie'},
+const VISUALIZATIONS: {id: Visualization; icon: string; string: string}[] = [
+    {id: 'pillar', icon: 'chart-pillar', string: 'visualization_pillar'},
+    {id: 'bar', icon: 'chart-bar', string: 'visualization_bar'},
+    {id: 'pie', icon: 'chart-pie', string: 'visualization_pie'},
 ];
 
+type ModalForm = {
+    events: {FORM_SUBMITTED: string};
+    addEventListener: (type: string, listener: (e: CustomEvent<{count: number}>) => void) => void;
+    show: () => void;
+};
+
+type ModalFormModule = new (config: Record<string, unknown>) => ModalForm;
+
 type OptionEditorProps = {
-    pageid: number;
+    page: PageInfo;
     option: QuizOption;
     supportscorrect: boolean;
     placeholder: string;
@@ -68,17 +71,16 @@ type OptionEditorProps = {
  * @returns {React.JSX.Element}
  */
 function OptionEditor(props: OptionEditorProps): React.JSX.Element {
-    const {pageid, option, supportscorrect, placeholder, deletelabel, correctlabel, onChanged} = props;
+    const {page, option, supportscorrect, placeholder, deletelabel, correctlabel, onChanged} = props;
     const [text, setText] = useState(option.text);
-    const [iscorrect, setIscorrect] = useState(option.iscorrect);
+    const [iscorrect, setIscorrect] = useState(option.isCorrect);
+    const path = `/pages/${page.id}/options/${option.id}`;
 
     useEffect(() => setText(option.text), [option.text]);
-    useEffect(() => setIscorrect(option.iscorrect), [option.iscorrect]);
+    useEffect(() => setIscorrect(option.isCorrect), [option.isCorrect]);
 
-    const update = (newtext: string, newiscorrect: boolean) => {
-        callWs('mootimetertool_quiz_update_option', {pageid, optionid: option.id, text: newtext, iscorrect: newiscorrect})
-            .then(onChanged)
-            .catch(displayException);
+    const update = (body: {text?: string; isCorrect?: boolean}) => {
+        patch(componentOf(page), path, body).then(onChanged).catch(displayError);
     };
 
     return (
@@ -93,7 +95,7 @@ function OptionEditor(props: OptionEditorProps): React.JSX.Element {
                             checked={iscorrect}
                             onChange={(e) => {
                                 setIscorrect(e.target.checked);
-                                update(text, e.target.checked);
+                                update({isCorrect: e.target.checked});
                             }}
                         />
                         <span className="checkbox-icon-wrapper">
@@ -109,7 +111,7 @@ function OptionEditor(props: OptionEditorProps): React.JSX.Element {
                 placeholder={placeholder}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                onBlur={() => text !== option.text && update(text, iscorrect)}
+                onBlur={() => text !== option.text && update({text})}
                 onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
             />
             <TransparentButton
@@ -117,9 +119,7 @@ function OptionEditor(props: OptionEditorProps): React.JSX.Element {
                 title={deletelabel}
                 className="mtmt-remove-answeroption"
                 onClick={() => {
-                    callWs('mootimetertool_quiz_delete_option', {pageid, optionid: option.id})
-                        .then(onChanged)
-                        .catch(displayException);
+                    remove(componentOf(page), path).then(onChanged).catch(displayError);
                 }}
             />
         </div>
@@ -142,8 +142,8 @@ function ImportOptions({page, onImported}: ImportOptionsProps): React.JSX.Elemen
 
     const openForm = async() => {
         try {
-            const ModalForm = await requireAmd('core_form/modalform');
-            const form = new ModalForm({
+            const ModalFormClass = await requireAsync<ModalFormModule>('core_form/modalform');
+            const form = new ModalFormClass({
                 formClass: 'mootimetertool_quiz\\form\\import_options',
                 args: {pageid: page.id},
                 modalConfig: {title: s.import_options},
@@ -155,7 +155,7 @@ function ImportOptions({page, onImported}: ImportOptionsProps): React.JSX.Elemen
             });
             form.show();
         } catch (error) {
-            displayException(error);
+            displayError(error);
         }
     };
 
@@ -187,25 +187,27 @@ export default function Settings({page, settingsVersion, refresh}: ToolViewProps
         'correct_answer',
     ]);
     const c = useStrings('core', ['settings', 'delete']);
-    const data = useWebservice<QuizData>('mootimetertool_quiz_get_page_data', {pageid: page.id}, [page.id, settingsVersion]);
+    const data = useResource<QuizData>(componentOf(page), `/pages/${page.id}`, [settingsVersion]);
 
     if (!data) {
         return <Loading />;
     }
 
+    const save = (body: Record<string, unknown>) => patch(componentOf(page), `/pages/${page.id}`, body).then(refresh);
+
     const addOption = () => {
-        callWs('mootimetertool_quiz_add_option', {pageid: page.id}).then(refresh).catch(displayException);
+        post(componentOf(page), `/pages/${page.id}/options`, {}).then(refresh).catch(displayError);
     };
 
-    const setVisualization = (id: number) => {
-        storeSetting(page.id, 'visualizationtype', id).then(refresh).catch(displayException);
+    const setVisualization = (visualization: Visualization) => {
+        save({visualization}).catch(displayError);
     };
 
     return (
         <>
             <p className="text-bold">{s.answeroptions}</p>
 
-            {data.supportscorrect && (
+            {data.supportsCorrectOptions && (
                 <Notification type="info" icon="fa-share fa-flip-vertical" iconclass="mootimeter_rotate_110"
                     text={s.mark_correct_answer} />
             )}
@@ -214,9 +216,9 @@ export default function Settings({page, settingsVersion, refresh}: ToolViewProps
                 {data.options.map((option) => (
                     <OptionEditor
                         key={option.id}
-                        pageid={page.id}
+                        page={page}
                         option={option}
-                        supportscorrect={data.supportscorrect}
+                        supportscorrect={data.supportsCorrectOptions}
                         placeholder={s.enter_answeroption}
                         deletelabel={c.delete}
                         correctlabel={s.correct_answer}
@@ -247,7 +249,7 @@ export default function Settings({page, settingsVersion, refresh}: ToolViewProps
                             onClick={() => setVisualization(visualization.id)}
                         >
                             <img
-                                src={`${wwwroot}/mod/mootimeter/tools/quiz/pix/${visualization.icon}.svg`}
+                                src={`${config.wwwroot}/mod/mootimeter/tools/quiz/pix/${visualization.icon}.svg`}
                                 width="24px"
                                 className="m-1"
                                 alt=""
@@ -261,11 +263,9 @@ export default function Settings({page, settingsVersion, refresh}: ToolViewProps
 
             <p className="text-bold">{c.settings}</p>
             <NumberSetting
-                pageid={page.id}
-                name="maxanswersperuser"
-                value={data.maxanswers}
+                value={data.maxAnswers}
                 label={s.answers_max_number}
-                onStored={refresh}
+                onSave={(maxAnswers) => save({maxAnswers})}
             />
             <AnonymousModeSetting page={page} onStored={refresh} />
         </>

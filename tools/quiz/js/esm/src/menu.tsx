@@ -23,11 +23,12 @@
  */
 
 import React from 'react';
+import {patch} from '@moodle/lms/mod_mootimeter/lib/api';
 import {IconButton} from '@moodle/lms/mod_mootimeter/lib/components';
-import {useStrings, useWebservice} from '@moodle/lms/mod_mootimeter/lib/hooks';
-import {displayException, storeSetting} from '@moodle/lms/mod_mootimeter/lib/moodle';
+import {useResource, useStrings} from '@moodle/lms/mod_mootimeter/lib/hooks';
+import {displayError} from '@moodle/lms/mod_mootimeter/lib/moodle';
 import type {ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
-import type {QuizData} from './types';
+import {componentOf, type QuizData} from './types';
 
 /**
  * Toggle of the answer correction.
@@ -40,7 +41,7 @@ export default function Menu({page, settingsVersion, refresh}: ToolViewProps): R
         'tooltip_content_menu_answercorrection',
         'tooltip_content_menu_answercorrection_disabled',
     ]);
-    const data = useWebservice<QuizData>('mootimetertool_quiz_get_page_data', {pageid: page.id}, [page.id, settingsVersion]);
+    const data = useResource<QuizData>(componentOf(page), `/pages/${page.id}`, [settingsVersion]);
 
     if (!data) {
         return null;
@@ -48,13 +49,15 @@ export default function Menu({page, settingsVersion, refresh}: ToolViewProps): R
 
     return (
         <IconButton
-            icon={data.answercorrection ? 'fa-check-square-o' : 'fa-square-o'}
-            title={data.answercorrection
+            icon={data.correctionShown ? 'fa-check-square-o' : 'fa-square-o'}
+            title={data.correctionShown
                 ? s.tooltip_content_menu_answercorrection_disabled
                 : s.tooltip_content_menu_answercorrection}
-            active={data.answercorrection}
+            active={data.correctionShown}
             onClick={() => {
-                storeSetting(page.id, 'showanswercorrection', !data.answercorrection).then(refresh).catch(displayException);
+                patch(componentOf(page), `/pages/${page.id}`, {correctionShown: !data.correctionShown})
+                    .then(refresh)
+                    .catch(displayError);
             }}
         />
     );

@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "sources": ["../src/types.ts"],
+  "sourceRoot": "../../../../../../sources/public/mod/mootimeter/tools/wordcloud/js/esm/build",
+  "sourcesContent": ["// This file is part of Moodle - http://moodle.org/\n//\n// Moodle is free software: you can redistribute it and/or modify\n// it under the terms of the GNU General Public License as published by\n// the Free Software Foundation, either version 3 of the License, or\n// (at your option) any later version.\n//\n// Moodle is distributed in the hope that it will be useful,\n// but WITHOUT ANY WARRANTY; without even the implied warranty of\n// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n// GNU General Public License for more details.\n//\n// You should have received a copy of the GNU General Public License\n// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.\n\n/**\n * Types of the wordcloud tool, mirroring mootimetertool_wordcloud\\route\\schema.\n *\n * @module     mootimetertool_wordcloud/types\n * @copyright  2026 ISB Bayern\n * @author     Dr. Peter Mayer\n * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later\n */\n\nexport const COMPONENT = 'mootimetertool_wordcloud';\n\nexport type Answer = {\n    id: number;\n    text: string;\n    fullName: string;\n    createdAt: string;\n};\n\nexport type WordcloudData = {\n    pageId: number;\n    ownAnswers: Answer[];\n    maxAnswers: number;\n    allowDuplicateAnswers: boolean;\n};\n\nexport type Word = {\n    text: string;\n    count: number;\n};\n\nexport type WordcloudResults = {\n    available: boolean;\n    words: Word[];\n};\n"],
+  "mappings": "AAeA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AASO,MAAM,YAAY;",
+  "names": []
+}

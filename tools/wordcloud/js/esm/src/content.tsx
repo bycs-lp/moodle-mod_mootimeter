@@ -23,17 +23,12 @@
  */
 
 import React, {useState} from 'react';
+import {ApiError, post, remove as removeResource} from '@moodle/lms/mod_mootimeter/lib/api';
 import {Loading, Notification, QuestionHeader} from '@moodle/lms/mod_mootimeter/lib/components';
-import {useStrings, useWebservice} from '@moodle/lms/mod_mootimeter/lib/hooks';
-import {callWs, confirmDelete, displayException} from '@moodle/lms/mod_mootimeter/lib/moodle';
-import {CODE_OK} from '@moodle/lms/mod_mootimeter/lib/types';
-import type {StoreResult, ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
-
-type WordcloudData = {
-    answers: {id: number; text: string}[];
-    maxinputsperuser: number;
-    allowduplicateanswers: boolean;
-};
+import {useResource, useStrings} from '@moodle/lms/mod_mootimeter/lib/hooks';
+import {confirmDelete, displayError} from '@moodle/lms/mod_mootimeter/lib/moodle';
+import type {ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
+import {COMPONENT, type WordcloudData} from './types';
 
 /**
  * Lets participants submit words and shows their own submissions.
@@ -45,13 +40,9 @@ export default function Content({page, settingsVersion, answersVersion, refresh}
     const s = useStrings('mootimetertool_wordcloud', ['submit', 'type_answer']);
     const m = useStrings('mod_mootimeter', ['delete_single_answer_dialog_title', 'delete_single_answer_dialog_question']);
     const c = useStrings('core', ['delete']);
-    const data = useWebservice<WordcloudData>(
-        'mootimetertool_wordcloud_get_page_data',
-        {pageid: page.id},
-        [page.id, settingsVersion, answersVersion]
-    );
+    const data = useResource<WordcloudData>(COMPONENT, `/pages/${page.id}`, [settingsVersion, answersVersion]);
     const [answer, setAnswer] = useState('');
-    const [result, setResult] = useState<StoreResult | null>(null);
+    const [problem, setProblem] = useState('');
 
     if (!data) {
         return <Loading />;
@@ -60,35 +51,32 @@ export default function Content({page, settingsVersion, answersVersion, refresh}
     const submit = async(e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await callWs<StoreResult>('mootimetertool_wordcloud_store_answer', {pageid: page.id, answer});
-            setResult(response);
-            if (response.code === CODE_OK) {
-                setAnswer('');
-                refresh();
-            }
+            await post(COMPONENT, `/pages/${page.id}/answers`, {text: answer});
+            setAnswer('');
+            refresh();
         } catch (error) {
-            displayException(error);
+            if (error instanceof ApiError && [409, 422].includes(error.status)) {
+                setProblem(error.message);
+            } else {
+                displayError(error);
+            }
         }
     };
 
     const remove = async(answerid: number) => {
         if (await confirmDelete(m.delete_single_answer_dialog_title, m.delete_single_answer_dialog_question)) {
-            callWs('mod_mootimeter_delete_answers', {pageid: page.id, scope: 'single', answerid})
-                .then(refresh)
-                .catch(displayException);
+            removeResource(COMPONENT, `/pages/${page.id}/answers/${answerid}`).then(refresh).catch(displayError);
         }
     };
 
     return (
         <div className="mootimeter-colcontent-preview mootimeter-width-s">
             <QuestionHeader page={page}>
-                {result && result.code !== CODE_OK && (
-                    <Notification type="warning" icon="fa-exclamation" text={result.message} />
-                )}
+                {problem && <Notification type="warning" icon="fa-exclamation" text={problem} />}
             </QuestionHeader>
 
             <div className="filter_mathjaxloader_equation" id="mtmt_wordcloud_pills">
-                {data.answers.map((item) => (
+                {data.ownAnswers.map((item) => (
                     <div className="mootimeter-pill mootimeter-pill-inline" key={item.id}>
                         <span>
                             {item.text}
@@ -116,7 +104,7 @@ export default function Content({page, settingsVersion, answersVersion, refresh}
                     autoFocus
                     onChange={(e) => {
                         setAnswer(e.target.value);
-                        setResult(null);
+                        setProblem('');
                     }}
                 />
                 <button type="submit" className="mootimeter-btn mootimeter-btn-full">{s.submit}</button>

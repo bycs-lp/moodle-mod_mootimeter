@@ -26,8 +26,9 @@
 namespace mod_mootimeter;
 
 use advanced_testcase;
-use context_module;
-use context_course;
+use core\context\module as context_module;
+use PHPUnit\Framework\Attributes\CoversFunction;
+use PHPUnit\Framework\Attributes\CoversMethod;
 
 /**
  * Test for deleting mootimeter instances when user loses moderator capability
@@ -37,6 +38,8 @@ use context_course;
  * @author      Andreas Wagner
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+#[CoversFunction('mootimeter_delete_instance')]
+#[CoversMethod(helper::class, 'delete_page')]
 final class delete_instance_test extends advanced_testcase {
     /**
      * Test that async deletion succeeds when teacher loses moderator capability
@@ -46,14 +49,10 @@ final class delete_instance_test extends advanced_testcase {
      * 2. The teacher is then unenrolled from the course
      * 3. The adhoc task course_delete_modules runs and should succeed
      *
-     * @covers \mootimeter_delete_instance
-     * @covers \mod_mootimeter\helper::delete_page()
      * @return void
      */
     public function test_async_delete_succeeds_when_teacher_loses_capability(): void {
-        global $DB, $CFG;
-
-        require_once($CFG->dirroot . '/course/lib.php');
+        global $DB;
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
@@ -86,7 +85,6 @@ final class delete_instance_test extends advanced_testcase {
         $page = $mtmgenerator->create_page([
             'instance' => $mootimeter->id,
             'tool' => 'wordcloud',
-            'title' => 'Test Page for Async Delete',
         ]);
 
         // Verify page was created.
@@ -95,8 +93,8 @@ final class delete_instance_test extends advanced_testcase {
         // Set user as teacher and trigger async deletion.
         $this->setUser($teacher);
 
-        // Trigger async deletion by calling course_delete_module().
-        course_delete_module($cm->id, true);
+        // Trigger async deletion.
+        \core_courseformat\formatactions::cm($course->id)->delete($cm->id, true);
 
         // Verify that the adhoc task was created.
         $tasks = $DB->get_records('task_adhoc', ['classname' => '\core_course\task\course_delete_modules']);

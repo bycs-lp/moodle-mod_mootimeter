@@ -44,66 +44,48 @@ class mod_mootimeter_generator extends testing_module_generator {
     }
 
     /**
-     * Creates a mootimetertool_{tool} page.
+     * Creates a page with the tool hooks, like a moderator does.
      *
-     * @param advanced_testcase $atc
-     * @param array $record
-     * @return stdClass
-     * @throws dml_exception
-     * @throws coding_exception
-     * @throws required_capability_exception
+     * @param array $record with the key instance and the optional keys tool, visible and question
+     * @return stdClass the page record
+     * @throws \core\exception\coding_exception if the instance is missing
      */
     public function create_page($record = []): stdClass {
+        global $DB;
+
         $record = (array) $record;
-
-        $tool = (empty($record['tool'])) ? self::MTMT_DEFAULT_TOOLNAME_WORDCLOUD : $record['tool'];
-
         if (empty($record['instance'])) {
-            mtrace('mootimetertool_' . $tool . " instance is missing.");
-            return new stdClass();
+            throw new \core\exception\coding_exception('The mootimeter instance of the page is missing.');
         }
 
-        $mtmhelper = new \mod_mootimeter\helper();
-        $record = $record + [
-            'tool' => $tool,
-            'title' => 'Test ' . $tool . " page",
-            'timemodified' => time(),
-            'sortorder' => $mtmhelper->get_page_next_sortorder($record['instance']),
-            'visible' => $mtmhelper::PAGE_VISIBLE,
-        ];
+        $helper = new \mod_mootimeter\helper();
+        $cm = $helper::get_cm_by_instance((int) $record['instance']);
+        $page = $helper->create_page($cm, $record['tool'] ?? self::MTMT_DEFAULT_TOOLNAME_WORDCLOUD);
 
-        $pageid = $mtmhelper->store_page((object)$record);
+        $visible = (bool) ($record['visible'] ?? true);
+        if ((int) $page->visible !== (int) $visible) {
+            $helper->set_page_visibility($page, $visible);
+        }
+        if (isset($record['question'])) {
+            $helper->set_tool_config($page, 'question', $record['question']);
+        }
 
-        return $mtmhelper->get_page($pageid);
+        return $DB->get_record('mootimeter_pages', ['id' => $page->id], '*', MUST_EXIST);
     }
 
     /**
-     * Create a quiz/poll answer option.
-     * @param object $page
-     * @param object $record
-     * @return void
+     * Create an answer option of a quiz or poll page.
+     *
+     * @param stdClass $page
+     * @param string $text
+     * @param bool $iscorrect only used by quiz pages
+     * @return stdClass the option record
      */
-    public function create_quiz_poll_answer_option(object $page, object $record): void {
-        global $USER;
-
-        $record = new stdClass();
-        $record->pageid = $page->id;
-        $record->usermodified = (empty($record->userid)) ? $USER->id : $record->userid;
-        $record->optiontext = (empty($record->optiontext)) ? 'Default Option' : $record->optiontext;
-        if ($page->tool == "quiz") {
-            $record->optioniscorrect = (empty($record->optioniscorrect)) ? 0 : $record->optioniscorrect;
-        }
-        $record->timecreated = time();
-
-        if ($page->tool == "poll") {
-            $mtmthelper = new \mootimetertool_poll\poll();
-        }
-        if ($page->tool == "quiz") {
-            $mtmthelper = new \mootimetertool_quiz\quiz();
-        }
-
-        // Store two answer options as default.
-        $mtmthelper->store_answer_option($record);
-        return;
+    public function create_quiz_poll_answer_option(
+        stdClass $page,
+        string $text = 'Default Option',
+        bool $iscorrect = false,
+    ): stdClass {
+        return \mod_mootimeter\helper::get_toolhelper($page->tool)->create_option($page, $text, $iscorrect);
     }
 }

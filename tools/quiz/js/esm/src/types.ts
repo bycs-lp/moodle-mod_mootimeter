@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Types of the quiz and poll tool.
+ * Types of the quiz and poll tool, mirroring mootimetertool_quiz\route\schema.
  *
  * @module     mootimetertool_quiz/types
  * @copyright  2026 ISB Bayern
@@ -22,24 +22,45 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+import type {PageInfo} from '@moodle/lms/mod_mootimeter/lib/types';
+
+export type Visualization = 'pillar' | 'bar' | 'line' | 'pie';
+
 export type QuizOption = {
     id: number;
     text: string;
-    texthtml: string;
-    iscorrect: boolean;
+    textHtml: string;
+    isCorrect: boolean;
 };
 
-/** See mootimetertool_quiz\quiz::export_page_data(). */
 export type QuizData = {
+    pageId: number;
     options: QuizOption[];
-    selected: number[];
-    maxanswers: number;
-    answercorrection: boolean;
-    supportscorrect: boolean;
-    visualization: number;
+    selectedOptionIds: number[];
+    maxAnswers: number;
+    correctionShown: boolean;
+    supportsCorrectOptions: boolean;
+    visualization: Visualization;
 };
 
-export const VISUALIZATION_PILLAR = 1;
-export const VISUALIZATION_BAR = 2;
-export const VISUALIZATION_LINE = 3;
-export const VISUALIZATION_PIE = 4;
+export type QuizResults = {
+    available: boolean;
+    visualization: Visualization;
+    options: {id: number; label: string; count: number}[];
+    colors: string[];
+};
+
+export type QuizResponse = {
+    id: number;
+    fullName: string;
+    optionIds: number[];
+    createdAt: string;
+};
+
+/**
+ * The component owning the REST resources of a page, the poll reuses the quiz frontend.
+ *
+ * @param page
+ * @returns The frankenstyle component.
+ */
+export const componentOf = (page: PageInfo): string => `mootimetertool_${page.tool}`;

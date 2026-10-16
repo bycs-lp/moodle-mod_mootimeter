@@ -54,12 +54,12 @@ class mootimeter_plugin_request_data {
     /**
      * Object creator for mootimeter plugin request data.
      *
-     * @param \context $context Context object.
+     * @param \core\context $context Context object.
      * @param object $page The Mootimeter object.
      * @param ?object $user The user object.
      * @param array  $subcontext
      */
-    public function __construct(\context $context, object $page, ?object $user = null, array $subcontext = []) {
+    public function __construct(\core\context $context, object $page, ?object $user = null, array $subcontext = []) {
         $this->context = $context;
         $this->page = $page;
         if ($user == null) {
@@ -83,7 +83,7 @@ class mootimeter_plugin_request_data {
     /**
      * Getter for this attribute.
      *
-     * @return \context Context
+     * @return \core\context Context
      */
     public function get_context() {
         return $this->context;

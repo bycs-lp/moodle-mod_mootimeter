@@ -23,18 +23,18 @@
  */
 
 import React, {useEffect, useRef} from 'react';
+import {requireAsync} from '@moodle/lms/core/amd';
 import {Loading} from '@moodle/lms/mod_mootimeter/lib/components';
-import {useStrings, useWebservice} from '@moodle/lms/mod_mootimeter/lib/hooks';
-import {requireAmd} from '@moodle/lms/mod_mootimeter/lib/moodle';
+import {useResource, useStrings} from '@moodle/lms/mod_mootimeter/lib/hooks';
 import type {ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
-import {VISUALIZATION_BAR, VISUALIZATION_LINE, VISUALIZATION_PIE} from './types';
+import {componentOf, type QuizResults} from './types';
 
-const Chart: any = await requireAmd('core/chartjs');
+// Chart.js is loaded as untyped AMD module.
+const Chart: any = await requireAsync('core/chartjs');
 Chart.defaults.font.size = 25;
 
 type Results = {
-    visible: boolean;
-    visualization: number;
+    visualization: QuizResults['visualization'];
     labels: string[];
     values: number[];
     colors: string[];
@@ -64,13 +64,13 @@ const buildChartConfig = (results: Results, label: string): any => {
     const integerticks = {ticks: {stepSize: 1}};
     const dataset: any = {label, data: results.values, backgroundColor: results.colors};
     switch (results.visualization) {
-        case VISUALIZATION_PIE:
+        case 'pie':
             return {
                 type: 'pie',
                 data: {labels: results.labels, datasets: [dataset]},
                 options: {responsive: true, plugins: {legend: {position: 'right'}}},
             };
-        case VISUALIZATION_LINE:
+        case 'line':
             return {
                 type: 'line',
                 data: {
@@ -79,7 +79,7 @@ const buildChartConfig = (results: Results, label: string): any => {
                 },
                 options: {indexAxis: 'x', scales: {x: {min: 0, ...integerticks}}},
             };
-        case VISUALIZATION_BAR:
+        case 'bar':
             return {
                 type: 'bar',
                 data: {labels: results.labels, datasets: [{...dataset, borderRadius: 20}]},
@@ -102,18 +102,21 @@ const buildChartConfig = (results: Results, label: string): any => {
  */
 export default function ResultsView({page, settingsVersion, answersVersion}: ToolViewProps): React.JSX.Element {
     const s = useStrings('mootimetertool_quiz', ['no_answer_due_to_showteacherpermission', 'show_results']);
-    const results = useWebservice<Results>(
-        'mootimetertool_quiz_get_results',
-        {pageid: page.id},
-        [page.id, settingsVersion, answersVersion]
-    );
+    const response = useResource<QuizResults>(componentOf(page), `/pages/${page.id}/results`, [settingsVersion, answersVersion]);
     const canvas = useRef<HTMLCanvasElement>(null);
     const chart = useRef<any>(null);
 
-    const label = new DOMParser().parseFromString(page.questionhtml, 'text/html').body.textContent ?? '';
+    const label = new DOMParser().parseFromString(page.questionHtml, 'text/html').body.textContent ?? '';
+    const results: Results | null = response?.available ? {
+        visualization: response.visualization,
+        labels: response.options.map((option) => option.label),
+        values: response.options.map((option) => option.count),
+        colors: response.colors,
+    } : null;
+    const resultskey = JSON.stringify(results);
 
     useEffect(() => {
-        if (!results?.visible || !canvas.current) {
+        if (!results || !canvas.current) {
             return;
         }
         const config = getChartConfig(results, label);
@@ -126,15 +129,15 @@ export default function ResultsView({page, settingsVersion, answersVersion}: Too
         }
         current?.destroy();
         chart.current = new Chart(canvas.current, config);
-    }, [results, label]);
+    }, [resultskey, label]);
 
     useEffect(() => () => chart.current?.destroy(), []);
 
-    if (!results) {
+    if (!response) {
         return <Loading />;
     }
 
-    if (!results.visible) {
+    if (!results) {
         return (
             <div className="mootimeterfullwidth mootimeter-colcontent-preview mootimeter-width-xl mootimeter-vertical-align">
                 {s.no_answer_due_to_showteacherpermission}

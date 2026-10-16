@@ -28,9 +28,9 @@ defined('MOODLE_INTERNAL') || die();
 
 $definitions = [
     'answers' => [
-        'mode' => cache_store::MODE_APPLICATION,
+        'mode' => \core_cache\store::MODE_APPLICATION,
     ],
     'lastupdated' => [
-        'mode' => cache_store::MODE_APPLICATION,
+        'mode' => \core_cache\store::MODE_APPLICATION,
     ],
 ];

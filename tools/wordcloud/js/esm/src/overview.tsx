@@ -23,19 +23,16 @@
  */
 
 import React, {useState} from 'react';
+import {patch, remove} from '@moodle/lms/mod_mootimeter/lib/api';
 import {Loading, OverviewTable, TransparentButton} from '@moodle/lms/mod_mootimeter/lib/components';
-import type {OverviewRow} from '@moodle/lms/mod_mootimeter/lib/components';
-import {useStrings, useWebservice} from '@moodle/lms/mod_mootimeter/lib/hooks';
-import {callWs, displayException} from '@moodle/lms/mod_mootimeter/lib/moodle';
+import {useCollection, useStrings} from '@moodle/lms/mod_mootimeter/lib/hooks';
+import {displayError} from '@moodle/lms/mod_mootimeter/lib/moodle';
 import type {ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
-
-type Row = OverviewRow & {
-    text: string;
-};
+import {COMPONENT, type Answer} from './types';
 
 type AnswerEditorProps = {
     pageid: number;
-    row: Row;
+    row: Answer;
     onChanged: () => void;
 };
 
@@ -70,11 +67,11 @@ function AnswerEditor({pageid, row, onChanged}: AnswerEditorProps): React.JSX.El
     const save = async(e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await callWs('mootimetertool_wordcloud_update_answer', {pageid, answerid: row.answerid, text});
+            await patch(COMPONENT, `/pages/${pageid}/answers/${row.id}`, {text});
             setEditing(false);
             onChanged();
         } catch (error) {
-            displayException(error);
+            displayError(error);
         }
     };
 
@@ -96,24 +93,23 @@ function AnswerEditor({pageid, row, onChanged}: AnswerEditorProps): React.JSX.El
  */
 export default function OverviewView({page, answersVersion, refresh}: ToolViewProps): React.JSX.Element {
     const s = useStrings('mod_mootimeter', ['delete_single_answer_dialog_title', 'delete_single_answer_dialog_question']);
-    const overview = useWebservice<{anonymous: boolean; rows: Row[]}>(
-        'mootimetertool_wordcloud_get_overview',
-        {pageid: page.id},
-        [page.id, answersVersion]
-    );
+    const answers = useCollection<Answer>(COMPONENT, `/pages/${page.id}/answers?sort=id`, [answersVersion]);
 
-    if (!overview) {
+    if (!answers) {
         return <Loading />;
     }
 
     return (
-        <OverviewTable<Row>
-            rows={overview.rows}
+        <OverviewTable<Answer>
+            rows={answers.items}
+            offset={(answers.page - 1) * answers.pageSize}
+            totalPages={answers.totalPages}
+            currentPage={answers.page}
+            onPageChange={answers.setPage}
             deleteTitle={s.delete_single_answer_dialog_title}
             deleteQuestion={s.delete_single_answer_dialog_question}
-            onDelete={(row) => callWs('mod_mootimeter_delete_answers', {pageid: page.id, scope: 'single', answerid: row.answerid})
-                .then(refresh)}
-            renderAnswer={(row) => <AnswerEditor pageid={page.id} row={row} onChanged={refresh} />}
+            onDelete={(row) => remove(COMPONENT, `/pages/${page.id}/answers/${row.id}`).then(refresh)}
+            renderAnswer={(row) => <AnswerEditor key={row.id} pageid={page.id} row={row} onChanged={refresh} />}
         />
     );
 }

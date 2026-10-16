@@ -14,488 +14,271 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * mod_mootimeter helper test
- *
- * @package     mod_mootimeter
- * @copyright   2023, ISB Bayern
- * @author      Peter Mayer <peter.mayer@isb.bayern.de>
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace mod_mootimeter;
 
-use advanced_testcase;
-use coding_exception;
-use dml_exception;
-use mod_mootyper_generator;
-use PHPUnit\Framework\Exception;
-use SebastianBergmann\RecursionContext\InvalidArgumentException;
-use PHPUnit\Framework\ExpectationFailedException;
-use required_capability_exception;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
- * mod_mootimeter helper test
+ * Tests for the helper of mod_mootimeter.
  *
- * @package     mod_mootimeter
- * @copyright   2023, ISB Bayern
- * @author      Peter Mayer <peter.mayer@isb.bayern.de>
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package    mod_mootimeter
+ * @copyright  2026 ISB Bayern
+ * @author     Dr. Peter Mayer
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class helper_test extends advanced_testcase {
-    /** @var \stdClass The course used for testing */
-    private $course;
-    /** @var \stdClass The kanban used for testing */
-    private $mootimeter;
-    /** @var array The users used for testing */
-    private $users;
-    /** @var array The roles defined for testing */
-    private $roles;
-    /** @var object $generator The generator instance */
-    private $generator;
-
-    /** @var string test question */
-    const TEST_QUESTION_TITLE = 'Is this a test question?';
-
-    /** @var string toolname: quiz */
-    const TOOLNAME_QUIZ = 'quiz';
-
-    /** @var string answer column wordcloud */
-    const ANSWER_COLUMN_WORDCLOD = "answer";
+#[CoversClass(helper::class)]
+final class helper_test extends \advanced_testcase {
+    /** @var string Question used in the tests. */
+    const QUESTION = 'Is this a test question?';
 
     /**
-     * Setup the test cases.
-     */
-    public function setup(): void {
-        global $DB;
-
-        $this->generator = $this->getDataGenerator();
-        $this->course = $this->generator->create_course();
-        $this->mootimeter = $this->generator->create_module('mootimeter', ['course' => $this->course]);
-
-        $this->roles['student'] = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
-        $this->roles['teacher'] = $DB->get_record('role', ['shortname' => 'teacher'], '*', MUST_EXIST);
-
-        $this->users['teacher'] = $this->generator->create_user();
-        $this->users['student'] = $this->generator->create_user();
-        $this->users['student_not_in_course'] = $this->generator->create_user();
-
-        $this->generator->role_assign('teacher', $this->users['teacher']->id, \context_module::instance($this->mootimeter->cmid));
-        $this->generator->role_assign('student', $this->users['student']->id, \context_module::instance($this->mootimeter->cmid));
-
-        $this->generator->enrol_user($this->users['teacher']->id, $this->course->id, 'teacher');
-        $this->generator->enrol_user($this->users['student']->id, $this->course->id, 'student');
-
-        assign_capability(
-            'mod/mootimeter:moderator',
-            CAP_ALLOW,
-            $this->roles['teacher']->id,
-            \context_module::instance($this->mootimeter->cmid)->id,
-            true
-        );
-        parent::setup();
-    }
-
-    /**
-     * Create page
-     * @covers \mod_mootimeter\helper->store_page method
-     * @covers \mod_mootimeter\helper->delete_page method
+     * Create a mootimeter instance.
      *
-     * @return void
-     * @throws dml_exception
-     * @throws InvalidArgumentException
-     * @throws Exception
-     * @throws ExpectationFailedException
-     * @throws coding_exception
-     * @throws required_capability_exception
+     * @return \stdClass the module record with cmid
      */
-    public function test_create_delete_page(): void {
-        $this->resetAfterTest();
-
-        $helper = new \mod_mootimeter\helper();
-
-        $this->assertCount(0, $helper->get_pages($this->mootimeter->id));
-
-        $this->setUser($this->users['teacher']);
-        $record = [
-            'instance' => $this->mootimeter->id,
-            'tool' => 'wordcloud',
-        ];
-        $pageid = $helper->store_page((object)$record);
-        $this->assertCount(1, $helper->get_pages($this->mootimeter->id));
-
-        // Now check that a student gets an Exception, when creating a page.
-        $this->setUser($this->users['student']);
-        $this->expectException(\required_capability_exception::class);
-        $helper->store_page((object)$record);
-
-        // Now delete the page.
-        // First use student.
-        $this->expectException(\required_capability_exception::class);
-        $helper->delete_page($pageid);
-
-        // Second use teacher.
-        $this->setUser($this->users['teacher']);
-        $helper->delete_page($pageid);
-        $this->assertEmpty($helper->get_pages($this->mootimeter->id));
+    private function create_mootimeter(): \stdClass {
+        $course = $this->getDataGenerator()->create_course();
+        return $this->getDataGenerator()->create_module('mootimeter', ['course' => $course->id]);
     }
 
     /**
-     * Store page details
-     * @covers \mod_mootimeter\helper->store_page_detail
+     * Get the generator of mod_mootimeter.
+     *
+     * @return \mod_mootimeter_generator
      */
-    public function test_store_page_detail(): void {
-        $this->resetAfterTest();
-
-        $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
-        $helper = new \mod_mootimeter\helper();
-
-        $this->setUser($this->users['teacher']);
-        $page = $mtmgenerator->create_page(['instance' => $this->mootimeter->id]);
-
-        $helper->store_page_detail($page->id, 'tool', self::TOOLNAME_QUIZ);
-        $pagenew = $helper->get_page($page->id);
-        $this->assertEquals(self::TOOLNAME_QUIZ, $pagenew->tool);
+    private function get_generator(): \mod_mootimeter_generator {
+        return $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
     }
 
     /**
-     * Store page details and handle sortorder
-     * @covers \mod_mootimeter\helper->store_page_detail
+     * Creating a page appends it to the page list and runs the tool hook.
      */
-    public function test_store_page_detail_sortorder(): void {
-        $this->resetAfterTest();
-
-        $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
-        $helper = new \mod_mootimeter\helper();
-
-        $this->setUser($this->users['teacher']);
-        $page1 = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
-        $page2 = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
-        $page3 = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
-        $page4 = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
-
-        // Sort to the beginning of the list.
-        $helper->store_page_detail($page3->id, 'sortorder', 0);
-
-        $this->assertEquals(1, $helper->get_page($page1->id)->sortorder);
-        $this->assertEquals(2, $helper->get_page($page2->id)->sortorder);
-        $this->assertEquals(0, $helper->get_page($page3->id)->sortorder);
-        $this->assertEquals(3, $helper->get_page($page4->id)->sortorder);
-
-        // Sort to the end of the list.
-        $helper->store_page_detail($page3->id, 'sortorder', 3);
-
-        $this->assertEquals(0, $helper->get_page($page1->id)->sortorder);
-        $this->assertEquals(1, $helper->get_page($page2->id)->sortorder);
-        $this->assertEquals(3, $helper->get_page($page3->id)->sortorder);
-        $this->assertEquals(2, $helper->get_page($page4->id)->sortorder);
-
-        // Finally make some sorts between beginning and ending of the list.
-        $helper->store_page_detail($page3->id, 'sortorder', 2);
-        $helper->store_page_detail($page3->id, 'sortorder', 1);
-        $this->assertEquals(0, $helper->get_page($page1->id)->sortorder);
-        $this->assertEquals(2, $helper->get_page($page2->id)->sortorder);
-        $this->assertEquals(1, $helper->get_page($page3->id)->sortorder);
-        $this->assertEquals(3, $helper->get_page($page4->id)->sortorder);
-    }
-
-    /**
-     * Validate that a page belongs to an instance.
-     * @return void
-     * @throws coding_exception
-     * @throws dml_exception
-     * @throws InvalidArgumentException
-     * @throws ExpectationFailedException
-     * @covers \mod_mootimeter\helper->validate_page_belongs_to_instance
-     */
-    public function test_validate_page_belongs_to_instance(): void {
+    public function test_create_page(): void {
+        global $DB;
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        $helper = new \mod_mootimeter\helper();
-        $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
+        $cm = helper::get_cm_by_instance($mootimeter->id);
 
-        $helper = new \mod_mootimeter\helper();
+        set_config('default_new_page_visibility', 0, 'mod_mootimeter');
+        $first = $helper->create_page($cm, 'wordcloud');
+        set_config('default_new_page_visibility', 1, 'mod_mootimeter');
+        $second = $helper->create_page($cm, 'quiz');
 
-        // Create a second instance.
-        $mootimeter2 = $this->generator->create_module('mootimeter', ['course' => $this->course]);
+        $this->assertEquals(0, $first->sortorder);
+        $this->assertEquals(helper::PAGE_UNVISIBLE, $first->visible);
+        $this->assertEquals(1, $second->sortorder);
+        $this->assertEquals(helper::PAGE_VISIBLE, $second->visible);
+        $this->assertSame([$first->id, $second->id], array_keys($helper->get_pages($mootimeter->id)));
+        $this->assertSame([$second->id], array_keys($helper->get_pages($mootimeter->id, true)));
 
-        // Create a page in each instance.
-        $page = $mtmgenerator->create_page(['instance' => $this->mootimeter->id]);
-        $page2 = $mtmgenerator->create_page(['instance' => $mootimeter2->id]);
-
-        // Get all pages of instance 1.
-        $myinstancepages = $helper->get_pages($this->mootimeter->id);
-
-        // Check if the page is / is not present in instance 1 / 2.
-        $this->assertTrue($helper->validate_page_belongs_to_instance($page->id, $myinstancepages));
-        $this->assertFalse($helper->validate_page_belongs_to_instance($page2->id, $myinstancepages));
+        // The quiz hook creates two empty answer options.
+        $this->assertEquals(2, $DB->count_records('mootimetertool_quiz_options', ['pageid' => $second->id]));
     }
 
     /**
-     * Test set / get tool config.
-     * @return void
-     * @throws coding_exception
-     * @throws dml_exception
-     * @throws InvalidArgumentException
-     * @throws ExpectationFailedException
-     * @covers \mod_mootimeter\helper->set_tool_config
-     * @covers \mod_mootimeter\helper->get_tool_config
+     * An unknown tool is rejected.
+     */
+    public function test_get_toolhelper_unknown_tool(): void {
+        $this->expectException(\core\exception\coding_exception::class);
+        helper::get_toolhelper('unknown');
+    }
+
+    /**
+     * The installed tools are listed.
+     */
+    public function test_get_installed_tools(): void {
+        $tools = helper::get_installed_tools();
+        foreach (['quiz', 'poll', 'wordcloud'] as $tool) {
+            $this->assertContains($tool, $tools);
+        }
+    }
+
+    /**
+     * Pages can be moved to any position, the other pages keep their order.
+     */
+    public function test_move_page(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
+        $pages = [];
+        for ($i = 0; $i < 4; $i++) {
+            $pages[] = $this->get_generator()->create_page(['instance' => $mootimeter->id]);
+        }
+        $order = fn(): array => array_map('intval', array_keys($helper->get_pages($mootimeter->id)));
+        $ids = array_map(fn($page) => (int) $page->id, $pages);
+
+        $helper->move_page($helper->get_page($ids[2]), 0);
+        $this->assertSame([$ids[2], $ids[0], $ids[1], $ids[3]], $order());
+
+        $helper->move_page($helper->get_page($ids[2]), 3);
+        $this->assertSame([$ids[0], $ids[1], $ids[3], $ids[2]], $order());
+
+        $helper->move_page($helper->get_page($ids[2]), 1);
+        $this->assertSame([$ids[0], $ids[2], $ids[1], $ids[3]], $order());
+
+        // Positions outside the list are clamped.
+        $helper->move_page($helper->get_page($ids[0]), 99);
+        $this->assertSame([$ids[2], $ids[1], $ids[3], $ids[0]], $order());
+        $this->assertSame([0, 1, 2, 3], array_map(
+            fn($page) => (int) $page->sortorder,
+            array_values($helper->get_pages($mootimeter->id))
+        ));
+    }
+
+    /**
+     * Deleting a page removes its settings, options and answers.
+     */
+    public function test_delete_page(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
+        $page = $this->get_generator()->create_page([
+            'instance' => $mootimeter->id,
+            'tool' => 'quiz',
+            'question' => self::QUESTION,
+        ]);
+        $other = $this->get_generator()->create_page(['instance' => $mootimeter->id, 'tool' => 'quiz']);
+        $options = array_keys((new \mootimetertool_quiz\quiz())->get_answer_options($page->id));
+        (new \mootimetertool_quiz\quiz())->submit_response($page, [$options[0]]);
+
+        $helper->delete_page($page);
+
+        $this->assertNull($helper->get_page($page->id));
+        $this->assertFalse($DB->record_exists('mootimeter_tool_settings', ['pageid' => $page->id]));
+        $this->assertFalse($DB->record_exists('mootimetertool_quiz_options', ['pageid' => $page->id]));
+        $this->assertFalse($DB->record_exists('mootimetertool_quiz_answers', ['pageid' => $page->id]));
+        $this->assertNotNull($helper->get_page($other->id));
+        $this->assertEquals(2, $DB->count_records('mootimetertool_quiz_options', ['pageid' => $other->id]));
+    }
+
+    /**
+     * Settings are stored per page and default values are returned for missing settings.
      */
     public function test_set_get_tool_config(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        $helper = new \mod_mootimeter\helper();
-        $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
+        $page = $this->get_generator()->create_page(['instance' => $mootimeter->id]);
 
-        $page = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
+        $this->assertSame('default', helper::get_tool_config($page, 'question', 'default'));
 
-        $helper->set_tool_config($page, 'question', self::TEST_QUESTION_TITLE);
+        $helper->set_tool_config($page, 'question', self::QUESTION);
+        $this->assertSame(self::QUESTION, helper::get_tool_config($page, 'question'));
+        $this->assertSame(self::QUESTION, helper::get_tool_config((int) $page->id, 'question'));
 
-        $this->assertEquals(self::TEST_QUESTION_TITLE, \mod_mootimeter\helper::get_tool_config($page, 'question'));
-
-        $helper->set_tool_config($page->id, 'question', self::TEST_QUESTION_TITLE . "2");
-        $this->assertEquals(self::TEST_QUESTION_TITLE . "2", \mod_mootimeter\helper::get_tool_config($page->id, 'question'));
+        $helper->set_tool_config($page, 'question', self::QUESTION . '2');
+        $this->assertSame(self::QUESTION . '2', helper::get_tool_config($page, 'question'));
     }
 
     /**
-     * Toggle state test.
-     * @return void
-     * @throws coding_exception
-     * @throws dml_exception
-     * @throws InvalidArgumentException
-     * @throws ExpectationFailedException
-     * @covers \mod_mootimeter\helper->toggle_state
-     * @covers \mod_mootimeter\helper->toggle_teacherpermission_state
+     * Answers are stored for the current user and optionally replace the previous answers.
      */
-    public function test_toggle_state(): void {
+    public function test_store_answer(): void {
         $this->resetAfterTest();
+
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
         $this->setAdminUser();
+        $page = $this->get_generator()->create_page(['instance' => $mootimeter->id]);
+        $table = 'mootimetertool_wordcloud_answers';
+        $answer = fn(string $text) => (object) ['pageid' => $page->id, 'answer' => $text];
 
-        $helper = new \mod_mootimeter\helper();
-        $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
-        $page = $mtmgenerator->create_page(['instance' => $this->mootimeter->id, 'visible' => helper::PAGE_VISIBLE]);
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+        $this->assertFalse($helper->has_answers($page));
 
-        $this->setUser($this->users['teacher']);
-        $helper->toggle_state($page, 'teststate');
-        $this->assertTrue((bool) \mod_mootimeter\helper::get_tool_config($page, 'teststate'));
-        $helper->toggle_state($page, 'teststate');
-        $this->assertFalse((bool) \mod_mootimeter\helper::get_tool_config($page, 'teststate'));
+        $helper->store_answer($table, [$answer('one'), $answer('two')]);
+        $this->assertCount(2, $helper->get_answers($table, $page->id));
+        $this->assertTrue($helper->has_answers($page));
 
-        $this->setUser($this->users['student']);
-        $this->expectException(\required_capability_exception::class);
-        $helper->toggle_state($page, 'teststate');
-        $this->assertFalse((bool) \mod_mootimeter\helper::get_tool_config($page, 'teststate'));
+        $helper->store_answer($table, [$answer('three')], true);
+        $useranswers = $helper->get_user_answers($table, $page->id, 'answer', $user->id);
+        $this->assertSame(['three'], array_keys($useranswers));
 
-        $this->expectException(\required_capability_exception::class);
-        $helper->toggle_teacherpermission_state($page);
-        $this->assertFalse((bool) \mod_mootimeter\helper::get_tool_config($page, 'teststate'));
-
-        $this->setUser($this->users['teacher']);
-        $helper->toggle_state($page, 'teststate');
-        $this->assertTrue((bool) \mod_mootimeter\helper::get_tool_config($page, 'teststate'));
+        $helper->store_answer($table, [$answer('three')]);
+        $this->assertSame(['three' => 2], $helper->get_answers_grouped($table, $page->id, 'answer'));
     }
 
     /**
-     * Test to check if store_answer throws missing_pageid exception
-     * @return void
-     * @throws coding_exception
-     * @throws dml_exception
-     * @covers \mod_mootimeter\helper->store_answer
+     * Answers without a page are rejected.
      */
-    public function test_store_answer_exception_missing_pageid(): void {
-        $this->resetAfterTest();
-        $this->setAdminUser();
-
-        $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
-        $page = $mtmgenerator->create_page([
-            'instance' => $this->mootimeter->id,
-            'tool' => 'wordcloud',
-            'visible' => helper::PAGE_VISIBLE,
-        ]);
-
-        $this->setUser($this->users['student']);
-
-        $helper = new \mod_mootimeter\helper();
-
-        $record = new \stdClass();
-        $record->answer = "Test";
-        $record->timecreated = time();
-        $records[] = $record;
-
-        // Firstcheck if the $records object has all necessary attributes.
-        $this->expectException(\moodle_exception::class);
-        $this->expectExceptionMessage('pageidmissing');
-        $helper->store_answer(
-            'mootimetertool_wordcloud_answers',
-            $records,
-            false,
-            self::ANSWER_COLUMN_WORDCLOD,
-            (bool)$helper::get_tool_config($page, 'multipleanswers')
-        );
+    public function test_store_answer_without_page(): void {
+        $this->expectException(\core\exception\coding_exception::class);
+        (new helper())->store_answer('mootimetertool_wordcloud_answers', [(object) ['answer' => 'Test']]);
     }
 
     /**
-     * Test to check if store_answer accepts updateexisting and multipleanswers parameter.
-     * @return void
-     * @throws coding_exception
-     * @throws dml_exception
-     * @covers \mod_mootimeter\helper->store_answer
+     * Answers can be deleted completely or per user.
      */
-    public function test_store_answer_update_existing_and_multiple_answers(): void {
+    public function test_delete_answers(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
-        $page = $mtmgenerator->create_page([
-            'instance' => $this->mootimeter->id,
-            'tool' => 'wordcloud',
-            'visible' => helper::PAGE_VISIBLE,
-        ]);
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
+        $page = $this->get_generator()->create_page(['instance' => $mootimeter->id]);
+        $table = 'mootimetertool_wordcloud_answers';
+        $users = [$this->getDataGenerator()->create_user(), $this->getDataGenerator()->create_user()];
+        foreach ($users as $user) {
+            $this->setUser($user);
+            $helper->store_answer($table, [(object) ['pageid' => $page->id, 'answer' => 'Test']]);
+        }
 
-        $this->setAdminUser();
+        $helper->delete_answers($page, ['usermodified' => $users[0]->id]);
+        $this->assertSame([(int) $users[1]->id], array_map(
+            fn($answer) => (int) $answer->usermodified,
+            array_values($helper->get_answers($table, $page->id))
+        ));
 
-        $helper = new \mod_mootimeter\helper();
-        $helper->toggle_state($page, 'page_visibility');
-
-        $helper->set_tool_config($page, 'multipleanswers', 0);
-
-        $this->setUser($this->users['student']);
-
-        $record = new \stdClass();
-        $record->pageid = $page->id;
-        $record->answer = "Test";
-        $record->timecreated = time();
-        $records[] = $record;
-
-        $helper->store_answer(
-            'mootimetertool_wordcloud_answers',
-            $records,
-            true,
-            self::ANSWER_COLUMN_WORDCLOD,
-            (bool)$helper::get_tool_config($page, 'multipleanswers') // False.
-        );
-
-        $answers = $helper->get_answers('mootimetertool_wordcloud_answers', $page->id, self::ANSWER_COLUMN_WORDCLOD);
-        $this->assertCount(1, (array)$answers);
-
-        $answer1 = (array) $answers;
-
-        $record = new \stdClass();
-        $record->pageid = $page->id;
-        $record->answer = "Test2";
-        $record->timecreated = time();
-        $records[] = $record;
-
-        $helper->store_answer(
-            'mootimetertool_wordcloud_answers',
-            $records,
-            true,
-            self::ANSWER_COLUMN_WORDCLOD,
-            (bool)$helper::get_tool_config($page, 'multipleanswers') // False.
-        );
-
-        $answers = $helper->get_answers('mootimetertool_wordcloud_answers', $page->id, self::ANSWER_COLUMN_WORDCLOD);
-        $this->assertCount(1, (array)$answers);
-        $answer2 = (array) $answers;
-
-        $this->assertNotEquals(array_pop($answer1)->answer, array_pop($answer2)->answer);
+        $helper->delete_all_answers($page);
+        $this->assertFalse($helper->has_answers($page));
     }
 
+    /**
+     * Changes get a new revision.
+     */
+    public function test_notify_data_changed(): void {
+        $this->resetAfterTest();
+
+        $clock = $this->mock_clock_with_frozen(1000);
+        $helper = new helper();
+
+        $helper->notify_data_changed(5, helper::CHANGE_ANSWERS);
+        $this->assertEquals(1000000, $helper->get_data_changed(5, helper::CHANGE_ANSWERS));
+
+        $clock->bump(2);
+        $helper->notify_data_changed(5, helper::CHANGE_ANSWERS);
+        $this->assertEquals(1002000, $helper->get_data_changed(5, helper::CHANGE_ANSWERS));
+
+        // Unknown data gets the current revision.
+        $this->assertEquals(1002000, $helper->get_data_changed(6, helper::CHANGE_SETTINGS));
+    }
 
     /**
-     * Test to check if store_answer accepts updateexisting and multipleanswers parameter.
-     * @return void
-     * @throws coding_exception
-     * @throws dml_exception
-     * @covers \mod_mootimeter\helper->store_answer
+     * Participants only see the results once they are published.
      */
-    public function test_store_answer_multiple_answers(): void {
+    public function test_can_view_results(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        $mtmgenerator = $this->getDataGenerator()->get_plugin_generator('mod_mootimeter');
-        $page = $mtmgenerator->create_page([
-            'instance' => $this->mootimeter->id,
-            'tool' => 'wordcloud',
-            'visible' => helper::PAGE_VISIBLE,
-        ]);
-        $helper = new \mod_mootimeter\helper();
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
+        $page = $this->get_generator()->create_page(['instance' => $mootimeter->id]);
 
-        $this->setAdminUser();
-        $helper->set_tool_config($page, 'multipleanswers', 1);
-        $helper->toggle_state($page, 'page_visibility');
+        $this->assertTrue($helper->can_view_results($page, true));
+        $this->assertFalse($helper->can_view_results($page, false));
 
-        $this->setUser($this->users['student']);
-        $record = new \stdClass();
-        $record->pageid = $page->id;
-        $record->answer = "Test";
-        $record->timecreated = time();
-        $records[] = $record;
-
-        $helper->store_answer(
-            'mootimetertool_wordcloud_answers',
-            $records,
-            false,
-            self::ANSWER_COLUMN_WORDCLOD,
-            (bool)$helper::get_tool_config($page, 'multipleanswers') // True.
-        );
-
-        $answers = $helper->get_answers('mootimetertool_wordcloud_answers', $page->id, self::ANSWER_COLUMN_WORDCLOD);
-        $this->assertCount(1, (array)$answers);
-
-        // Reset records array.
-        $records = [];
-
-        $record = new \stdClass();
-        $record->pageid = $page->id;
-        $record->answer = "Test2";
-        $record->timecreated = time();
-        $records[] = $record;
-
-        $helper->store_answer(
-            'mootimetertool_wordcloud_answers',
-            $records,
-            false,
-            self::ANSWER_COLUMN_WORDCLOD,
-            (bool)$helper::get_tool_config($page, 'multipleanswers') // True.
-        );
-
-        $answers = $helper->get_answers('mootimetertool_wordcloud_answers', $page->id, self::ANSWER_COLUMN_WORDCLOD);
-        $this->assertCount(2, (array)$answers);
-
-        // Now try to store a doubled answer and update the existing answers.
-        // Reset records array.
-        $records = [];
-
-        $record = new \stdClass();
-        $record->pageid = $page->id;
-        $record->answer = "Test3";
-        $record->timecreated = time();
-        $records[] = $record;
-
-        $record = new \stdClass();
-        $record->pageid = $page->id;
-        $record->answer = "Test4";
-        $record->timecreated = time();
-        $records[] = $record;
-
-        $helper->store_answer(
-            'mootimetertool_wordcloud_answers',
-            $records,
-            true,
-            self::ANSWER_COLUMN_WORDCLOD,
-            (bool)$helper::get_tool_config($page, 'multipleanswers') // True.
-        );
-
-        $answers = $helper->get_answers('mootimetertool_wordcloud_answers', $page->id, self::ANSWER_COLUMN_WORDCLOD);
-        $this->assertCount(2, (array)$answers);
-
-        $answervalues = array_map(function ($tempanswer) {
-            return $tempanswer->answer;
-        }, (array) $answers);
-
-        $this->assertEquals(array_values($answervalues), ['Test3', 'Test4']);
+        $helper->set_tool_config($page, 'showonteacherpermission', '1');
+        $this->assertTrue($helper->can_view_results($page, false));
     }
 }

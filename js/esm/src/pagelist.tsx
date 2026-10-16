@@ -28,11 +28,10 @@ import type {PageListItem} from './lib/types';
 
 const LONGPRESS_MS = 600;
 
-/* eslint-disable no-unused-vars -- the core rule reports the parameter names of TypeScript function types. */
 type PageListProps = {
     pages: PageListItem[];
     selected: number;
-    isediting: boolean;
+    isEditing: boolean;
     onSelect: (pageid: number) => void;
     onAddPage: () => void;
     onMove: (pageid: number, position: number) => void;
@@ -50,7 +49,7 @@ type PageListProps = {
  * @returns {React.JSX.Element}
  */
 export default function PageList(props: PageListProps): React.JSX.Element {
-    const {pages, selected, isediting, onSelect, onAddPage, onMove, onToggleVisibility} = props;
+    const {pages, selected, isEditing, onSelect, onAddPage, onMove, onToggleVisibility} = props;
     const s = useStrings('mod_mootimeter', ['addpage', 'dialogue_move_pagelistelement', 'longpress_toggle_visibility']);
     const [dragged, setDragged] = useState<number | null>(null);
     const [pressing, setPressing] = useState<number | null>(null);
@@ -119,19 +118,19 @@ export default function PageList(props: PageListProps): React.JSX.Element {
                         title={onToggleVisibility ? [page.title, s.longpress_toggle_visibility].filter(Boolean).join(' – ')
                             : page.title}
                         data-pageid={page.id}
-                        draggable={isediting}
+                        draggable={isEditing}
                         onDragStart={() => {
                             cancelPress();
                             setDragged(page.id);
                         }}
-                        onDragOver={(e) => isediting && e.preventDefault()}
+                        onDragOver={(e) => isEditing && e.preventDefault()}
                         onDrop={(e) => {
                             e.preventDefault();
                             drop(index);
                         }}
                         onDragEnd={() => setDragged(null)}
                     >
-                        {isediting && (
+                        {isEditing && (
                             <button
                                 type="button"
                                 className="mootimeter_page_move"
@@ -155,12 +154,12 @@ export default function PageList(props: PageListProps): React.JSX.Element {
                             onContextMenu={(e) => onToggleVisibility && e.preventDefault()}
                         >
                             <span className="mootimeter_pages_count">{page.number}</span>
-                            <img src={page.iconurl} width="35px" className="m-1" alt="" />
+                            <img src={page.iconUrl} width="35px" className="m-1" alt="" />
                         </button>
                     </li>
                 ))}
             </ul>
-            {isediting && (
+            {isEditing && (
                 <ul id="mootimeter-addpage-button">
                     <li className="d-flex mootimeter_addpage" title={s.addpage}>
                         <button type="button" className="mootimeter_page_select" aria-label={s.addpage} onClick={onAddPage}>

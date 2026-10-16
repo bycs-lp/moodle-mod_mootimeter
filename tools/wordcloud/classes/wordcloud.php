@@ -14,21 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-/**
- * Pluginlib
- *
- * @package     mootimetertool_wordcloud
- * @copyright   2023, ISB Bayern
- * @author      Peter Mayer <peter.mayer@isb.bayern.de>
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace mootimetertool_wordcloud;
 
-use dml_exception;
+use core\context\module as context_module;
+use core\param;
+use mod_mootimeter\exception\conflict_exception;
+use mod_mootimeter\exception\not_found_exception;
+use mod_mootimeter\exception\validation_exception;
+use mod_mootimeter\local\access;
+use mod_mootimeter\route\api_util;
 
 /**
- * Pluginlib
+ * Answers and results of wordcloud pages.
  *
  * @package     mootimetertool_wordcloud
  * @copyright   2023, ISB Bayern
@@ -36,89 +33,201 @@ use dml_exception;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class wordcloud extends \mod_mootimeter\toolhelper {
-    /**
-     * @var string Answer cloum
-     */
-    const ANSWER_COLUMN = "answer";
-    /**
-     * @var string Answer table
-     */
-    const ANSWER_TABLE = "mootimetertool_wordcloud_answers";
+    /** @var string Answer column. */
+    const ANSWER_COLUMN = 'answer';
 
-    /**
-     * @var string Name of table column of the answer table where the user id is stored
-     */
-    const ANSWER_USERID_COLUMN = 'usermodified';
+    /** @var string Answer table. */
+    const ANSWER_TABLE = 'mootimetertool_wordcloud_answers';
 
-    /** Show Results live */
-    const MTMT_VIEW_RESULT_LIVE = 1;
-    /** Show Results after teacher permission */
-    const MTMT_VIEW_RESULT_TEACHERPERMISSION = 2;
+    /** @var int Maximum length of an answer. */
+    const MAX_ANSWER_LENGTH = 255;
 
-    /**
-     * Get the tools answer column.
-     * @return string
-     */
-    public function get_answer_column() {
+    #[\Override]
+    public function get_answer_column(): string {
         return self::ANSWER_COLUMN;
     }
 
-    /**
-     * Get the tools answer table.
-     * @return string
-     */
-    public function get_answer_table() {
+    #[\Override]
+    public function get_answer_table(): string {
         return self::ANSWER_TABLE;
     }
 
-    /**
-     * Get the userid column name in the answer table of the tool.
-     *
-     * @return ?string the column name where the user id is stored in the answer table, null if no user id is stored
-     */
-    public function get_answer_userid_column(): ?string {
-        return self::ANSWER_USERID_COLUMN;
+    #[\Override]
+    public function hook_after_new_page_created(\stdClass $page): void {
     }
 
     /**
-     * Will be executed after the page is created.
-     * @param object $page
-     * @return void
+     * Get the maximum number of answers per participant, 0 means unlimited.
+     *
+     * @param \stdClass $page
+     * @return int
      */
-    public function hook_after_new_page_created(object $page): void {
-        return;
+    public function get_max_answers(\stdClass $page): int {
+        return max(0, (int) self::get_tool_config($page, 'maxinputsperuser'));
     }
 
     /**
-     * Get the tool specific page settings that may be stored by moderators.
+     * Whether a participant may submit the same answer several times.
      *
-     * @return array of setting name => PARAM_* type
+     * @param \stdClass $page
+     * @return bool
      */
-    public function get_setting_definitions(): array {
+    public function allows_duplicate_answers(\stdClass $page): bool {
+        return !empty(self::get_tool_config($page, 'allowduplicateanswers'));
+    }
+
+    /**
+     * Change the settings of a page.
+     *
+     * @param \stdClass $page
+     * @param array $settings with the optional keys maxAnswers and allowDuplicateAnswers
+     */
+    public function update_settings(\stdClass $page, array $settings): void {
+        if (array_key_exists('maxAnswers', $settings)) {
+            $this->set_tool_config($page, 'maxinputsperuser', (string) max(0, (int) $settings['maxAnswers']));
+        }
+        if (array_key_exists('allowDuplicateAnswers', $settings)) {
+            $this->set_tool_config($page, 'allowduplicateanswers', $settings['allowDuplicateAnswers'] ? '1' : '0');
+        }
+    }
+
+    /**
+     * Validate the text of an answer.
+     *
+     * @param string $text
+     * @return string the trimmed text
+     * @throws validation_exception
+     */
+    protected function validate_text(string $text): string {
+        $text = trim(param::TEXT->clean($text));
+        $error = null;
+        if ($text === '') {
+            $error = 'emptyanswer';
+        } else if (\core_text::strlen($text) > self::MAX_ANSWER_LENGTH) {
+            $error = 'answertoolong';
+        }
+        if ($error) {
+            throw new validation_exception($error, 'mootimetertool_wordcloud', self::MAX_ANSWER_LENGTH, [
+                ['field' => 'text', 'message' => get_string($error, 'mootimetertool_wordcloud', self::MAX_ANSWER_LENGTH)],
+            ]);
+        }
+        return $text;
+    }
+
+    /**
+     * Store an answer of the current user.
+     *
+     * @param \stdClass $page
+     * @param string $text
+     * @return \stdClass the new answer
+     * @throws validation_exception|conflict_exception
+     */
+    public function submit_answer(\stdClass $page, string $text): \stdClass {
+        global $DB, $USER;
+
+        $text = $this->validate_text($text);
+        $ownanswers = array_filter(
+            $this->get_answers(self::ANSWER_TABLE, $page->id),
+            fn(\stdClass $answer): bool => (int) $answer->usermodified === (int) $USER->id
+        );
+
+        $maxanswers = $this->get_max_answers($page);
+        if ($maxanswers > 0 && count($ownanswers) >= $maxanswers) {
+            throw new conflict_exception('toomanyanswers', 'mootimetertool_wordcloud');
+        }
+        // Answers differing only in case count as duplicates, this keeps the wordcloud precise.
+        $owntexts = array_map(fn(\stdClass $answer): string => \core_text::strtolower($answer->answer), $ownanswers);
+        if (!$this->allows_duplicate_answers($page) && in_array(\core_text::strtolower($text), $owntexts, true)) {
+            throw new conflict_exception('duplicateanswer', 'mootimetertool_wordcloud');
+        }
+
+        [$answerid] = $this->store_answer(self::ANSWER_TABLE, [(object) ['pageid' => $page->id, 'answer' => $text]]);
+        return $DB->get_record(self::ANSWER_TABLE, ['id' => $answerid], '*', MUST_EXIST);
+    }
+
+    /**
+     * Get an answer of a page.
+     *
+     * @param \stdClass $page
+     * @param int $answerid
+     * @return \stdClass
+     * @throws not_found_exception
+     */
+    public function get_answer(\stdClass $page, int $answerid): \stdClass {
+        global $DB;
+        return $DB->get_record(self::ANSWER_TABLE, ['id' => $answerid, 'pageid' => $page->id])
+            ?: throw new not_found_exception('answernotfound', 'mootimetertool_wordcloud', $answerid);
+    }
+
+    /**
+     * Change the text of an answer.
+     *
+     * @param \stdClass $page
+     * @param \stdClass $answer
+     * @param string $text
+     * @return \stdClass the changed answer
+     * @throws validation_exception
+     */
+    public function update_answer(\stdClass $page, \stdClass $answer, string $text): \stdClass {
+        global $DB;
+
+        $answer->answer = $this->validate_text($text);
+        $answer->timemodified = self::now();
+        $DB->update_record(self::ANSWER_TABLE, $answer);
+
+        $this->clear_caches($page->id);
+        $this->notify_data_changed((int) $page->id, self::CHANGE_ANSWERS);
+        return $answer;
+    }
+
+    /**
+     * Delete an answer.
+     *
+     * @param \stdClass $page
+     * @param \stdClass $answer
+     */
+    public function delete_answer(\stdClass $page, \stdClass $answer): void {
+        $this->delete_answers($page, ['id' => $answer->id]);
+    }
+
+    /**
+     * Export an answer.
+     *
+     * @param \stdClass $page
+     * @param \stdClass $answer
+     * @return array
+     */
+    public function export_answer(\stdClass $page, \stdClass $answer): array {
         return [
-            'maxinputsperuser' => PARAM_INT,
-            'allowduplicateanswers' => PARAM_BOOL,
+            'id' => (int) $answer->id,
+            'text' => (string) $answer->answer,
+            'fullName' => $this->get_participant_name($page, (int) $answer->usermodified),
+            'createdAt' => api_util::format_datetime((int) $answer->timecreated),
         ];
     }
 
     /**
      * Export the own answers of the current user and the settings of the page.
      *
-     * @param object $page
+     * @param access $access access to the page
      * @return array
      */
-    public function export_page_data(object $page): array {
+    public function export_page_data(access $access): array {
         global $USER;
 
-        $answers = [];
-        foreach ($this->get_user_answers(self::ANSWER_TABLE, $page->id, self::ANSWER_COLUMN, $USER->id) as $answer) {
-            $answers[] = ['id' => (int) $answer->id, 'text' => (string) $answer->answer];
+        $page = $access->get_page();
+        $ownanswers = [];
+        foreach ($this->get_answers(self::ANSWER_TABLE, $page->id) as $answer) {
+            if ((int) $answer->usermodified === (int) $USER->id) {
+                $ownanswers[] = $this->export_answer($page, $answer);
+            }
         }
 
         return [
-            'answers' => $answers,
-            'maxinputsperuser' => max(0, (int) self::get_tool_config($page, 'maxinputsperuser')),
-            'allowduplicateanswers' => !empty(self::get_tool_config($page, 'allowduplicateanswers')),
+            'pageId' => (int) $page->id,
+            'ownAnswers' => $ownanswers,
+            'maxAnswers' => $this->get_max_answers($page),
+            'allowDuplicateAnswers' => $this->allows_duplicate_answers($page),
         ];
     }
 
@@ -127,66 +236,36 @@ class wordcloud extends \mod_mootimeter\toolhelper {
      *
      * The answers are only exported if the current user may see the results.
      *
-     * @param object $page
+     * @param access $access access to the page
      * @return array
      */
-    public function export_results(object $page): array {
-        $visible = (bool) $this->get_teacherpermission_to_view($page);
+    public function export_results(access $access): array {
+        $page = $access->get_page();
+        $available = $this->can_view_results($page, $access->ismoderator);
         $words = [];
-        if ($visible) {
-            foreach ($this->get_answers_grouped(self::ANSWER_TABLE, ['pageid' => $page->id]) as $row) {
-                $row = (array) $row;
-                $words[] = ['text' => (string) $row['answer'], 'count' => (int) $row['cnt']];
+        if ($available) {
+            foreach ($this->get_answers_grouped(self::ANSWER_TABLE, $page->id, self::ANSWER_COLUMN) as $text => $count) {
+                $words[] = ['text' => (string) $text, 'count' => $count];
             }
         }
-        return ['visible' => $visible, 'words' => $words];
+        return ['available' => $available, 'words' => $words];
     }
 
-    /**
-     * Export the answer overview for moderators.
-     *
-     * @param object $page
-     * @return array
-     */
-    public function export_overview(object $page): array {
-        $anonymous = !empty(self::get_tool_config($page, 'anonymousmode'));
-
-        $rows = [];
-        foreach ($this->get_answers(self::ANSWER_TABLE, $page->id, self::ANSWER_COLUMN) as $answer) {
-            $fullname = get_string('anonymous_name', 'mod_mootimeter');
-            if (!$anonymous) {
-                $user = $this->get_user_by_id($answer->usermodified);
-                $fullname = $user ? fullname($user) : '';
-            }
-            $rows[] = [
-                'answerid' => (int) $answer->id,
-                'fullname' => $fullname,
-                'text' => (string) $answer->answer,
-                'time' => userdate($answer->timecreated, get_string('strftimedatetimeshortaccurate', 'core_langconfig')),
-            ];
-        }
-
-        return ['anonymous' => $anonymous, 'rows' => $rows];
-    }
-
-    /**
-     * Get the results of a page for the CSV download: the counts per term and all answers.
-     *
-     * @param object $page
-     * @param \context_module $context
-     * @return array
-     */
-    public function export_results_csv(object $page, \context_module $context): array {
+    #[\Override]
+    public function export_results_csv(\stdClass $page, context_module $context): array {
         $summary = [];
-        foreach ($this->get_answers_grouped(self::ANSWER_TABLE, ['pageid' => $page->id]) as $row) {
-            $row = (array) $row;
-            $summary[] = [(string) $row['answer'], (int) $row['cnt']];
+        foreach ($this->get_answers_grouped(self::ANSWER_TABLE, $page->id, self::ANSWER_COLUMN) as $text => $count) {
+            $summary[] = [(string) $text, $count];
         }
         usort($summary, fn(array $a, array $b): int => $b[1] <=> $a[1] ?: strcmp($a[0], $b[0]));
 
         $answers = [];
-        foreach ($this->export_overview($page)['rows'] as $row) {
-            $answers[] = [$row['fullname'], $row['text'], $row['time']];
+        foreach ($this->get_answers(self::ANSWER_TABLE, $page->id) as $answer) {
+            $answers[] = [
+                $this->get_participant_name($page, (int) $answer->usermodified),
+                (string) $answer->answer,
+                userdate($answer->timecreated, get_string('strftimedatetimeshortaccurate', 'core_langconfig')),
+            ];
         }
 
         return [
@@ -205,96 +284,9 @@ class wordcloud extends \mod_mootimeter\toolhelper {
         ];
     }
 
-    /**
-     * Change the text of an answer. Only moderators may change answers.
-     *
-     * @param object $page
-     * @param int $answerid
-     * @param string $text
-     * @return void
-     */
-    public function update_answer(object $page, int $answerid, string $text): void {
+    #[\Override]
+    public function delete_page_tool(\stdClass $page): void {
         global $DB;
-
-        $context = \context_module::instance(self::get_cm_by_pageid($page->id)->id);
-        require_capability('mod/mootimeter:moderator', $context);
-
-        $answer = $DB->get_record(self::ANSWER_TABLE, ['id' => $answerid, 'pageid' => $page->id], '*', MUST_EXIST);
-        $answer->answer = $text;
-        $answer->timemodified = time();
-        $DB->update_record(self::ANSWER_TABLE, $answer);
-
-        $this->clear_caches($page->id);
-        $this->notify_data_changed($page, 'answers');
-    }
-
-    /**
-     * Page type specivic insert_answer
-     *
-     * @param object $page
-     * @param string $answer
-     * @return void
-     */
-    public function insert_answer(object $page, $answer): void {
-
-        $record = new \stdClass();
-        $record->pageid = $page->id;
-        $record->answer = $answer;
-        $record->timecreated = time();
-
-        $this->store_answer(self::ANSWER_TABLE, $record);
-    }
-
-    /**
-     * Get a pure list of unique answers, without id etc.
-     *
-     * @param int $pageid
-     * @param int $userid
-     * @return array
-     * @throws dml_exception
-     */
-    public function get_answer_list_array(int $pageid, int $userid = 0): array {
-        global $DB;
-
-        $params = [
-            'pageid' => $pageid,
-        ];
-
-        if (!empty($userid)) {
-            $params['usermodified'] = $userid;
-        }
-
-        return array_keys($DB->get_records_menu(self::ANSWER_TABLE, $params, "", "answer"));
-    }
-
-    /**
-     * Delete all DB entries related to a specific page.
-     * @param object $page
-     * @return bool
-     */
-    public function delete_page_tool(object $page) {
-        global $DB;
-        try {
-            // Table not written yet.
-            $DB->delete_records(self::ANSWER_TABLE, ['pageid' => $page->id]);
-        } catch (\Exception $e) {
-            // Todo handling.
-            echo 'Something went wrong';
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Delete answers by condition.
-     *
-     * @param object $page
-     * @param array $conditions
-     * @return void
-     */
-    public function delete_answers_tool(object $page, array $conditions): void {
-        global $DB;
-        $DB->delete_records($this->get_answer_table(), $conditions);
-        $this->clear_caches($page->id);
+        $DB->delete_records(self::ANSWER_TABLE, ['pageid' => $page->id]);
     }
 }

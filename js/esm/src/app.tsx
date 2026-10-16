@@ -23,12 +23,14 @@
  */
 
 import React, {useCallback, useEffect, useState} from 'react';
+import {getString} from '@moodle/lms/core/stringUtils';
 import AddPage from './addpage';
 import ContentMenu from './contentmenu';
+import {ApiError, get, getAll, patch, post} from './lib/api';
 import {Loading} from './lib/components';
 import {useStrings} from './lib/hooks';
-import {addToast, callWs, displayException, getString} from './lib/moodle';
-import type {AppProps, ChangeState, PageInfo, PageListItem, ToolInfo, ToolViewProps, View} from './lib/types';
+import {addToast, displayError, enableEditMode} from './lib/moodle';
+import type {AppProps, PageInfo, PageListItem, ToolInfo, ToolViewProps, Updates, View} from './lib/types';
 import PageList from './pagelist';
 import SettingsPanel from './settingspanel';
 import ToolComponent from './toolcomponent';
@@ -62,47 +64,123 @@ const updateUrl = (pageid: number, view: View, fullscreen: boolean) => {
 };
 
 /**
- * Whether two change states are equal.
+ * Whether two update revisions are equal.
  *
- * @param {ChangeState} a
- * @param {ChangeState} b
+ * @param {Updates} a
+ * @param {Updates} b
  * @returns {boolean}
  */
-const sameState = (a: ChangeState, b: ChangeState): boolean =>
-    a.pagelist === b.pagelist && a.settings === b.settings && a.answers === b.answers;
+const sameUpdates = (a: Updates, b: Updates): boolean =>
+    a.pageList === b.pageList && a.settings === b.settings && a.answers === b.answers;
+
+/**
+ * Poll the revisions of the data of the activity while the browser tab is visible.
+ *
+ * @param {number} cmId
+ * @param {number} pageId the page shown
+ * @param {number} refreshInterval polling interval in milliseconds
+ * @returns {Updates}
+ */
+function useUpdates(cmId: number, pageId: number, refreshInterval: number): Updates {
+    const [updates, setUpdates] = useState<Updates>({pageList: 0, settings: 0, answers: 0});
+
+    useEffect(() => {
+        let active = true;
+        let timer: number | undefined;
+        const interval = Math.max(MIN_REFRESH_INTERVAL, refreshInterval || 0);
+        const poll = async() => {
+            if (!document.hidden) {
+                try {
+                    const latest = await get<Updates>('mod_mootimeter', `/instances/${cmId}/updates?pageid=${pageId}`);
+                    if (active) {
+                        setUpdates((old) => (sameUpdates(old, latest) ? old : latest));
+                    }
+                } catch (error) {
+                    window.console.error(error);
+                }
+            }
+            if (active) {
+                timer = window.setTimeout(poll, interval);
+            }
+        };
+        poll();
+        return () => {
+            active = false;
+            window.clearTimeout(timer);
+        };
+    }, [cmId, pageId, refreshInterval]);
+
+    return updates;
+}
+
+/**
+ * Load a page whenever its version changes.
+ *
+ * @param {number} pageId the page, 0 for none
+ * @param {string} version changes whenever the page has to be reloaded
+ * @param {Function} onMissing called if the page has been deleted or hidden meanwhile
+ * @returns {PageInfo|null}
+ */
+function usePage(pageId: number, version: string, onMissing: () => void): PageInfo | null {
+    const [page, setPage] = useState<PageInfo | null>(null);
+
+    useEffect(() => {
+        if (!pageId) {
+            setPage(null);
+            return undefined;
+        }
+        let active = true;
+        get<PageInfo>('mod_mootimeter', `/pages/${pageId}`)
+            .then((result) => active && setPage(result))
+            .catch((error) => {
+                // Most likely the page has been deleted or hidden, the reloaded page list selects another one.
+                if (active) {
+                    if (!(error instanceof ApiError && [403, 404].includes(error.status))) {
+                        displayError(error);
+                    }
+                    setPage(null);
+                    onMissing();
+                }
+            });
+        return () => {
+            active = false;
+        };
+    }, [pageId, version]);
+
+    return page?.id === pageId ? page : null;
+}
 
 /**
  * Whether the selected page has been hidden from a participant.
  *
- * @param {boolean} ismoderator
- * @param {number} pageid
- * @param {PageListItem[]|null} pages
+ * @param {boolean} isModerator
+ * @param {number} pageId
+ * @param {PageListItem[]|null} pages the pages visible to the user
  * @returns {boolean}
  */
-const isLocked = (ismoderator: boolean, pageid: number, pages: PageListItem[] | null): boolean =>
-    !ismoderator && pageid > 0 && pages !== null && !pages.some((p) => p.id === pageid);
+const isLocked = (isModerator: boolean, pageId: number, pages: PageListItem[] | null): boolean =>
+    !isModerator && pageId > 0 && pages !== null && !pages.some((p) => p.id === pageId);
 
 /**
  * Whether the settings column and the strip to unfold it are shown.
  *
- * @param {boolean} cansettings whether the current view has settings for the user
- * @param {boolean} isediting
- * @param {boolean} settingsopen whether the settings were unfolded outside the editing mode
+ * @param {boolean} canSettings whether the current view has settings for the user
+ * @param {boolean} isEditing
+ * @param {boolean} settingsOpen whether the settings were unfolded outside the editing mode
  * @param {boolean} fullscreen
  * @returns {{show: boolean, toggle: boolean}}
  */
-const settingsVisibility = (cansettings: boolean, isediting: boolean, settingsopen: boolean, fullscreen: boolean) => ({
-    show: cansettings && (isediting || settingsopen),
-    toggle: cansettings && !isediting && !fullscreen,
+const settingsVisibility = (canSettings: boolean, isEditing: boolean, settingsOpen: boolean, fullscreen: boolean) => ({
+    show: canSettings && (isEditing || settingsOpen),
+    toggle: canSettings && !isEditing && !fullscreen,
 });
 
-/* eslint-disable no-unused-vars -- the core rule reports the parameter names of TypeScript function types. */
 type ContentProps = {
     pages: PageListItem[] | null;
     tools: ToolInfo[];
-    pageid: number;
+    pageId: number;
     view: View;
-    ismoderator: boolean;
+    isModerator: boolean;
     locked: boolean;
     toolprops: ToolViewProps | null;
     onAddPage: (tool: string) => void;
@@ -114,16 +192,16 @@ type ContentProps = {
  * @param {ContentProps} props
  * @returns {React.JSX.Element}
  */
-function Content({pages, tools, pageid, view, ismoderator, locked, toolprops, onAddPage}: ContentProps): React.JSX.Element {
+function Content({pages, tools, pageId, view, isModerator, locked, toolprops, onAddPage}: ContentProps): React.JSX.Element {
     const s = useStrings('mod_mootimeter', ['please_select_a_page', 'no_pages_header', 'pagelocked']);
 
     if (!pages) {
         return <Loading />;
     }
-    if (ismoderator && (view === 'addpage' || !pageid)) {
+    if (isModerator && (view === 'addpage' || !pageId)) {
         return <AddPage tools={tools} onAdd={onAddPage} />;
     }
-    if (!pageid || locked) {
+    if (!pageId || locked) {
         let message = pages.length ? s.please_select_a_page : s.no_pages_header;
         if (locked) {
             message = s.pagelocked;
@@ -140,10 +218,10 @@ function Content({pages, tools, pageid, view, ismoderator, locked, toolprops, on
     let specifier = toolprops.page.components.content;
     if (view === 'results') {
         specifier = toolprops.page.components.results;
-    } else if (view === 'overview' && ismoderator) {
+    } else if (view === 'overview' && isModerator) {
         specifier = toolprops.page.components.overview;
     }
-    return <ToolComponent key={`${specifier}-${pageid}`} specifier={specifier} {...toolprops} />;
+    return <ToolComponent key={`${specifier}-${pageId}`} specifier={specifier} {...toolprops} />;
 }
 
 type SettingsToggleProps = {
@@ -178,78 +256,48 @@ function SettingsToggle({open, onToggle}: SettingsToggleProps): React.JSX.Elemen
     );
 }
 
-
 /**
- * Root component, mounted by view.php.
+ * Root component, rendered by mod_mootimeter\output\app.
  *
  * @param {AppProps} props
  * @returns {React.JSX.Element}
  */
 export default function App(props: AppProps): React.JSX.Element {
-    const {cmid, ismoderator} = props;
+    const {cmId, isModerator} = props;
 
     const [pages, setPages] = useState<PageListItem[] | null>(null);
     const [tools, setTools] = useState<ToolInfo[]>([]);
-    const [isediting, setIsediting] = useState(props.isediting);
-    const [pageid, setPageid] = useState(props.pageid);
+    const [isEditing, setIsEditing] = useState(props.isEditing);
+    const [pageId, setPageId] = useState(props.pageId);
     const [view, setView] = useState<View>(props.view);
     const [fullscreen, setFullscreen] = useState(props.fullscreen);
     // Outside the editing mode moderators can unfold the settings without switching the mode.
-    const [settingsopen, setSettingsopen] = useState(false);
-    const [page, setPage] = useState<PageInfo | null>(null);
-    const [state, setState] = useState<ChangeState>({pagelist: 0, settings: 0, answers: 0});
+    const [settingsOpen, setSettingsOpen] = useState(false);
     // Incremented by own actions so that the data is reloaded immediately.
-    const [localversion, setLocalversion] = useState(0);
-    const [pagesreload, setPagesreload] = useState(0);
+    const [localVersion, setLocalVersion] = useState(0);
+    const [pagesReload, setPagesReload] = useState(0);
 
-    const refresh = useCallback(() => setLocalversion((version) => version + 1), []);
+    const refresh = useCallback(() => setLocalVersion((version) => version + 1), []);
 
-    useEffect(() => updateUrl(pageid, view, fullscreen), [pageid, view, fullscreen]);
+    useEffect(() => updateUrl(pageId, view, fullscreen), [pageId, view, fullscreen]);
 
-    useEffect(() => {
-        let active = true;
-        let timer: number | undefined;
-        const interval = Math.max(MIN_REFRESH_INTERVAL, props.refreshinterval || 0);
-        const poll = async() => {
-            if (!document.hidden) {
-                try {
-                    const newstate = await callWs<ChangeState>('mod_mootimeter_get_state', {cmid, pageid});
-                    if (active) {
-                        setState((old) => (sameState(old, newstate) ? old : newstate));
-                    }
-                } catch (error) {
-                    window.console.error(error);
-                }
-            }
-            if (active) {
-                timer = window.setTimeout(poll, interval);
-            }
-        };
-        poll();
-        return () => {
-            active = false;
-            window.clearTimeout(timer);
-        };
-    }, [cmid, pageid, props.refreshinterval]);
+    const updates = useUpdates(cmId, pageId, props.refreshInterval);
 
     useEffect(() => {
         let active = true;
-        const load = async() => {
-            try {
-                const result = await callWs<{pages: PageListItem[]; tools: ToolInfo[]}>('mod_mootimeter_get_pages', {cmid});
-                if (active) {
-                    setPages(result.pages);
-                    setTools(result.tools);
-                }
-            } catch (error) {
-                displayException(error);
-            }
-        };
-        load();
+        getAll<PageListItem>('mod_mootimeter', `/instances/${cmId}/pages?sort=number`)
+            .then((list) => active && setPages(list))
+            .catch(displayError);
         return () => {
             active = false;
         };
-    }, [cmid, state.pagelist, localversion, pagesreload]);
+    }, [cmId, updates.pageList, localVersion, pagesReload]);
+
+    useEffect(() => {
+        if (isModerator) {
+            getAll<ToolInfo>('mod_mootimeter', '/tools?sort=name').then(setTools).catch(displayError);
+        }
+    }, [isModerator]);
 
     // Select another page if the selected one disappeared, or the only one if nothing is selected.
     // Participants keep a page the teacher has hidden and see a notice until it is shown again.
@@ -257,61 +305,35 @@ export default function App(props: AppProps): React.JSX.Element {
         if (!pages) {
             return;
         }
-        if (ismoderator && pageid && !pages.some((p) => p.id === pageid)) {
-            setPageid(pages.length ? pages[0].id : 0);
+        if (isModerator && pageId && !pages.some((p) => p.id === pageId)) {
+            setPageId(pages.length ? pages[0].id : 0);
             setView('question');
-        } else if (!pageid && pages.length === 1 && view !== 'addpage') {
-            setPageid(pages[0].id);
+        } else if (!pageId && pages.length === 1 && view !== 'addpage') {
+            setPageId(pages[0].id);
         }
-    }, [pages, pageid, view, ismoderator]);
+    }, [pages, pageId, view, isModerator]);
 
-    const locked = isLocked(ismoderator, pageid, pages);
+    const locked = isLocked(isModerator, pageId, pages);
 
-    const pageversion = `${state.settings}:${ismoderator ? state.answers : 0}:${localversion}`;
-    useEffect(() => {
-        if (!pageid || locked) {
-            setPage(null);
-            return undefined;
-        }
-        let active = true;
-        callWs<PageInfo>('mod_mootimeter_get_page', {pageid})
-            .then((result) => active && setPage(result))
-            .catch((error) => {
-                // Most likely the page has been deleted or hidden, the reloaded page list selects another one.
-                if (active) {
-                    if (error?.errorcode !== 'pagelocked') {
-                        window.console.error(error);
-                    }
-                    setPage(null);
-                    setPagesreload((count) => count + 1);
-                }
-            });
-        return () => {
-            active = false;
-        };
-    }, [pageid, pageversion, locked]);
+    const pageVersion = `${updates.settings}:${isModerator ? updates.answers : 0}:${localVersion}`;
+    const page = usePage(locked ? 0 : pageId, pageVersion, () => setPagesReload((count) => count + 1));
 
     const selectPage = (id: number) => {
-        setPageid(id);
+        setPageId(id);
         setView('question');
     };
 
     const addPage = async(tool: string) => {
         try {
-            const {pageid: newpageid} = await callWs<{pageid: number}>('mod_mootimeter_add_page', {cmid, tool});
-            const result = await callWs<{pages: PageListItem[]; tools: ToolInfo[]}>('mod_mootimeter_get_pages', {cmid});
-            setPages(result.pages);
-            setTools(result.tools);
-            // The server switched into the editing mode, so that the new page can be configured.
-            setIsediting(true);
-            const editswitch = document.querySelector<HTMLInputElement>('.editmode-switch-form input[name="setmode"]');
-            if (editswitch) {
-                editswitch.checked = true;
-            }
-            setPageid(newpageid);
+            const created = await post<PageInfo>('mod_mootimeter', `/instances/${cmId}/pages`, {tool});
+            setPages(await getAll<PageListItem>('mod_mootimeter', `/instances/${cmId}/pages?sort=number`));
+            // A new page has to be configured.
+            await enableEditMode().catch(displayError);
+            setIsEditing(true);
+            setPageId(created.id);
             setView('question');
         } catch (error) {
-            displayException(error);
+            displayError(error);
         }
     };
 
@@ -321,35 +343,32 @@ export default function App(props: AppProps): React.JSX.Element {
             reordered.splice(position, 0, pages.find((p) => p.id === id) as PageListItem);
             setPages(reordered.map((p, index) => ({...p, number: index + 1})));
         }
-        callWs('mod_mootimeter_reorder_page', {pageid: id, position}).then(refresh).catch(displayException);
+        patch('mod_mootimeter', `/pages/${id}`, {position}).then(refresh).catch(displayError);
     };
 
     const toggleVisibility = async(item: PageListItem) => {
         try {
-            const {visible} = await callWs<{visible: boolean}>(
-                'mod_mootimeter_set_page_visibility',
-                {pageid: item.id, visible: !item.visible}
-            );
+            const changed = await patch<PageInfo>('mod_mootimeter', `/pages/${item.id}`, {visible: !item.visible});
             refresh();
-            addToast(await getString(visible ? 'page_shown' : 'page_hidden', 'mod_mootimeter', item.number));
+            addToast(await getString(changed.visible ? 'page_shown' : 'page_hidden', 'mod_mootimeter', item.number));
         } catch (error) {
-            displayException(error);
+            displayError(error);
         }
     };
 
-    const currentpage = page?.id === pageid && !locked ? page : null;
-    const toolprops: ToolViewProps | null = currentpage ? {
-        page: currentpage,
-        ismoderator,
-        isediting,
-        settingsVersion: `${state.settings}:${localversion}`,
-        answersVersion: `${state.answers}:${localversion}`,
+    const currentPage = locked ? null : page;
+    const toolprops: ToolViewProps | null = currentPage ? {
+        page: currentPage,
+        isModerator,
+        isEditing,
+        settingsVersion: `${updates.settings}:${localVersion}`,
+        answersVersion: `${updates.answers}:${localVersion}`,
         refresh,
     } : null;
 
-    const cansettings = ismoderator && toolprops !== null && view !== 'addpage';
-    const settings = settingsVisibility(cansettings, isediting, settingsopen, fullscreen);
-    const showcontentmenu = toolprops && !(ismoderator && view === 'addpage');
+    const canSettings = isModerator && toolprops !== null && view !== 'addpage';
+    const settings = settingsVisibility(canSettings, isEditing, settingsOpen, fullscreen);
+    const showContentMenu = toolprops && !(isModerator && view === 'addpage');
 
     return (
         <div
@@ -362,36 +381,36 @@ export default function App(props: AppProps): React.JSX.Element {
                         {pages ? (
                             <PageList
                                 pages={pages}
-                                selected={pageid}
-                                isediting={ismoderator && isediting}
+                                selected={pageId}
+                                isEditing={isModerator && isEditing}
                                 onSelect={selectPage}
                                 onAddPage={() => setView('addpage')}
                                 onMove={movePage}
-                                onToggleVisibility={ismoderator ? toggleVisibility : undefined}
+                                onToggleVisibility={isModerator ? toggleVisibility : undefined}
                             />
                         ) : <Loading />}
                     </div>
                     {settings.show && toolprops && (
                         <div className="mootimetercol mootimetercoledit" id="mootimeter-col-settings">
                             <SettingsPanel
-                                key={`settings-${pageid}`}
+                                key={`settings-${pageId}`}
                                 {...toolprops}
                                 onDeleted={() => {
-                                    const remaining = (pages ?? []).filter((p) => p.id !== pageid);
+                                    const remaining = (pages ?? []).filter((p) => p.id !== pageId);
                                     setPages(remaining);
-                                    setPageid(remaining.length ? remaining[0].id : 0);
+                                    setPageId(remaining.length ? remaining[0].id : 0);
                                     setView('question');
-                                    setPagesreload((count) => count + 1);
+                                    setPagesReload((count) => count + 1);
                                 }}
                             />
                         </div>
                     )}
                     {settings.toggle && (
-                        <SettingsToggle open={settingsopen} onToggle={() => setSettingsopen(!settingsopen)} />
+                        <SettingsToggle open={settingsOpen} onToggle={() => setSettingsOpen(!settingsOpen)} />
                     )}
                 </div>
                 <div className="mootimetercol mootimetercolcontent">
-                    {showcontentmenu && toolprops && (
+                    {showContentMenu && toolprops && (
                         <ContentMenu
                             {...toolprops}
                             view={view}
@@ -404,9 +423,9 @@ export default function App(props: AppProps): React.JSX.Element {
                         <Content
                             pages={pages}
                             tools={tools}
-                            pageid={pageid}
+                            pageId={pageId}
                             view={view}
-                            ismoderator={ismoderator}
+                            isModerator={isModerator}
                             locked={locked}
                             toolprops={toolprops}
                             onAddPage={addPage}

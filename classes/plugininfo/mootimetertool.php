@@ -15,10 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The mod_mootimeter course module viewed event.
+ * Plugin info of the mootimetertool subplugins.
  *
  * @package     mod_mootimeter
- * @category    string
  * @copyright   2023, ISB Bayern
  * @author      Peter Mayer <peter.mayer@isb.bayern.de>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -26,16 +25,15 @@
 
 namespace mod_mootimeter\plugininfo;
 
-use coding_exception;
-use cache_exception;
-use core\plugininfo\base, core_plugin_manager, moodle_url;
-use dml_exception;
+use core\plugin_manager;
+use core\plugininfo\base;
+use core_admin\setting\settingpage\settingpage;
+use core_admin\setting\tree\part_of_admin_tree;
 
 /**
- * The mod_mootimeter course module viewed event class.
+ * Plugin info of the mootimetertool subplugins.
  *
  * @package     mod_mootimeter
- * @category    string
  * @copyright   2023, ISB Bayern
  * @author      Peter Mayer <peter.mayer@isb.bayern.de>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -48,7 +46,7 @@ class mootimetertool extends base {
     public static function get_enabled_plugins() {
         global $DB;
 
-        $plugins = core_plugin_manager::instance()->get_installed_plugins('mootimetertool');
+        $plugins = plugin_manager::instance()->get_installed_plugins('mootimetertool');
         if (!$plugins) {
             return [];
         }
@@ -81,9 +79,6 @@ class mootimetertool extends base {
      * @param string $pluginname
      * @param int $enabled
      * @return bool
-     * @throws dml_exception
-     * @throws coding_exception
-     * @throws cache_exception
      */
     public static function enable_plugin(string $pluginname, int $enabled): bool {
         $haschanged = false;
@@ -97,7 +92,7 @@ class mootimetertool extends base {
             $haschanged = true;
 
             add_to_config_log('disabled', $oldvalue, $disabled, $plugin);
-            \core_plugin_manager::reset_caches();
+            plugin_manager::reset_caches();
         }
 
         return $haschanged;
@@ -125,13 +120,12 @@ class mootimetertool extends base {
      * Loads plugin settings to the settings tree
      *
      * This function usually includes settings.php file in plugins folder.
-     * Alternatively it can create a link to some settings page (instance of admin_externalpage)
      *
-     * @param \part_of_admin_tree $adminroot
+     * @param part_of_admin_tree $adminroot
      * @param string $parentnodename
      * @param bool $hassiteconfig whether the current user has moodle/site:config capability
      */
-    public function load_settings(\part_of_admin_tree $adminroot, $parentnodename, $hassiteconfig) {
+    public function load_settings(part_of_admin_tree $adminroot, $parentnodename, $hassiteconfig) {
         global $CFG, $USER, $DB, $OUTPUT, $PAGE; // In case settings.php wants to refer to them.
         $ADMIN = $adminroot; // May be used in settings.php.
         $plugininfo = $this; // Also can be used inside settings.php.
@@ -146,10 +140,9 @@ class mootimetertool extends base {
 
         $section = $this->get_settings_section_name();
 
-        $settings = new \admin_settingpage($section, $this->displayname, 'moodle/site:config', $this->is_enabled() === false);
+        $settings = new settingpage($section, $this->displayname, 'moodle/site:config', $this->is_enabled() === false);
 
         if ($adminroot->fulltree) {
-            $shortsubtype = substr($this->type, strlen('assign'));
             include($this->full_path('settings.php'));
         }
 

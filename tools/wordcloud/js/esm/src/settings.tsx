@@ -23,14 +23,11 @@
  */
 
 import React from 'react';
+import {patch} from '@moodle/lms/mod_mootimeter/lib/api';
 import {AnonymousModeSetting, CheckboxSetting, Loading, NumberSetting} from '@moodle/lms/mod_mootimeter/lib/components';
-import {useStrings, useWebservice} from '@moodle/lms/mod_mootimeter/lib/hooks';
+import {useResource, useStrings} from '@moodle/lms/mod_mootimeter/lib/hooks';
 import type {ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
-
-type WordcloudData = {
-    maxinputsperuser: number;
-    allowduplicateanswers: boolean;
-};
+import {COMPONENT, type WordcloudData} from './types';
 
 /**
  * Maximum number of answers, duplicates and anonymous mode.
@@ -41,32 +38,26 @@ type WordcloudData = {
 export default function Settings({page, settingsVersion, refresh}: ToolViewProps): React.JSX.Element {
     const s = useStrings('mootimetertool_wordcloud', ['answers_max_number', 'allowduplicateanswers']);
     const c = useStrings('core', ['settings']);
-    const data = useWebservice<WordcloudData>(
-        'mootimetertool_wordcloud_get_page_data',
-        {pageid: page.id},
-        [page.id, settingsVersion]
-    );
+    const data = useResource<WordcloudData>(COMPONENT, `/pages/${page.id}`, [settingsVersion]);
 
     if (!data) {
         return <Loading />;
     }
 
+    const save = (body: Record<string, unknown>) => patch(COMPONENT, `/pages/${page.id}`, body).then(refresh);
+
     return (
         <>
             <p className="text-bold">{c.settings}</p>
             <NumberSetting
-                pageid={page.id}
-                name="maxinputsperuser"
-                value={data.maxinputsperuser}
+                value={data.maxAnswers}
                 label={s.answers_max_number}
-                onStored={refresh}
+                onSave={(maxAnswers) => save({maxAnswers})}
             />
             <CheckboxSetting
-                pageid={page.id}
-                name="allowduplicateanswers"
-                value={data.allowduplicateanswers}
+                value={data.allowDuplicateAnswers}
                 label={s.allowduplicateanswers}
-                onStored={refresh}
+                onSave={(allowDuplicateAnswers) => save({allowDuplicateAnswers})}
             />
             <AnonymousModeSetting page={page} onStored={refresh} />
         </>

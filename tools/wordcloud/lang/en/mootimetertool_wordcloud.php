@@ -27,13 +27,13 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['allowduplicateanswers'] = 'Allow students to submit the same answer multiple times';
+$string['answernotfound'] = 'The answer {$a} does not exist.';
 $string['answers_max_number'] = 'Maximum number of answers per participant (0: unlimited)';
+$string['answertoolong'] = 'An answer can have at most {$a} characters.';
 $string['csv_term'] = 'Term';
-$string['error_empty_answers'] = 'Empty answers are not allowed';
-$string['error_no_duplicate_answers'] = 'Duplicate answers are not allowed';
-$string['error_to_many_answers'] = 'You reached the maximum amount of answers';
+$string['duplicateanswer'] = 'Duplicate answers are not allowed';
+$string['emptyanswer'] = 'Empty answers are not allowed';
 $string['heading_answer'] = 'Answers';
-$string['hide_results'] = 'Hide result wordcloud';
 $string['no_answer'] = 'There are no answers yet.';
 $string['no_answer_due_to_showteacherpermission'] = 'The teacher must first allow the answers to be displayed.';
 $string['pluginname'] = 'Wordcloud';
@@ -45,9 +45,8 @@ $string['privacy:metadata:mootimetertool_wordcloud_answers:timecreated'] = 'Subm
 $string['privacy:metadata:mootimetertool_wordcloud_answers:timemodified'] = 'Submission modified';
 $string['privacy:metadata:mootimetertool_wordcloud_answers:userid'] = 'User ID';
 $string['show_results'] = 'Show result wordcloud';
-$string['showresultlive'] = 'Show results live';
-$string['showresultteacherpermission'] = 'Show results on teacher permission';
 $string['submit'] = 'Submit';
 $string['tool_description_short'] = "Collect words or statements live";
+$string['toomanyanswers'] = 'You reached the maximum amount of answers';
 $string['type_answer'] = 'Insert a word or statement and hit Enter.';
 $string['wordcloud_aria_label'] = 'Word cloud with {$a} terms';

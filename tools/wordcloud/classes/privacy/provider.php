@@ -25,11 +25,9 @@
 
 namespace mootimetertool_wordcloud\privacy;
 
-use coding_exception;
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\contextlist;
 use core_privacy\local\request\writer;
-use dml_exception;
 use mod_mootimeter\privacy\mootimeter_plugin_request_data;
 
 /**
@@ -166,7 +164,7 @@ class provider implements
 
         $mtmthelper = new \mootimetertool_wordcloud\wordcloud();
         $page = $requestdata->get_page();
-        $mtmthelper->delete_answers_tool($page, ['pageid' => $page->id]);
+        $mtmthelper->delete_all_answers($page);
     }
 
     /**
@@ -183,6 +181,6 @@ class provider implements
         $mtmthelper = new \mootimetertool_wordcloud\wordcloud();
         $user = $requestdata->get_user();
         $page = $requestdata->get_page();
-        $mtmthelper->delete_answers_tool($page, ['pageid' => $page->id, 'usermodified' => $user->id]);
+        $mtmthelper->delete_answers($page, ['usermodified' => $user->id]);
     }
 }

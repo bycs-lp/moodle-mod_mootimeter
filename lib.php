@@ -56,11 +56,9 @@ function mootimeter_supports($feature) {
 function mootimeter_add_instance($moduleinstance, $mform = null) {
     global $DB;
 
-    $moduleinstance->timecreated = time();
+    $moduleinstance->timecreated = \core\di::get(\core\clock::class)->time();
 
-    $id = $DB->insert_record('mootimeter', $moduleinstance);
-
-    return $id;
+    return $DB->insert_record('mootimeter', $moduleinstance);
 }
 
 /**
@@ -76,7 +74,7 @@ function mootimeter_add_instance($moduleinstance, $mform = null) {
 function mootimeter_update_instance($moduleinstance, $mform = null) {
     global $DB;
 
-    $moduleinstance->timemodified = time();
+    $moduleinstance->timemodified = \core\di::get(\core\clock::class)->time();
     $moduleinstance->id = $moduleinstance->instance;
 
     return $DB->update_record('mootimeter', $moduleinstance);
@@ -90,10 +88,9 @@ function mootimeter_update_instance($moduleinstance, $mform = null) {
  */
 function mootimeter_delete_instance($id) {
     global $DB;
-    $pages = $DB->get_fieldset_sql('SELECT id FROM {mootimeter_pages} WHERE instance = :id', ['id' => $id]);
 
     $helper = new \mod_mootimeter\helper();
-    foreach ($pages as $page) {
+    foreach ($helper->get_pages($id) as $page) {
         $helper->delete_page($page);
     }
 
@@ -154,8 +151,6 @@ function mootimeter_get_file_info($browser, $areas, $course, $cm, $context, $fil
  * @param array $options Additional options affecting the file serving.
  */
 function mootimeter_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = []) {
-    global $DB, $CFG;
-
     if ($context->contextlevel != CONTEXT_MODULE) {
         send_file_not_found();
     }
@@ -195,9 +190,6 @@ function mootimeter_extend_settings_navigation($settingsnav, $mootimeternode = n
  * @param object $moduleinstance
  * @param object $ctx
  * @param object $course
- * @return void
- * @throws coding_exception
- * @throws ddl_exception
  */
 function mootimeter_trigger_event_course_module_viewed(object $moduleinstance, object $ctx, object $course): void {
     $event = \mod_mootimeter\event\course_module_viewed::create(
@@ -219,9 +211,7 @@ function mootimeter_trigger_event_course_module_viewed(object $moduleinstance, o
 function mootimeter_reset_course_form_definition(MoodleQuickform $mform): void {
     $mform->addElement('header', 'mootimeterheader', get_string('pluginnameplural', 'mod_mootimeter'));
     foreach (\mod_mootimeter\plugininfo\mootimetertool::get_enabled_plugins() as $tool) {
-        $classname = '\mootimetertool_' . $tool . '\\' . $tool;
-        $toolhelper = new $classname();
-        $toolhelper->reset_course_form_definition($mform);
+        \mod_mootimeter\helper::get_toolhelper($tool)->reset_course_form_definition($mform);
     }
 }
 
@@ -233,9 +223,7 @@ function mootimeter_reset_course_form_definition(MoodleQuickform $mform): void {
 function mootimeter_reset_course_form_defaults(stdClass $course): array {
     $defaults = [];
     foreach (\mod_mootimeter\plugininfo\mootimetertool::get_enabled_plugins() as $tool) {
-        $classname = '\mootimetertool_' . $tool . '\\' . $tool;
-        $toolhelper = new $classname();
-        $defaults = array_merge($defaults, $toolhelper->reset_course_form_defaults($course));
+        $defaults = array_merge($defaults, \mod_mootimeter\helper::get_toolhelper($tool)->reset_course_form_defaults($course));
     }
     return $defaults;
 }
@@ -250,14 +238,10 @@ function mootimeter_reset_course_form_defaults(stdClass $course): array {
 function mootimeter_reset_userdata(stdClass $data): array {
     $status = [];
 
-    foreach (array_keys(core_plugin_manager::instance()->get_installed_plugins('mootimetertool')) as $tool) {
-        if (empty($data->{'reset_mootimetertool_' . $tool . '_answers'})) {
-            continue;
+    foreach (\mod_mootimeter\helper::get_installed_tools() as $tool) {
+        if (!empty($data->{'reset_mootimetertool_' . $tool . '_answers'})) {
+            $status = array_merge($status, \mod_mootimeter\helper::get_toolhelper($tool)->reset_userdata($data));
         }
-        $classname = '\mootimetertool_' . $tool . '\\' . $tool;
-        $toolhelper = new $classname();
-        // If we get to this point, no exception has occured, so we are pretty confident that everyting went well.
-        $status = array_merge($status, $toolhelper->reset_userdata($data));
     }
     return $status;
 }

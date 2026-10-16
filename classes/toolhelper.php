@@ -14,76 +14,46 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * The toolhelper methods must be implemented of each tool.
- *
- * @package     mod_mootimeter
- * @category    string
- * @copyright   2023, ISB Bayern
- * @author      Peter Mayer <peter.mayer@isb.bayern.de>
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace mod_mootimeter;
 
-use coding_exception;
-use cache_exception;
-use dml_exception;
-use stdClass;
+use core\context\module as context_module;
 
 /**
- * The toolhelper methods must be implemented of each tool.
+ * Base class of the tool helpers each mootimetertool subplugin implements.
  *
  * @package     mod_mootimeter
- * @category    string
  * @copyright   2023, ISB Bayern
  * @author      Peter Mayer <peter.mayer@isb.bayern.de>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class toolhelper extends helper {
     /**
-     * Get the tools answer column.
+     * Get the column of the answer table holding the answer.
+     *
      * @return string
      */
-    abstract public function get_answer_column();
+    abstract public function get_answer_column(): string;
 
     /**
-     * Get the tools answer table.
+     * Get the answer table of the tool. The user is stored in the column usermodified.
+     *
      * @return string
      */
-    abstract public function get_answer_table();
+    abstract public function get_answer_table(): string;
 
     /**
-     * Get the userid column name in the answer table of the tool.
-     * @return ?string the column name where the user id is stored in the answer table, null if no user id is stored
-     */
-    public function get_answer_userid_column(): ?string {
-        return null;
-    }
-
-    /**
-     * Insert the answer.
+     * Delete the tool specific data of a page.
      *
-     * @param object $page
-     * @param mixed $answer
-     * @return void
+     * @param \stdClass $page
      */
-    abstract public function insert_answer(object $page, $answer);
+    abstract public function delete_page_tool(\stdClass $page): void;
 
     /**
-     * Delete Page
+     * Initialise a new page.
      *
-     * @param object $page
-     * @return bool
+     * @param \stdClass $page
      */
-    abstract public function delete_page_tool(object $page);
-
-    /**
-     * Will be executed after the page is created.
-     * @param object $page
-     * @return void
-     */
-    abstract public function hook_after_new_page_created(object $page);
+    abstract public function hook_after_new_page_created(\stdClass $page): void;
 
     /**
      * Get the short name of the tool, e.g. "quiz".
@@ -114,104 +84,76 @@ abstract class toolhelper extends helper {
     }
 
     /**
-     * Get the tool specific page settings that may be stored by moderators.
-     *
-     * @return array of setting name => PARAM_* type
-     */
-    public function get_setting_definitions(): array {
-        return [];
-    }
-
-    /**
      * Get the results of a page for the CSV download.
      *
      * Each section is written as a header row followed by its rows, sections are separated by an empty row.
      *
-     * @param object $page
-     * @param \context_module $context
+     * @param \stdClass $page
+     * @param context_module $context
      * @return array list of sections with the keys columns (string[]) and rows (array[])
      */
-    public function export_results_csv(object $page, \context_module $context): array {
+    public function export_results_csv(\stdClass $page, context_module $context): array {
         return [];
     }
 
     /**
-     * Checks if a select option is selected.
+     * Get the name to show for the author of an answer.
      *
-     * @param int $optionid
-     * @param object $config
-     * @param string $attribute
-     * @return bool
+     * @param \stdClass $page
+     * @param int $userid
+     * @return string
      */
-    public function is_option_selected(int $optionid, object $config, string $attribute): bool {
-
-        if (empty($config->{$attribute})) {
-            return false;
+    public function get_participant_name(\stdClass $page, int $userid): string {
+        if (!empty(self::get_tool_config($page, 'anonymousmode'))) {
+            return get_string('anonymous_name', 'mod_mootimeter');
         }
-
-        if ($config->{$attribute} == $optionid) {
-            return true;
-        }
-
-        return false;
+        $user = \core\user::get_user($userid);
+        return $user ? fullname($user) : '';
     }
 
-
     /**
-     * Helper function to add the form definition for this subplugin to the reset userdata form.
+     * Add the form definition for this subplugin to the reset userdata form.
      *
      * @param \MoodleQuickForm $mform The mform object to use
      */
     public function reset_course_form_definition(\MoodleQuickForm $mform): void {
-        $shortclassname = preg_replace('/.*\\\\/', '', get_class($this));
         $mform->addElement(
             'checkbox',
-            'reset_mootimetertool_' . $shortclassname . '_answers',
-            get_string(
-                'resetuserdata',
-                'mod_mootimeter',
-                get_string('pluginname', 'mootimetertool_' . $shortclassname)
-            )
+            'reset_mootimetertool_' . $this->get_toolname() . '_answers',
+            get_string('resetuserdata', 'mod_mootimeter', get_string('pluginname', 'mootimetertool_' . $this->get_toolname()))
         );
     }
 
     /**
      * Defines the form defaults for the course reset form.
      *
-     * @param stdClass $course the course object
+     * @param \stdClass $course the course object
      * @return array the array of defaults
      */
-    public function reset_course_form_defaults(stdClass $course): array {
-        $shortclassname = preg_replace('/.*\\\\/', '', get_class($this));
-        return [
-            'reset_mootimetertool_' . $shortclassname . '_answers' => 1,
-        ];
+    public function reset_course_form_defaults(\stdClass $course): array {
+        return ['reset_mootimetertool_' . $this->get_toolname() . '_answers' => 1];
     }
 
     /**
-     * Callback function for the form definition of the reset course functionality.
+     * Delete the answers of all pages of this tool in a course.
      *
-     * @param stdClass $data The data from the mform submission
+     * @param \stdClass $data The data from the mform submission
      * @return array array of associative arrays representing the status of the course reset
      */
-    public function reset_userdata(stdClass $data): array {
-        $shortclassname = preg_replace('/.*\\\\/', '', get_class($this));
+    public function reset_userdata(\stdClass $data): array {
         foreach (get_all_instances_in_course('mootimeter', get_course($data->courseid)) as $instance) {
-            $pages = $this->get_pages($instance->id);
-            $pages = array_filter($pages, fn($page) => $page->tool === $shortclassname);
-            foreach ($pages as $page) {
-                $this->delete_all_answers($this->get_answer_table(), $page->id);
+            foreach ($this->get_pages($instance->id) as $page) {
+                if ($page->tool === $this->get_toolname()) {
+                    $this->delete_all_answers($page);
+                }
             }
         }
 
+        $toolname = get_string('pluginname', 'mootimetertool_' . $this->get_toolname());
         return [
             [
-                'component' => get_string('pluginname', 'mootimetertool_' . $shortclassname),
-                'item' => get_string(
-                    'resetuserdata',
-                    'mod_mootimeter',
-                    get_string('pluginname', 'mootimetertool_' . $shortclassname)
-                ),
+                'component' => $toolname,
+                'item' => get_string('resetuserdata', 'mod_mootimeter', $toolname),
                 'error' => false,
             ],
         ];

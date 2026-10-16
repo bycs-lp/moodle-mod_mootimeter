@@ -25,65 +25,44 @@
 
 require(__DIR__ . '/../../config.php');
 
-require_once(__DIR__ . '/lib.php');
+use core\output\html_writer;
+use core\url;
+use core_table\output\html_table;
 
 $id = required_param('id', PARAM_INT);
 
 $course = $DB->get_record('course', ['id' => $id], '*', MUST_EXIST);
 require_course_login($course);
 
-$coursecontext = context_course::instance($course->id);
-
-$PAGE->set_url('/mod/mootimeter/index.php', ['id' => $id]);
+$PAGE->set_url(new url('/mod/mootimeter/index.php', ['id' => $id]));
 $PAGE->set_title(format_string($course->fullname));
 $PAGE->set_heading(format_string($course->fullname));
-$PAGE->set_context($coursecontext);
-
-echo $OUTPUT->header();
+$PAGE->set_context(\core\context\course::instance($course->id));
 
 $modulenameplural = get_string('modulenameplural', 'mod_mootimeter');
-echo $OUTPUT->heading($modulenameplural);
-
 $mootimeters = get_all_instances_in_course('mootimeter', $course);
-
 if (empty($mootimeters)) {
-    notice(get_string('no$mootimeterinstances', 'mod_mootimeter'), new moodle_url('/course/view.php', ['id' => $course->id]));
+    notice(get_string('thereareno', 'moodle', $modulenameplural), new url('/course/view.php', ['id' => $course->id]));
 }
 
 $table = new html_table();
 $table->attributes['class'] = 'generaltable mod_index';
-
-if ($course->format == 'weeks') {
-    $table->head  = [get_string('week'), get_string('name')];
-    $table->align = ['center', 'left'];
-} else if ($course->format == 'topics') {
-    $table->head  = [get_string('topic'), get_string('name')];
-    $table->align = ['center', 'left', 'left', 'left'];
-} else {
-    $table->head  = [get_string('name')];
-    $table->align = ['left', 'left', 'left'];
+$withsection = $course->format === 'weeks' || $course->format === 'topics';
+$table->head = [get_string('name')];
+if ($withsection) {
+    array_unshift($table->head, get_string($course->format === 'weeks' ? 'week' : 'topic'));
 }
 
 foreach ($mootimeters as $mootimeter) {
-    if (!$mootimeter->visible) {
-        $link = html_writer::link(
-            new moodle_url('/mod/mootimeter/view.php', ['id' => $mootimeter->coursemodule]),
-            format_string($mootimeter->name, true),
-            ['class' => 'dimmed']
-        );
-    } else {
-        $link = html_writer::link(
-            new moodle_url('/mod/mootimeter/view.php', ['id' => $mootimeter->coursemodule]),
-            format_string($mootimeter->name, true)
-        );
-    }
-
-    if ($course->format == 'weeks' || $course->format == 'topics') {
-        $table->data[] = [$mootimeter->section, $link];
-    } else {
-        $table->data[] = [$link];
-    }
+    $link = html_writer::link(
+        new url('/mod/mootimeter/view.php', ['id' => $mootimeter->coursemodule]),
+        format_string($mootimeter->name, true, ['context' => \core\context\module::instance($mootimeter->coursemodule)]),
+        $mootimeter->visible ? [] : ['class' => 'dimmed']
+    );
+    $table->data[] = $withsection ? [$mootimeter->section, $link] : [$link];
 }
 
+echo $OUTPUT->header();
+echo $OUTPUT->heading($modulenameplural);
 echo html_writer::table($table);
 echo $OUTPUT->footer();

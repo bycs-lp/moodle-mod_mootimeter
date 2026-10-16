@@ -16,6 +16,8 @@
 /**
  * Types shared between mod_mootimeter and the mootimetertool subplugins.
  *
+ * The resource types mirror the REST API, see mod_mootimeter\route\schema.
+ *
  * @module     mod_mootimeter/lib/types
  * @copyright  2026 ISB Bayern
  * @author     Dr. Peter Mayer
@@ -24,15 +26,26 @@
 
 export type View = 'question' | 'results' | 'overview' | 'addpage';
 
-/** Props of the application, rendered by view.php. */
+/** Props of the application, see mod_mootimeter\output\app. */
 export type AppProps = {
-    cmid: number;
-    pageid: number;
+    cmId: number;
+    pageId: number;
     view: View;
     fullscreen: boolean;
-    ismoderator: boolean;
-    isediting: boolean;
-    refreshinterval: number;
+    isModerator: boolean;
+    isEditing: boolean;
+    refreshInterval: number;
+};
+
+export type Pagination = {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+};
+
+export type Collection<T> = {
+    items: T[];
+    pagination: Pagination;
 };
 
 export type PageListItem = {
@@ -41,14 +54,14 @@ export type PageListItem = {
     visible: boolean;
     number: number;
     title: string;
-    iconurl: string;
+    iconUrl: string;
 };
 
 export type ToolInfo = {
     name: string;
-    displayname: string;
+    displayName: string;
     description: string;
-    iconurl: string;
+    iconUrl: string;
 };
 
 export type ToolComponents = {
@@ -59,24 +72,23 @@ export type ToolComponents = {
     menu: string;
 };
 
-/** Common page data, see mod_mootimeter\local\exporter::export_page(). */
 export type PageInfo = {
     id: number;
-    cmid: number;
+    cmId: number;
     tool: string;
-    toolname: string;
+    toolName: string;
     visible: boolean;
     question: string;
-    questionhtml: string;
-    showonteacherpermission: boolean;
-    resultsvisible: boolean;
-    anonymousmode: boolean;
-    hasanswers: boolean;
+    questionHtml: string;
+    resultsPublished: boolean;
+    canViewResults: boolean;
+    anonymousMode: boolean;
+    hasAnswers: boolean;
     components: ToolComponents;
 };
 
-export type ChangeState = {
-    pagelist: number;
+export type Updates = {
+    pageList: number;
     settings: number;
     answers: number;
 };
@@ -88,17 +100,9 @@ export type ChangeState = {
  */
 export type ToolViewProps = {
     page: PageInfo;
-    ismoderator: boolean;
-    isediting: boolean;
+    isModerator: boolean;
+    isEditing: boolean;
     settingsVersion: string;
     answersVersion: string;
     refresh: () => void;
 };
-
-/** Result of the answer storing web services. */
-export type StoreResult = {
-    code: number;
-    message: string;
-};
-
-export const CODE_OK = 200;

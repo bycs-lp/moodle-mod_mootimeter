@@ -25,7 +25,6 @@
 
 namespace mod_mootimeter\privacy;
 
-use coding_exception;
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\contextlist;
 use core_privacy\local\request\writer;
@@ -34,7 +33,6 @@ use core_privacy\local\request\helper;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\manager;
-use dml_exception;
 
 /**
  * Privacy class for requesting user data.
@@ -63,9 +61,6 @@ class provider implements
      */
     public static function get_metadata(collection $collection): collection {
 
-        $collection->add_plugintype_link('mootimetertool', [], 'privacy:metadata:mootimetertoolpluginsummary');
-
-        // Link to subplugins.
         $collection->add_plugintype_link('mootimetertool', [], 'privacy:metadata:mootimetertoolpluginsummary');
 
         return $collection;
@@ -117,6 +112,8 @@ class provider implements
      * @param approved_contextlist $contextlist contexts that we are writing data out from.
      */
     public static function export_user_data(approved_contextlist $contextlist) {
+        global $DB;
+
         foreach ($contextlist->get_contexts() as $context) {
             // Check that the context is a module context.
             if ($context->contextlevel != CONTEXT_MODULE) {
@@ -127,9 +124,8 @@ class provider implements
             $mootimeterdata = helper::get_context_data($context, $user);
             writer::with_context($context)->export_data([], $mootimeterdata);
 
-            $cm = get_coursemodule_from_id('', $context->instanceid);
-            $mtmhelper = new \mod_mootimeter\helper();
-            $mootimeterinstance = $mtmhelper::get_mootimeter_instance($cm->instance);
+            $cm = get_coursemodule_from_id('mootimeter', $context->instanceid, 0, false, MUST_EXIST);
+            $mootimeterinstance = $DB->get_record('mootimeter', ['id' => $cm->instance], '*', MUST_EXIST);
             writer::with_context($context)->export_data([], $mootimeterinstance);
 
             static::export_mootimetertool_data($mootimeterinstance, $user, $context, []);
@@ -150,48 +146,36 @@ class provider implements
         object $context,
         array $path,
     ) {
-        $helper = new \mod_mootimeter\helper();
-        $toolpages = $helper->get_all_tools_of_instance($mootimeterinstance);
-        foreach ($toolpages as $tool => $pages) {
-            foreach ($pages as $page) {
-                $subpath = array_merge($path, [get_string('privacy:pagepath', 'mod_mootimeter', $page->id)]);
-                $params = new mootimeter_plugin_request_data($context, $page, $user, $subpath);
-                manager::plugintype_class_callback(
-                    'mootimetertool',
-                    self::MOOTIMETERTOOL_INTERFACE,
-                    'export_mootimetertool_user_data',
-                    [$params]
-                );
-            }
+        foreach ((new \mod_mootimeter\helper())->get_pages($mootimeterinstance->id) as $page) {
+            $subpath = array_merge($path, [get_string('privacy:pagepath', 'mod_mootimeter', $page->id)]);
+            $params = new mootimeter_plugin_request_data($context, $page, $user, $subpath);
+            manager::plugintype_class_callback(
+                'mootimetertool',
+                self::MOOTIMETERTOOL_INTERFACE,
+                'export_mootimetertool_user_data',
+                [$params]
+            );
         }
     }
 
     /**
      * Delete data for all users in context.
      *
-     * @param \context $context
-     * @return void
-     * @throws dml_exception
-     * @throws coding_exception
+     * @param \core\context $context
      */
     public static function delete_data_for_all_users_in_context($context) {
 
         if ($context->contextlevel == CONTEXT_MODULE) {
             $cm = get_coursemodule_from_id('mootimeter', $context->instanceid);
             if ($cm) {
-                $helper = new \mod_mootimeter\helper(['privacyexport' => 1]);
-                $toolpages = $helper->get_all_tools_of_instance($cm->instance);
-                foreach ($toolpages as $tool => $pages) {
-                    foreach ($pages as $page) {
-                        // What to do first... Get sub plugins to delete their stuff.
-                        $requestdata = new mootimeter_plugin_request_data($context, $page);
-                        manager::plugintype_class_callback(
-                            'mootimetertool',
-                            self::MOOTIMETERTOOL_INTERFACE,
-                            'delete_answers_for_context',
-                            [$requestdata]
-                        );
-                    }
+                foreach ((new \mod_mootimeter\helper())->get_pages($cm->instance) as $page) {
+                    $requestdata = new mootimeter_plugin_request_data($context, $page);
+                    manager::plugintype_class_callback(
+                        'mootimetertool',
+                        self::MOOTIMETERTOOL_INTERFACE,
+                        'delete_answers_for_context',
+                        [$requestdata]
+                    );
                 }
             }
         }
@@ -200,8 +184,7 @@ class provider implements
     /**
      * Delete data for a user in context.
      *
-     * @param \approved_contextlist $contextlist
-     * @return void
+     * @param approved_contextlist $contextlist
      */
     public static function delete_data_for_user(approved_contextlist $contextlist) {
         foreach ($contextlist->get_contexts() as $context) {
@@ -212,21 +195,15 @@ class provider implements
 
             $cm = get_coursemodule_from_id('mootimeter', $context->instanceid);
             if ($cm) {
-                $helper = new \mod_mootimeter\helper();
-                $toolpages = $helper->get_all_tools_of_instance($cm->instance);
                 $user = $contextlist->get_user();
-
-                foreach ($toolpages as $tool => $pages) {
-                    foreach ($pages as $page) {
-                        // What to do first... Get sub plugins to delete their stuff.
-                        $requestdata = new mootimeter_plugin_request_data($context, $page, $user);
-                        manager::plugintype_class_callback(
-                            'mootimetertool',
-                            self::MOOTIMETERTOOL_INTERFACE,
-                            'delete_answers_for_user',
-                            [$requestdata]
-                        );
-                    }
+                foreach ((new \mod_mootimeter\helper())->get_pages($cm->instance) as $page) {
+                    $requestdata = new mootimeter_plugin_request_data($context, $page, $user);
+                    manager::plugintype_class_callback(
+                        'mootimetertool',
+                        self::MOOTIMETERTOOL_INTERFACE,
+                        'delete_answers_for_user',
+                        [$requestdata]
+                    );
                 }
             }
         }
@@ -246,21 +223,15 @@ class provider implements
 
         $cm = get_coursemodule_from_id('mootimeter', $context->instanceid);
         if ($cm) {
-            $helper = new \mod_mootimeter\helper();
-            $toolpages = $helper->get_all_tools_of_instance($cm->instance);
-
-            foreach ($toolpages as $tool => $pages) {
-                foreach ($pages as $page) {
-                    foreach ($userids as $userid) {
-                        $user = \core_user::get_user($userid);
-                        $requestdata = new mootimeter_plugin_request_data($context, $page, $user);
-                        manager::plugintype_class_callback(
-                            'mootimetertool',
-                            self::MOOTIMETERTOOL_INTERFACE,
-                            'delete_answers_for_user',
-                            [$requestdata]
-                        );
-                    }
+            foreach ((new \mod_mootimeter\helper())->get_pages($cm->instance) as $page) {
+                foreach ($userids as $userid) {
+                    $requestdata = new mootimeter_plugin_request_data($context, $page, \core\user::get_user($userid));
+                    manager::plugintype_class_callback(
+                        'mootimetertool',
+                        self::MOOTIMETERTOOL_INTERFACE,
+                        'delete_answers_for_user',
+                        [$requestdata]
+                    );
                 }
             }
         }

@@ -26,7 +26,6 @@ import React from 'react';
 import {useStrings} from './lib/hooks';
 import type {ToolInfo} from './lib/types';
 
-/* eslint-disable no-unused-vars -- the core rule reports the parameter names of TypeScript function types. */
 type AddPageProps = {
     tools: ToolInfo[];
     onAdd: (tool: string) => void;
@@ -56,9 +55,9 @@ export default function AddPage({tools, onAdd}: AddPageProps): React.JSX.Element
                         data-name={tool.name}
                         onClick={() => onAdd(tool.name)}
                     >
-                        <img src={tool.iconurl} width="40px" className="m-1" alt="" />
+                        <img src={tool.iconUrl} width="40px" className="m-1" alt="" />
                         <span className="card-details">
-                            <span className="card-type">{tool.displayname}</span>
+                            <span className="card-type">{tool.displayName}</span>
                             <span className="card-desc">{tool.description}</span>
                         </span>
                         <span className="active-border"></span>

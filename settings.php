@@ -27,10 +27,13 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-    $settings = new admin_settingpage('mod_mootimeter_settings', new lang_string('pluginname', 'mod_mootimeter'));
+    $settings = new \core_admin\setting\settingpage\settingpage(
+        'mod_mootimeter_settings',
+        new \core\lang_string('pluginname', 'mod_mootimeter')
+    );
 
     if ($ADMIN->fulltree) {
-        $settings->add(new admin_setting_configtext(
+        $settings->add(new \core_admin\setting\setting\configtext(
             'mod_mootimeter/refreshinterval',
             get_string('refreshinterval', 'mod_mootimeter'),
             get_string('refreshinterval_desc', 'mod_mootimeter'),
@@ -38,14 +41,14 @@ if ($hassiteconfig) {
             PARAM_INT
         ));
 
-        $settings->add(new admin_setting_configcheckbox(
+        $settings->add(new \core_admin\setting\setting\configcheckbox(
             'mod_mootimeter/default_new_page_visibility',
             get_string('default_new_page_visibility', 'mod_mootimeter'),
             get_string('default_new_page_visibility_desc', 'mod_mootimeter'),
             0
         ));
 
-        $settings->add(new admin_setting_configtext(
+        $settings->add(new \core_admin\setting\setting\configtext(
             'mod_mootimeter/chartcolors',
             get_string('chartcolors', 'mod_mootimeter'),
             get_string('chartcolors_desc', 'mod_mootimeter'),

@@ -25,11 +25,12 @@
  */
 
 import React, {useEffect, useRef, useState, ReactNode} from 'react';
+import {Pagination} from '@moodlehq/design-system';
+import {patch} from './api';
 import {useStrings} from './hooks';
-import {confirmDelete, displayException, notifyFilterContentUpdated, storeSetting} from './moodle';
+import {confirmDelete, displayError, formatUserDates, notifyFilterContentUpdated} from './moodle';
 import type {PageInfo} from './types';
 
-/* eslint-disable no-unused-vars -- the core rule reports the parameter names of TypeScript function types. */
 type IconButtonProps = {
     icon: string;
     title: string;
@@ -124,7 +125,9 @@ type FormattedHtmlProps = {
  */
 export function FormattedHtml({html, tag = 'span', className = ''}: FormattedHtmlProps): React.JSX.Element {
     const ref = useRef<HTMLElement>(null);
-    useEffect(() => notifyFilterContentUpdated(ref.current), [html]);
+    useEffect(() => {
+        notifyFilterContentUpdated(ref.current);
+    }, [html]);
     return React.createElement(tag, {ref, className, dangerouslySetInnerHTML: {__html: html}});
 }
 
@@ -142,8 +145,8 @@ type QuestionHeaderProps = {
 export function QuestionHeader({page, children}: QuestionHeaderProps): React.JSX.Element {
     return (
         <div className="mootimeter-colcontent-preview-header filter_mathjaxloader_equation">
-            <div className="mootimeter-pill"><span>{page.toolname}</span></div>
-            <FormattedHtml tag="h4" html={page.questionhtml} />
+            <div className="mootimeter-pill"><span>{page.toolName}</span></div>
+            <FormattedHtml tag="h4" html={page.questionHtml} />
             {children}
         </div>
     );
@@ -190,25 +193,23 @@ export function Choice(
     );
 }
 
-type SettingProps = {
-    pageid: number;
-    name: string;
-    onStored?: () => void;
+type SettingProps<T> = {
+    onSave: (value: T) => Promise<unknown>;
 };
 
-type TextSettingProps = SettingProps & {
+type TextSettingProps = SettingProps<string> & {
     value: string;
     placeholder?: string;
     label: string;
 };
 
 /**
- * Text input that stores a page setting when it loses the focus.
+ * Text input that saves a setting when it loses the focus.
  *
  * @param {TextSettingProps} props
  * @returns {React.JSX.Element}
  */
-export function TextSetting({pageid, name, value, placeholder, label, onStored}: TextSettingProps): React.JSX.Element {
+export function TextSetting({value, placeholder, label, onSave}: TextSettingProps): React.JSX.Element {
     const [current, setCurrent] = useState(value);
     const focused = useRef(false);
 
@@ -223,7 +224,7 @@ export function TextSetting({pageid, name, value, placeholder, label, onStored}:
         if (current === value) {
             return;
         }
-        storeSetting(pageid, name, current).then(() => onStored?.()).catch(displayException);
+        onSave(current).catch(displayError);
     };
 
     return (
@@ -243,19 +244,19 @@ export function TextSetting({pageid, name, value, placeholder, label, onStored}:
     );
 }
 
-type NumberSettingProps = SettingProps & {
+type NumberSettingProps = SettingProps<number> & {
     value: number;
     label: string;
     min?: number;
 };
 
 /**
- * Number input with up and down buttons that stores a page setting.
+ * Number input with up and down buttons that saves a setting.
  *
  * @param {NumberSettingProps} props
  * @returns {React.JSX.Element}
  */
-export function NumberSetting({pageid, name, value, label, min = 0, onStored}: NumberSettingProps): React.JSX.Element {
+export function NumberSetting({value, label, min = 0, onSave}: NumberSettingProps): React.JSX.Element {
     const [current, setCurrent] = useState(String(value));
 
     useEffect(() => setCurrent(String(value)), [value]);
@@ -266,7 +267,7 @@ export function NumberSetting({pageid, name, value, label, min = 0, onStored}: N
         if (cleaned === value) {
             return;
         }
-        storeSetting(pageid, name, cleaned).then(() => onStored?.()).catch(displayException);
+        onSave(cleaned).catch(displayError);
     };
 
     return (
@@ -287,6 +288,7 @@ export function NumberSetting({pageid, name, value, label, min = 0, onStored}: N
                         className="mootimeter-btn-icon-only-transparent mootimeter-number-input-btn-up"
                         aria-hidden="true"
                         tabIndex={-1}
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => store(Number(current) + 1)}
                     >
                         <i className="icon fa fa-sort-up fa-light" aria-hidden="true"></i>
@@ -296,6 +298,7 @@ export function NumberSetting({pageid, name, value, label, min = 0, onStored}: N
                         className="mootimeter-btn-icon-only-transparent mootimeter-number-input-btn-down"
                         aria-hidden="true"
                         tabIndex={-1}
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => store(Number(current) - 1)}
                     >
                         <i className="icon fa fa-sort-down fa-light" aria-hidden="true"></i>
@@ -307,29 +310,29 @@ export function NumberSetting({pageid, name, value, label, min = 0, onStored}: N
     );
 }
 
-type CheckboxSettingProps = SettingProps & {
+type CheckboxSettingProps = SettingProps<boolean> & {
     value: boolean;
     label: string;
     disabled?: boolean;
 };
 
 /**
- * Checkbox that stores a page setting.
+ * Checkbox that saves a setting.
  *
  * @param {CheckboxSettingProps} props
  * @returns {React.JSX.Element}
  */
-export function CheckboxSetting({pageid, name, value, label, disabled = false, onStored}: CheckboxSettingProps): React.JSX.Element {
+export function CheckboxSetting({value, label, disabled = false, onSave}: CheckboxSettingProps): React.JSX.Element {
     const [current, setCurrent] = useState(value);
 
     useEffect(() => setCurrent(value), [value]);
 
     const change = (checked: boolean) => {
         setCurrent(checked);
-        storeSetting(pageid, name, checked)
-            .then((stored) => setCurrent(stored === '1'))
-            .then(() => onStored?.())
-            .catch(displayException);
+        onSave(checked).catch((error) => {
+            setCurrent(value);
+            displayError(error);
+        });
     };
 
     return <Choice type="checkbox" checked={current} label={label} disabled={disabled} onChange={change} />;
@@ -350,12 +353,10 @@ export function AnonymousModeSetting({page, onStored}: AnonymousModeSettingProps
     const s = useStrings('mod_mootimeter', ['anonymousmode', 'anonymousmode_desc']);
     return (
         <CheckboxSetting
-            pageid={page.id}
-            name="anonymousmode"
-            value={page.anonymousmode}
+            value={page.anonymousMode}
             label={`${s.anonymousmode} ${s.anonymousmode_desc}`}
-            disabled={page.hasanswers}
-            onStored={onStored}
+            disabled={page.hasAnswers}
+            onSave={(anonymousMode) => patch('mod_mootimeter', `/pages/${page.id}`, {anonymousMode}).then(() => onStored?.())}
         />
     );
 }
@@ -384,13 +385,18 @@ export function Loading(): React.JSX.Element {
 }
 
 export type OverviewRow = {
-    answerid: number;
-    fullname: string;
-    time: string;
+    id: number;
+    fullName: string;
+    createdAt: string;
 };
 
 type OverviewTableProps<T extends OverviewRow> = {
     rows: T[];
+    // Number of the first row, the rows of later pages continue the numbering.
+    offset: number;
+    totalPages: number;
+    currentPage: number;
+    onPageChange: (page: number) => void;
     renderAnswer: (row: T) => ReactNode;
     onDelete: (row: T) => Promise<unknown>;
     deleteTitle: string;
@@ -399,25 +405,48 @@ type OverviewTableProps<T extends OverviewRow> = {
 };
 
 /**
+ * Format the creation times of the rows like the rest of Moodle.
+ *
+ * @param {OverviewRow[]} rows
+ * @returns {Record<number, string>} formatted time by row id
+ */
+function useRowTimes(rows: OverviewRow[]): Record<number, string> {
+    const [times, setTimes] = useState<Record<number, string>>({});
+    const key = rows.map((row) => `${row.id}:${row.createdAt}`).join(',');
+
+    useEffect(() => {
+        let active = true;
+        formatUserDates(rows.map((row) => Math.floor(Date.parse(row.createdAt) / 1000)))
+            .then((formatted) => active && setTimes(Object.fromEntries(rows.map((row, index) => [row.id, formatted[index]]))))
+            .catch(displayError);
+        return () => {
+            active = false;
+        };
+    }, [key]);
+
+    return times;
+}
+
+/**
  * Table of the answer overview.
  *
  * @param {OverviewTableProps} props
  * @returns {React.JSX.Element}
  */
-export function OverviewTable<T extends OverviewRow>(
-    {rows, renderAnswer, onDelete, deleteTitle, deleteQuestion, className = ''}: OverviewTableProps<T>
-): React.JSX.Element {
-    const s = useStrings('core', ['name', 'answer', 'date', 'time', 'options', 'delete', 'nothingtodisplay']);
+export function OverviewTable<T extends OverviewRow>(props: OverviewTableProps<T>): React.JSX.Element {
+    const {rows, offset, totalPages, currentPage, onPageChange, renderAnswer, onDelete, deleteTitle, deleteQuestion} = props;
+    const s = useStrings('core', ['name', 'answer', 'date', 'time', 'options', 'delete', 'nothingtodisplay', 'previous', 'next']);
     const m = useStrings('mod_mootimeter', ['show_answer_overview']);
+    const times = useRowTimes(rows);
 
     const remove = async(row: T) => {
         if (await confirmDelete(deleteTitle, deleteQuestion)) {
-            onDelete(row).catch(displayException);
+            onDelete(row).catch(displayError);
         }
     };
 
     return (
-        <div className={`mootimeter-colcontent-preview mootimeter-width-xl mootimeter-height-auto ${className}`}>
+        <div className={`mootimeter-colcontent-preview mootimeter-width-xl mootimeter-height-auto ${props.className ?? ''}`}>
             <table className="table">
                 <caption className="sr-only">{m.show_answer_overview}</caption>
                 <thead>
@@ -436,11 +465,11 @@ export function OverviewTable<T extends OverviewRow>(
                         </tr>
                     )}
                     {rows.map((row, index) => (
-                        <tr key={row.answerid}>
-                            <td>{index + 1}</td>
-                            <td>{row.fullname}</td>
+                        <tr key={row.id}>
+                            <td>{offset + index + 1}</td>
+                            <td>{row.fullName}</td>
                             <td>{renderAnswer(row)}</td>
-                            <td>{row.time}</td>
+                            <td>{times[row.id] ?? ''}</td>
                             <td>
                                 <IconButton icon="fa-trash" title={s.delete} onClick={() => remove(row)} />
                             </td>
@@ -448,6 +477,16 @@ export function OverviewTable<T extends OverviewRow>(
                     ))}
                 </tbody>
             </table>
+            {totalPages > 1 && (
+                <Pagination
+                    totalPages={totalPages}
+                    currentPage={currentPage}
+                    onPageChange={onPageChange}
+                    ariaLabel={m.show_answer_overview}
+                    previousPageLabel={s.previous}
+                    nextPageLabel={s.next}
+                />
+            )}
         </div>
     );
 }

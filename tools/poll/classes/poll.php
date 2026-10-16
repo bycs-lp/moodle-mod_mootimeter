@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Pluginlib
+ * Answer options, answers and results of poll pages.
  *
  * @package     mootimetertool_poll
  * @copyright   2023, ISB Bayern
@@ -26,7 +26,7 @@
 namespace mootimetertool_poll;
 
 /**
- * Pluginlib
+ * Poll tool: the quiz without correct options.
  *
  * @package     mootimetertool_poll
  * @copyright   2023, ISB Bayern
@@ -34,72 +34,15 @@ namespace mootimetertool_poll;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class poll extends \mootimetertool_quiz\quiz {
-    /**
-     * @var string Answer table
-     */
-    const ANSWER_TABLE = "mootimetertool_poll_answers";
+    /** @var string Answer table. */
+    const ANSWER_TABLE = 'mootimetertool_poll_answers';
 
-    /**
-     * @var string Name of table column of the answer table where the user id is stored
-     */
-    const ANSWER_USERID_COLUMN = 'usermodified';
+    /** @var string Answer option table. */
+    const ANSWER_OPTION_TABLE = 'mootimetertool_poll_options';
 
-    /**
-     * @var string Answer option table name.
-     */
-    const ANSWER_OPTION_TABLE = "mootimetertool_poll_options";
-
-    /**
-     * Get the tools answer column.
-     * @return string
-     */
-    public function get_answer_column() {
-        return self::ANSWER_COLUMN;
-    }
-
-    /**
-     * Get the tools answer table.
-     * @return string
-     */
-    public function get_answer_table() {
-        return self::ANSWER_TABLE;
-    }
-
-    /**
-     * Get the userid column name in the answer table of the tool.
-     *
-     * @return ?string the column name where the user id is stored in the answer table, null if no user id is stored
-     */
-    public function get_answer_userid_column(): ?string {
-        return self::ANSWER_USERID_COLUMN;
-    }
-
-    /**
-     * Get the tools answer table.
-     * @return string
-     */
-    public function get_answer_option_table() {
-        return self::ANSWER_OPTION_TABLE;
-    }
-
-    /**
-     * Polls have no correct options.
-     *
-     * @return bool
-     */
+    #[\Override]
     public function supports_correct_options(): bool {
         return false;
-    }
-
-    /**
-     * Get the tool specific page settings that may be stored by moderators.
-     *
-     * @return array of setting name => PARAM_* type
-     */
-    public function get_setting_definitions(): array {
-        $definitions = parent::get_setting_definitions();
-        unset($definitions['showanswercorrection']);
-        return $definitions;
     }
 
     /**
@@ -107,6 +50,7 @@ class poll extends \mootimetertool_quiz\quiz {
      *
      * @return array
      */
+    #[\Override]
     public function get_react_components(): array {
         $components = (new \mootimetertool_quiz\quiz())->get_react_components();
         $components['menu'] = '';

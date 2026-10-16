@@ -23,27 +23,17 @@
  */
 
 import React, {useState} from 'react';
+import {put, remove} from '@moodle/lms/mod_mootimeter/lib/api';
 import {Choice, FormattedHtml, Loading, OverviewTable, TransparentButton} from '@moodle/lms/mod_mootimeter/lib/components';
-import type {OverviewRow} from '@moodle/lms/mod_mootimeter/lib/components';
-import {useStrings, useWebservice} from '@moodle/lms/mod_mootimeter/lib/hooks';
-import {callWs, displayException} from '@moodle/lms/mod_mootimeter/lib/moodle';
-import type {ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
-
-type Row = OverviewRow & {
-    optionids: number[];
-};
-
-type Overview = {
-    anonymous: boolean;
-    maxanswers: number;
-    options: {id: number; texthtml: string}[];
-    rows: Row[];
-};
+import {useCollection, useResource, useStrings} from '@moodle/lms/mod_mootimeter/lib/hooks';
+import {displayError} from '@moodle/lms/mod_mootimeter/lib/moodle';
+import type {PageInfo, ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
+import {componentOf, type QuizData, type QuizResponse} from './types';
 
 type AnswerEditorProps = {
-    pageid: number;
-    row: Row;
-    overview: Overview;
+    page: PageInfo;
+    row: QuizResponse;
+    data: QuizData;
     onChanged: () => void;
 };
 
@@ -53,20 +43,20 @@ type AnswerEditorProps = {
  * @param {AnswerEditorProps} props
  * @returns {React.JSX.Element}
  */
-function AnswerEditor({pageid, row, overview, onChanged}: AnswerEditorProps): React.JSX.Element {
+function AnswerEditor({page, row, data, onChanged}: AnswerEditorProps): React.JSX.Element {
     const s = useStrings('core', ['edit', 'save', 'cancel']);
     const [editing, setEditing] = useState(false);
-    const [selected, setSelected] = useState<number[]>(row.optionids);
-    const single = overview.maxanswers === 1;
+    const [selected, setSelected] = useState<number[]>(row.optionIds);
+    const single = data.maxAnswers === 1;
 
     if (!editing) {
-        const texts = overview.options.filter((option) => row.optionids.includes(option.id));
+        const texts = data.options.filter((option) => row.optionIds.includes(option.id));
         return (
             <span>
                 {texts.map((option, index) => (
                     <React.Fragment key={option.id}>
                         {index > 0 && ' | '}
-                        <FormattedHtml html={option.texthtml} />
+                        <FormattedHtml html={option.textHtml} />
                     </React.Fragment>
                 ))}
                 <TransparentButton
@@ -74,7 +64,7 @@ function AnswerEditor({pageid, row, overview, onChanged}: AnswerEditorProps): Re
                     title={s.edit}
                     className="text-body"
                     onClick={() => {
-                        setSelected(row.optionids);
+                        setSelected(row.optionIds);
                         setEditing(true);
                     }}
                 />
@@ -84,23 +74,23 @@ function AnswerEditor({pageid, row, overview, onChanged}: AnswerEditorProps): Re
 
     const save = async() => {
         try {
-            await callWs('mootimetertool_quiz_update_user_answer', {pageid, answerid: row.answerid, optionids: selected});
+            await put(componentOf(page), `/pages/${page.id}/responses/${row.id}`, {optionIds: selected});
             setEditing(false);
             onChanged();
         } catch (error) {
-            displayException(error);
+            displayError(error);
         }
     };
 
     return (
         <div>
-            {overview.options.map((option) => (
+            {data.options.map((option) => (
                 <Choice
                     key={option.id}
                     type={single ? 'radio' : 'checkbox'}
-                    name={`mtmt_quiz_overview_${row.answerid}`}
+                    name={`mtmt_quiz_overview_${row.id}`}
                     checked={selected.includes(option.id)}
-                    label={<FormattedHtml html={option.texthtml} />}
+                    label={<FormattedHtml html={option.textHtml} />}
                     onChange={(checked) => setSelected((old) => {
                         if (single) {
                             return checked ? [option.id] : [];
@@ -125,24 +115,29 @@ function AnswerEditor({pageid, row, overview, onChanged}: AnswerEditorProps): Re
  */
 export default function OverviewView({page, settingsVersion, answersVersion, refresh}: ToolViewProps): React.JSX.Element {
     const s = useStrings('mod_mootimeter', ['delete_answers_of_user_dialog_title', 'delete_answers_of_user_dialog_question']);
-    const overview = useWebservice<Overview>(
-        'mootimetertool_quiz_get_overview',
-        {pageid: page.id},
-        [page.id, settingsVersion, answersVersion]
+    const component = componentOf(page);
+    const data = useResource<QuizData>(component, `/pages/${page.id}`, [settingsVersion]);
+    const responses = useCollection<QuizResponse>(
+        component,
+        `/pages/${page.id}/responses?sort=id`,
+        [settingsVersion, answersVersion]
     );
 
-    if (!overview) {
+    if (!data || !responses) {
         return <Loading />;
     }
 
     return (
-        <OverviewTable<Row>
-            rows={overview.rows}
+        <OverviewTable<QuizResponse>
+            rows={responses.items}
+            offset={(responses.page - 1) * responses.pageSize}
+            totalPages={responses.totalPages}
+            currentPage={responses.page}
+            onPageChange={responses.setPage}
             deleteTitle={s.delete_answers_of_user_dialog_title}
             deleteQuestion={s.delete_answers_of_user_dialog_question}
-            onDelete={(row) => callWs('mod_mootimeter_delete_answers', {pageid: page.id, scope: 'user', answerid: row.answerid})
-                .then(refresh)}
-            renderAnswer={(row) => <AnswerEditor pageid={page.id} row={row} overview={overview} onChanged={refresh} />}
+            onDelete={(row) => remove(component, `/pages/${page.id}/responses/${row.id}`).then(refresh)}
+            renderAnswer={(row) => <AnswerEditor key={row.id} page={page} row={row} data={data} onChanged={refresh} />}
         />
     );
 }

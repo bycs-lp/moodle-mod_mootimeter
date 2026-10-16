@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <libraries>
   <library>
-    <location>amd/src/d3_cloud.js</location>
+    <location>js/esm/src/cloudlayout.ts</location>
     <name>d3-cloud</name>
-    <description>Word cloud layout library</description>
+    <description>Word cloud layout algorithm, ported to TypeScript</description>
     <version>1.2.9</version>
     <license>BSD-3-Clause</license>
     <repository>https://github.com/jasondavies/d3-cloud</repository>

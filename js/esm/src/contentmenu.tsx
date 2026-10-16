@@ -23,13 +23,14 @@
  */
 
 import React from 'react';
+import config from '@moodle/lms/core/config';
+import {patch, remove} from './lib/api';
 import {IconButton} from './lib/components';
 import {useStrings} from './lib/hooks';
-import {callWs, confirmDelete, displayException, storeSetting, wwwroot} from './lib/moodle';
+import {confirmDelete, displayError} from './lib/moodle';
 import type {ToolViewProps, View} from './lib/types';
 import ToolComponent from './toolcomponent';
 
-/* eslint-disable no-unused-vars -- the core rule reports the parameter names of TypeScript function types. */
 type ContentMenuProps = ToolViewProps & {
     view: View;
     fullscreen: boolean;
@@ -44,7 +45,7 @@ type ContentMenuProps = ToolViewProps & {
  * @returns {React.JSX.Element}
  */
 export default function ContentMenu(props: ContentMenuProps): React.JSX.Element {
-    const {page, ismoderator, view, fullscreen, onView, onFullscreen, refresh} = props;
+    const {page, isModerator, view, fullscreen, onView, onFullscreen, refresh} = props;
     const s = useStrings('mod_mootimeter', [
         'tooltip_content_menu_teacherpermission',
         'tooltip_content_menu_teacherpermission_disabled',
@@ -60,25 +61,25 @@ export default function ContentMenu(props: ContentMenuProps): React.JSX.Element 
     ]);
 
     const toggleResultsVisibility = () => {
-        storeSetting(page.id, 'showonteacherpermission', !page.showonteacherpermission).then(refresh).catch(displayException);
+        patch('mod_mootimeter', `/pages/${page.id}`, {resultsPublished: !page.resultsPublished}).then(refresh).catch(displayError);
     };
 
     const deleteAllAnswers = async() => {
         if (await confirmDelete(s.delete_all_answers_dialog_title, s.delete_all_answers_dialog_question)) {
-            callWs('mod_mootimeter_delete_answers', {pageid: page.id, scope: 'all'}).then(refresh).catch(displayException);
+            remove('mod_mootimeter', `/pages/${page.id}/answers`).then(refresh).catch(displayError);
         }
     };
 
     return (
         <div className="mootimeter-content-menu" id="mootimeter-pagecontentmenu">
-            {ismoderator && (
+            {isModerator && (
                 <>
                     <IconButton
-                        icon={page.showonteacherpermission ? 'fa-eye' : 'fa-eye-slash'}
-                        title={page.showonteacherpermission
+                        icon={page.resultsPublished ? 'fa-eye' : 'fa-eye-slash'}
+                        title={page.resultsPublished
                             ? s.tooltip_content_menu_teacherpermission_disabled
                             : s.tooltip_content_menu_teacherpermission}
-                        active={page.showonteacherpermission}
+                        active={page.resultsPublished}
                         onClick={toggleResultsVisibility}
                     />
                     <ToolComponent specifier={page.components.menu} {...props} />
@@ -96,11 +97,11 @@ export default function ContentMenu(props: ContentMenuProps): React.JSX.Element 
                 title={view === 'results' ? s.tooltip_show_question_page : s.tooltip_show_results_page}
                 onClick={() => onView(view === 'results' ? 'question' : 'results')}
             />
-            {ismoderator && (view === 'results' || view === 'overview') && (
+            {isModerator && (view === 'results' || view === 'overview') && (
                 <IconButton
                     icon="fa-download"
                     title={s.download_results}
-                    onClick={() => window.location.assign(`${wwwroot}/mod/mootimeter/download.php?pageid=${page.id}`)}
+                    onClick={() => window.location.assign(`${config.wwwroot}/mod/mootimeter/download.php?pageid=${page.id}`)}
                 />
             )}
             <IconButton

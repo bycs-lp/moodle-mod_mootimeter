@@ -22,27 +22,21 @@
  * @author      Peter Mayer <peter.mayer@isb.bayern.de>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class mootimetertool_wordcloud_generator extends testing_module_generator {
-    /** @var Toolname */
+class mootimetertool_wordcloud_generator extends component_generator_base {
+    /** @var string Toolname */
     const MTMT_TOOLNAME = 'wordcloud';
 
     /**
-     * Create a wordcloud page inside a fresh mootimeter activity in the given course.
+     * Create a visible wordcloud page inside a fresh mootimeter activity in the given course.
      *
      * @param stdClass $course
-     * @return stdClass the page record
+     * @return stdClass the page record with the additional key cmid
      */
     public function create_wordcloud_page(stdClass $course): stdClass {
-        global $DB;
         /** @var \mod_mootimeter_generator $mtmgenerator */
         $mtmgenerator = $this->datagenerator->get_plugin_generator('mod_mootimeter');
         $module = $this->datagenerator->create_module('mootimeter', ['course' => $course->id]);
-        $page = $mtmgenerator->create_page(['instance' => $module->id, 'tool' => 'wordcloud']);
-        // Pages are created hidden by default; reveal it so participants (non-moderators)
-        // can actually reach it, mirroring a page a teacher has opened for answering.
-        $DB->set_field('mootimeter_pages', 'visible', \mod_mootimeter\helper::PAGE_VISIBLE, ['id' => $page->id]);
-        $page->visible = \mod_mootimeter\helper::PAGE_VISIBLE;
-        // Keep the cmid handy for context lookups.
+        $page = $mtmgenerator->create_page(['instance' => $module->id, 'tool' => self::MTMT_TOOLNAME]);
         $page->cmid = $module->cmid;
         return $page;
     }
@@ -57,12 +51,14 @@ class mootimetertool_wordcloud_generator extends testing_module_generator {
      */
     public function create_answer(int $pageid, int $userid, string $answer): int {
         global $DB;
-        return (int) $DB->insert_record('mootimetertool_wordcloud_answers', (object) [
+        $answerid = (int) $DB->insert_record('mootimetertool_wordcloud_answers', (object) [
             'pageid' => $pageid,
             'usermodified' => $userid,
             'answer' => $answer,
-            'timecreated' => time(),
-            'timemodified' => time(),
+            'timecreated' => \core\di::get(\core\clock::class)->time(),
+            'timemodified' => 0,
         ]);
+        (new \mod_mootimeter\helper())->clear_caches($pageid);
+        return $answerid;
     }
 }

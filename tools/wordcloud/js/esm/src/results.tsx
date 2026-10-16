@@ -23,12 +23,13 @@
  */
 
 import React, {useEffect, useRef, useState} from 'react';
+import {getString} from '@moodle/lms/core/stringUtils';
 import {Loading} from '@moodle/lms/mod_mootimeter/lib/components';
-import {useStrings, useWebservice} from '@moodle/lms/mod_mootimeter/lib/hooks';
-import {getString, notifyFilterContentUpdated, requireAmd} from '@moodle/lms/mod_mootimeter/lib/moodle';
+import {useResource, useStrings} from '@moodle/lms/mod_mootimeter/lib/hooks';
+import {notifyFilterContentUpdated} from '@moodle/lms/mod_mootimeter/lib/moodle';
 import type {ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
-
-const cloud: any = await requireAmd('mootimetertool_wordcloud/d3_cloud');
+import {layoutCloud, type PlacedWord as PlacedCloudWord} from './cloudlayout';
+import {COMPONENT, type Word, type WordcloudResults} from './types';
 
 const MIN_FONT_SIZE = 16;
 const RATIO = 4;
@@ -42,14 +43,7 @@ const SHRINK_STEP = 0.85;
 const FONT_FAMILY = 'Lexend, sans-serif';
 const COLORS = ['#c0580a', '#1a5fa8', '#b33000', '#2e7d32', '#6b3fa0', '#c2185b'];
 
-type Word = {text: string; count: number};
-
-type PlacedWord = Word & {
-    x: number;
-    y: number;
-    rotate: number;
-    size: number;
-};
+type PlacedWord = PlacedCloudWord<Word & {size: number; rotate: number}>;
 
 type Layout = {width: number; height: number; words: PlacedWord[]};
 
@@ -81,43 +75,32 @@ const layoutWords = (answers: Word[], width: number, height: number) => {
     const space = words.reduce((sum, word) => sum + word.text.length * CHAR_WIDTH * word.multiplier * word.multiplier, 0);
     const basesize = Math.max(MIN_FONT_SIZE, Math.sqrt(FILL_TARGET * width * height / space));
 
-    let layout: any = null;
-    let stopped = false;
-    const promise = new Promise<PlacedWord[]>((resolve) => {
-        const run = (shrinkfactor: number, attempt: number) => {
-            layout = cloud()
-                .size([width, height])
-                .words(words.map((word) => ({...word})))
-                .padding(4)
-                .rotate((d: any) => d.rotate)
-                .font(FONT_FAMILY)
-                .fontSize((d: any) => {
-                    // A rotated word spans the height, so it must fit along that axis.
-                    const lengthcap = (d.rotate === 0 ? width : height) / (d.text.length * FIT_CHAR_WIDTH);
-                    return Math.min(basesize * d.multiplier, densitycap, lengthcap) * shrinkfactor;
-                })
-                .on('end', (placed: PlacedWord[]) => {
-                    if (stopped) {
-                        return;
-                    }
-                    // D3-cloud silently drops words it cannot place.
-                    if (placed.length < words.length && attempt < MAX_SHRINK_ATTEMPTS) {
-                        layout.stop();
-                        run(shrinkfactor * SHRINK_STEP, attempt + 1);
-                        return;
-                    }
-                    resolve(placed);
-                });
-            layout.start();
-        };
-        run(1, 0);
-    });
+    let running: {stop: () => void} | null = null;
+    const state = {stopped: false};
+    const promise = (async() => {
+        let placed: PlacedWord[] = [];
+        for (let attempt = 0, shrink = 1; attempt <= MAX_SHRINK_ATTEMPTS && !state.stopped; attempt++, shrink *= SHRINK_STEP) {
+            const cloudwords = words.map(({text, count, multiplier, rotate}) => {
+                // A rotated word spans the height, so it must fit along that axis.
+                const lengthcap = (rotate === 0 ? width : height) / (text.length * FIT_CHAR_WIDTH);
+                return {text, count, rotate, size: Math.min(basesize * multiplier, densitycap, lengthcap) * shrink};
+            });
+            const layout = layoutCloud(cloudwords, {width, height, font: FONT_FAMILY, padding: 4});
+            running = layout;
+            placed = await layout.promise;
+            // Words that do not fit are dropped by the layout.
+            if (placed.length === words.length) {
+                break;
+            }
+        }
+        return placed;
+    })();
 
     return {
         promise,
         stop: () => {
-            stopped = true;
-            layout?.stop();
+            state.stopped = true;
+            running?.stop();
         },
     };
 };
@@ -130,16 +113,12 @@ const layoutWords = (answers: Word[], width: number, height: number) => {
  */
 export default function ResultsView({page, settingsVersion, answersVersion}: ToolViewProps): React.JSX.Element {
     const s = useStrings('mootimetertool_wordcloud', ['no_answer_due_to_showteacherpermission', 'no_answer']);
-    const results = useWebservice<{visible: boolean; words: Word[]}>(
-        'mootimetertool_wordcloud_get_results',
-        {pageid: page.id},
-        [page.id, settingsVersion, answersVersion]
-    );
+    const results = useResource<WordcloudResults>(COMPONENT, `/pages/${page.id}/results`, [settingsVersion, answersVersion]);
     const container = useRef<HTMLDivElement>(null);
     const [layout, setLayout] = useState<Layout | null>(null);
     const [arialabel, setArialabel] = useState('');
 
-    const words = results?.visible ? results.words : null;
+    const words = results?.available ? results.words : null;
     const wordskey = JSON.stringify(words);
 
     useEffect(() => {
@@ -152,7 +131,7 @@ export default function ResultsView({page, settingsVersion, answersVersion}: Too
         let active = true;
         let running: {stop: () => void} | null = null;
         const draw = async() => {
-            // D3-cloud measures text in the real font, so wait for it before the layout.
+            // The layout measures text in the real font, so wait for it.
             await document.fonts?.ready;
             if (!active) {
                 return;
@@ -172,13 +151,15 @@ export default function ResultsView({page, settingsVersion, answersVersion}: Too
         };
     }, [wordskey]);
 
-    useEffect(() => notifyFilterContentUpdated(container.current), [layout]);
+    useEffect(() => {
+        notifyFilterContentUpdated(container.current);
+    }, [layout]);
 
     if (!results) {
         return <Loading />;
     }
 
-    if (!results.visible) {
+    if (!results.available) {
         return (
             <div className="mootimeterfullwidth mootimeter-colcontent-preview mootimeter-width-xl mootimeter-vertical-align">
                 {s.no_answer_due_to_showteacherpermission}

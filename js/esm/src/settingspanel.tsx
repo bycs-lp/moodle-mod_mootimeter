@@ -23,9 +23,10 @@
  */
 
 import React from 'react';
+import {patch, remove} from './lib/api';
 import {Divider, TextSetting, TransparentButton} from './lib/components';
 import {useStrings} from './lib/hooks';
-import {callWs, confirmDelete, displayException} from './lib/moodle';
+import {confirmDelete, displayError} from './lib/moodle';
 import type {ToolViewProps} from './lib/types';
 import ToolComponent from './toolcomponent';
 
@@ -51,22 +52,22 @@ export default function SettingsPanel(props: SettingsPanelProps): React.JSX.Elem
     ]);
     const c = useStrings('core', ['areyousure']);
 
+    const save = (body: Record<string, unknown>) => patch('mod_mootimeter', `/pages/${page.id}`, body).then(refresh);
+
     const toggleVisibility = () => {
-        callWs('mod_mootimeter_set_page_visibility', {pageid: page.id, visible: !page.visible})
-            .then(refresh)
-            .catch(displayException);
+        save({visible: !page.visible}).catch(displayError);
     };
 
     const deletePage = async() => {
         if (await confirmDelete(s.delete_page, c.areyousure)) {
-            callWs('mod_mootimeter_delete_page', {pageid: page.id}).then(onDeleted).catch(displayException);
+            remove('mod_mootimeter', `/pages/${page.id}`).then(onDeleted).catch(displayError);
         }
     };
 
     return (
         <div className="mootimetersettings mootimeterfullwidth">
             <div className="mootimeter-header-wrapper">
-                <h4>{page.toolname}</h4>
+                <h4>{page.toolName}</h4>
                 <div className="d-flex">
                     <TransparentButton
                         icon={page.visible ? 'fa-eye' : 'fa-eye-slash'}
@@ -78,12 +79,10 @@ export default function SettingsPanel(props: SettingsPanelProps): React.JSX.Elem
             </div>
 
             <TextSetting
-                pageid={page.id}
-                name="question"
                 value={page.question}
                 label={s.question}
                 placeholder={s.enter_question}
-                onStored={refresh}
+                onSave={(question) => save({question})}
             />
 
             <Divider />

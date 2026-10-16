@@ -14,26 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Exports mootimeter data for the React frontend.
- *
- * @package     mod_mootimeter
- * @copyright   2026 ISB Bayern
- * @author      Dr. Peter Mayer
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace mod_mootimeter\local;
 
-use core_external\external_multiple_structure;
-use core_external\external_single_structure;
-use core_external\external_value;
+use core\url;
+use core_course\cm_info;
 use mod_mootimeter\helper;
-use mod_mootimeter\plugininfo\mootimetertool;
-use moodle_url;
 
 /**
- * Exports mootimeter data for the React frontend.
+ * Representations of mootimeter resources in the REST API, see the schemas in mod_mootimeter\route\schema.
  *
  * @package     mod_mootimeter
  * @copyright   2026 ISB Bayern
@@ -45,19 +33,17 @@ class exporter {
     const PAGE_TITLE_LENGTH = 40;
 
     /**
-     * Export the page list of an instance as visible for the current user.
+     * Export the pages of an activity as visible for the current user.
      *
-     * @param \cm_info $cm
-     * @param \context_module $context
-     * @return array
+     * @param access $access
+     * @return array[]
      */
-    public static function export_pages(\cm_info $cm, \context_module $context): array {
-        $helper = new helper();
+    public static function export_pages(access $access): array {
         $pages = [];
         $number = 1;
-        foreach ($helper->get_pages($cm->instance, 'sortorder ASC') as $page) {
-            $question = format_string((string) helper::get_tool_config($page, 'question'), true, [
-                'context' => $context,
+        foreach ((new helper())->get_pages($access->cm->instance, !$access->ismoderator) as $page) {
+            $question = format_string(helper::get_tool_config($page, 'question'), true, [
+                'context' => $access->context,
                 'escape' => false,
             ]);
             $pages[] = [
@@ -66,140 +52,68 @@ class exporter {
                 'visible' => (int) $page->visible === helper::PAGE_VISIBLE,
                 'number' => $number++,
                 'title' => shorten_text($question, self::PAGE_TITLE_LENGTH),
-                'iconurl' => (new moodle_url('/mod/mootimeter/tools/' . $page->tool . '/pix/' . $page->tool . '-white.svg'))
-                    ->out(false),
+                'iconUrl' => (new url('/mod/mootimeter/tools/' . $page->tool . '/pix/' . $page->tool . '-white.svg'))->out(false),
             ];
         }
         return $pages;
     }
 
     /**
-     * Export the enabled tools a moderator can choose from when adding a page.
+     * Export an enabled tool.
      *
+     * @param string $tool
      * @return array
      */
-    public static function export_tools(): array {
-        $tools = [];
-        foreach (mootimetertool::get_enabled_plugins() as $tool) {
-            $tools[] = [
-                'name' => $tool,
-                'displayname' => get_string('pluginname', 'mootimetertool_' . $tool),
-                'description' => get_string('tool_description_short', 'mootimetertool_' . $tool),
-                'iconurl' => (new moodle_url('/mod/mootimeter/tools/' . $tool . '/pix/' . $tool . '.svg'))->out(false),
-            ];
-        }
-        return $tools;
+    public static function export_tool(string $tool): array {
+        return [
+            'name' => $tool,
+            'displayName' => get_string('pluginname', 'mootimetertool_' . $tool),
+            'description' => get_string('tool_description_short', 'mootimetertool_' . $tool),
+            'iconUrl' => (new url('/mod/mootimeter/tools/' . $tool . '/pix/' . $tool . '.svg'))->out(false),
+        ];
     }
 
     /**
      * Export the common data of a page.
      *
-     * @param object $page
-     * @param \cm_info $cm
-     * @param \context_module $context
-     * @param bool $ismoderator
+     * @param access $access access to the page
      * @return array
      */
-    public static function export_page(object $page, \cm_info $cm, \context_module $context, bool $ismoderator): array {
+    public static function export_page(access $access): array {
         $helper = new helper();
+        $page = $access->get_page();
         $toolhelper = helper::get_toolhelper($page->tool);
-        $question = (string) helper::get_tool_config($page, 'question');
-        $answers = $helper->get_answers($toolhelper->get_answer_table(), $page->id, $toolhelper->get_answer_column());
+        $question = helper::get_tool_config($page, 'question');
 
         return [
             'id' => (int) $page->id,
-            'cmid' => (int) $cm->id,
+            'cmId' => (int) $access->cm->id,
             'tool' => $page->tool,
-            'toolname' => get_string('pluginname', 'mootimetertool_' . $page->tool),
+            'toolName' => get_string('pluginname', 'mootimetertool_' . $page->tool),
             'visible' => (int) $page->visible === helper::PAGE_VISIBLE,
-            'question' => $ismoderator ? $question : '',
-            'questionhtml' => format_string($question, true, ['context' => $context]),
-            'showonteacherpermission' => !empty(helper::get_tool_config($page, 'showonteacherpermission')),
-            'resultsvisible' => (bool) $helper->get_teacherpermission_to_view($page),
-            'anonymousmode' => !empty(helper::get_tool_config($page, 'anonymousmode')),
-            'hasanswers' => !empty($answers),
+            'question' => $access->ismoderator ? $question : '',
+            'questionHtml' => format_string($question, true, ['context' => $access->context]),
+            'resultsPublished' => !empty(helper::get_tool_config($page, 'showonteacherpermission')),
+            'canViewResults' => $helper->can_view_results($page, $access->ismoderator),
+            'anonymousMode' => !empty(helper::get_tool_config($page, 'anonymousmode')),
+            'hasAnswers' => $helper->has_answers($page),
             'components' => $toolhelper->get_react_components(),
         ];
     }
 
     /**
-     * Export the change timestamps used by the frontend polling.
+     * Export the revisions of the data, clients reload data whose revision changed.
      *
-     * @param \cm_info $cm
-     * @param object|null $page
+     * @param cm_info $cm
+     * @param \stdClass|null $page the page the client shows
      * @return array
      */
-    public static function export_state(\cm_info $cm, ?object $page): array {
+    public static function export_updates(cm_info $cm, ?\stdClass $page): array {
         $helper = new helper();
         return [
-            'pagelist' => $helper->get_data_changed($cm, 'pagelist'),
-            'settings' => $page ? $helper->get_data_changed($page, 'settings') : 0,
-            'answers' => $page ? $helper->get_data_changed($page, 'answers') : 0,
+            'pageList' => $helper->get_data_changed((int) $cm->instance, helper::CHANGE_PAGELIST),
+            'settings' => $page ? $helper->get_data_changed((int) $page->id, helper::CHANGE_SETTINGS) : 0,
+            'answers' => $page ? $helper->get_data_changed((int) $page->id, helper::CHANGE_ANSWERS) : 0,
         ];
-    }
-
-    /**
-     * Structure of {@see self::export_pages()} and {@see self::export_tools()}.
-     *
-     * @return external_single_structure
-     */
-    public static function pages_structure(): external_single_structure {
-        return new external_single_structure([
-            'pages' => new external_multiple_structure(new external_single_structure([
-                'id' => new external_value(PARAM_INT, 'Page id'),
-                'tool' => new external_value(PARAM_PLUGIN, 'Tool of the page'),
-                'visible' => new external_value(PARAM_BOOL, 'Whether participants can see the page'),
-                'number' => new external_value(PARAM_INT, 'Position of the page in the list'),
-                'title' => new external_value(PARAM_TEXT, 'Shortened question of the page'),
-                'iconurl' => new external_value(PARAM_URL, 'Icon of the tool'),
-            ])),
-            'tools' => new external_multiple_structure(new external_single_structure([
-                'name' => new external_value(PARAM_PLUGIN, 'Tool name'),
-                'displayname' => new external_value(PARAM_TEXT, 'Localised tool name'),
-                'description' => new external_value(PARAM_TEXT, 'Short description'),
-                'iconurl' => new external_value(PARAM_URL, 'Icon of the tool'),
-            ])),
-        ]);
-    }
-
-    /**
-     * Structure of {@see self::export_page()}.
-     *
-     * @return external_single_structure
-     */
-    public static function page_structure(): external_single_structure {
-        return new external_single_structure([
-            'id' => new external_value(PARAM_INT, 'Page id'),
-            'cmid' => new external_value(PARAM_INT, 'Course module id'),
-            'tool' => new external_value(PARAM_PLUGIN, 'Tool of the page'),
-            'toolname' => new external_value(PARAM_TEXT, 'Localised tool name'),
-            'visible' => new external_value(PARAM_BOOL, 'Whether participants can see the page'),
-            'question' => new external_value(PARAM_RAW, 'Raw question for editing, empty for participants'),
-            'questionhtml' => new external_value(PARAM_RAW, 'Formatted question'),
-            'showonteacherpermission' => new external_value(PARAM_BOOL, 'Whether participants may see the results'),
-            'resultsvisible' => new external_value(PARAM_BOOL, 'Whether the current user may see the results'),
-            'anonymousmode' => new external_value(PARAM_BOOL, 'Whether answers are anonymous'),
-            'hasanswers' => new external_value(PARAM_BOOL, 'Whether answers exist'),
-            'components' => new external_single_structure([
-                'content' => new external_value(PARAM_RAW, 'ESM specifier of the question view'),
-                'settings' => new external_value(PARAM_RAW, 'ESM specifier of the settings view'),
-                'results' => new external_value(PARAM_RAW, 'ESM specifier of the results view'),
-                'overview' => new external_value(PARAM_RAW, 'ESM specifier of the answer overview'),
-                'menu' => new external_value(PARAM_RAW, 'ESM specifier of the tool specific content menu, empty for none'),
-            ]),
-        ]);
-    }
-
-    /**
-     * Structure of {@see self::export_state()}.
-     *
-     * @return external_single_structure
-     */
-    public static function state_structure(): external_single_structure {
-        return new external_single_structure([
-            'pagelist' => new external_value(PARAM_INT, 'Last change of the page list'),
-            'settings' => new external_value(PARAM_INT, 'Last change of the page settings'),
-            'answers' => new external_value(PARAM_INT, 'Last change of the page answers'),
-        ]);
     }
 }

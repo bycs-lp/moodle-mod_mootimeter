@@ -14,30 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Modal form to import answer options from a CSV file.
- *
- * @package     mootimetertool_quiz
- * @copyright   2026 ISB Bayern
- * @author      Dr. Peter Mayer
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace mootimetertool_quiz\form;
 
+use core\context\user as context_user;
+use core\output\html_writer;
+use core\url;
 use core_form\dynamic_form;
-use html_writer;
-use mod_mootimeter\local\external_util;
-use moodle_url;
+use mod_mootimeter\helper;
+use mod_mootimeter\local\access;
 use mootimetertool_quiz\quiz;
 
 /**
- * Modal form to import answer options from a CSV file.
+ * Modal form to import answer options of a quiz or poll page from a CSV file.
  *
- * @package     mootimetertool_quiz
- * @copyright   2026 ISB Bayern
- * @author      Dr. Peter Mayer
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package    mootimetertool_quiz
+ * @copyright  2026 ISB Bayern
+ * @author     Dr. Peter Mayer
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class import_options extends dynamic_form {
     /** @var int Maximum size of the uploaded file in bytes. */
@@ -49,43 +42,45 @@ class import_options extends dynamic_form {
     /** @var string Existing answer options and all answers are deleted. */
     const MODE_REPLACE = 'replace';
 
-    /** @var object|null */
-    private ?object $page = null;
+    /** @var access|null Access to the page. */
+    private ?access $access = null;
 
     /**
-     * Get the page the options are imported to.
+     * Get the access to the page the options are imported to.
      *
-     * @return object
+     * @return access
      */
-    private function get_page(): object {
-        global $DB;
-        if (!$this->page) {
-            $pageid = $this->optional_param('pageid', 0, PARAM_INT);
-            $this->page = $DB->get_record('mootimeter_pages', ['id' => $pageid], '*', MUST_EXIST);
+    private function get_access(): access {
+        if (!$this->access) {
+            $page = (new helper())->get_page($this->optional_param('pageid', 0, PARAM_INT));
+            if (!$page || !(helper::get_toolhelper($page->tool) instanceof quiz)) {
+                throw new \mod_mootimeter\exception\not_found_exception('pagenotfound', 'mod_mootimeter');
+            }
+            $this->access = access::for_page($page);
         }
-        return $this->page;
+        return $this->access;
     }
 
     /**
-     * Get the context of the page.
+     * Get the tool of the page.
      *
-     * @return \context
+     * @return quiz
      */
-    protected function get_context_for_dynamic_submission(): \context {
-        [, $cm] = get_course_and_cm_from_instance($this->get_page()->instance, 'mootimeter');
-        return \context_module::instance($cm->id);
+    private function get_tool(): quiz {
+        return helper::get_toolhelper($this->get_access()->get_page()->tool);
     }
 
-    /**
-     * Only moderators may import answer options.
-     */
+    #[\Override]
+    protected function get_context_for_dynamic_submission(): \core\context {
+        return $this->get_access()->context;
+    }
+
+    #[\Override]
     protected function check_access_for_dynamic_submission(): void {
-        external_util::validate_page($this->get_page()->id, true);
+        $this->get_access()->require_moderator();
     }
 
-    /**
-     * Define the form.
-     */
+    #[\Override]
     public function definition() {
         $mform = $this->_form;
 
@@ -93,7 +88,7 @@ class import_options extends dynamic_form {
         $mform->setType('pageid', PARAM_INT);
 
         $example = html_writer::link(
-            new moodle_url('/mod/mootimeter/tools/quiz/example/answeroptions.csv'),
+            new url('/mod/mootimeter/tools/quiz/example/answeroptions.csv'),
             get_string('import_options_example', 'mootimetertool_quiz'),
             ['download' => 'answeroptions.csv']
         );
@@ -109,12 +104,7 @@ class import_options extends dynamic_form {
         ]);
         $mform->addRule('csvfile', null, 'required');
 
-        // Options nobody has filled in yet, like the two empty ones of a new page, are replaced without asking.
-        $hasoptions = false;
-        foreach (quiz::get_for_page($this->get_page())->get_answer_options($this->get_page()->id) as $option) {
-            $hasoptions = $hasoptions || trim((string) $option->optiontext) !== '';
-        }
-        if ($hasoptions) {
+        if ($this->has_options()) {
             $mform->addElement(
                 'radio',
                 'mode',
@@ -122,8 +112,13 @@ class import_options extends dynamic_form {
                 get_string('import_options_append', 'mootimetertool_quiz'),
                 self::MODE_APPEND
             );
-            $replace = get_string('import_options_replace', 'mootimetertool_quiz');
-            $mform->addElement('radio', 'mode', '', $replace, self::MODE_REPLACE);
+            $mform->addElement(
+                'radio',
+                'mode',
+                '',
+                get_string('import_options_replace', 'mootimetertool_quiz'),
+                self::MODE_REPLACE
+            );
             $mform->setDefault('mode', self::MODE_APPEND);
         } else {
             $mform->addElement('hidden', 'mode', self::MODE_REPLACE);
@@ -132,12 +127,22 @@ class import_options extends dynamic_form {
     }
 
     /**
-     * Check that the file contains answer options and not too many.
+     * Whether the page has answer options somebody filled in.
      *
-     * @param array $data
-     * @param array $files
-     * @return array
+     * Options nobody has filled in yet, like the two empty ones of a new page, are replaced without asking.
+     *
+     * @return bool
      */
+    private function has_options(): bool {
+        foreach ($this->get_tool()->get_answer_options($this->get_access()->get_page()->id) as $option) {
+            if (trim((string) $option->optiontext) !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    #[\Override]
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
         $options = self::parse_options($this->get_draft_content((int) ($data['csvfile'] ?? 0)));
@@ -152,32 +157,43 @@ class import_options extends dynamic_form {
     /**
      * Import the answer options.
      *
-     * @return array number of imported options
+     * @return array the number of imported options
      */
+    #[\Override]
     public function process_dynamic_submission() {
         $data = $this->get_data();
-        $page = $this->get_page();
-        $options = self::parse_options($this->get_draft_content((int) $data->csvfile));
-        $count = quiz::get_for_page($page)->import_answer_options($page, $options, $data->mode === self::MODE_REPLACE);
-        return ['count' => $count];
+        $page = $this->get_access()->get_page();
+        $tool = $this->get_tool();
+        $texts = self::parse_options($this->get_draft_content((int) $data->csvfile));
+
+        $items = [];
+        if ($data->mode !== self::MODE_REPLACE) {
+            foreach ($tool->get_answer_options($page->id) as $option) {
+                $items[] = [
+                    'id' => (int) $option->id,
+                    'text' => $option->optiontext,
+                    'isCorrect' => !empty($option->optioniscorrect),
+                ];
+            }
+        }
+        foreach ($texts as $text) {
+            $items[] = ['text' => $text];
+        }
+        $tool->replace_options($page, $items);
+
+        return ['count' => count($texts)];
     }
 
-    /**
-     * Set the page id.
-     */
+    #[\Override]
     public function set_data_for_dynamic_submission(): void {
-        $this->set_data(['pageid' => $this->get_page()->id]);
+        $this->set_data(['pageid' => $this->get_access()->get_page()->id]);
     }
 
-    /**
-     * Get the page the form is shown on.
-     *
-     * @return moodle_url
-     */
-    protected function get_page_url_for_dynamic_submission(): moodle_url {
-        return new moodle_url('/mod/mootimeter/view.php', [
-            'id' => $this->get_context_for_dynamic_submission()->instanceid,
-            'pageid' => $this->get_page()->id,
+    #[\Override]
+    protected function get_page_url_for_dynamic_submission(): url {
+        return new url('/mod/mootimeter/view.php', [
+            'id' => $this->get_access()->cm->id,
+            'pageid' => $this->get_access()->get_page()->id,
         ]);
     }
 
@@ -190,7 +206,7 @@ class import_options extends dynamic_form {
     private function get_draft_content(int $draftitemid): string {
         global $USER;
         $files = get_file_storage()->get_area_files(
-            \context_user::instance($USER->id)->id,
+            context_user::instance($USER->id)->id,
             'user',
             'draft',
             $draftitemid,

@@ -34,12 +34,12 @@ $page = $DB->get_record('mootimeter_pages', ['id' => $pageid], '*', MUST_EXIST);
 [$course, $cm] = get_course_and_cm_from_instance($page->instance, 'mootimeter');
 
 require_login($course, false, $cm);
-$context = context_module::instance($cm->id);
+$context = \core\context\module::instance($cm->id);
 require_capability('mod/mootimeter:moderator', $context);
 
-$PAGE->set_url('/mod/mootimeter/download.php', ['pageid' => $page->id]);
+$PAGE->set_url(new \core\url('/mod/mootimeter/download.php', ['pageid' => $page->id]));
 
-$question = format_string((string) helper::get_tool_config($page, 'question'), true, ['context' => $context, 'escape' => false]);
+$question = format_string(helper::get_tool_config($page, 'question'), true, ['context' => $context, 'escape' => false]);
 $sections = helper::get_toolhelper($page->tool)->export_results_csv($page, $context);
 
 $csv = new csv_export_writer('comma', '"', 'text/csv', true);

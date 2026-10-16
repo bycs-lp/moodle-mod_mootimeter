@@ -175,7 +175,7 @@ class provider implements
 
         $mtmthelper = new \mootimetertool_quiz\quiz();
         $page = $requestdata->get_page();
-        $mtmthelper->delete_answers_tool($page, ['pageid' => $page->id]);
+        $mtmthelper->delete_all_answers($page);
     }
 
     /**
@@ -191,6 +191,6 @@ class provider implements
         $mtmthelper = new \mootimetertool_quiz\quiz();
         $user = $requestdata->get_user();
         $page = $requestdata->get_page();
-        $mtmthelper->delete_answers_tool($page, ['pageid' => $page->id, 'usermodified' => $user->id]);
+        $mtmthelper->delete_answers($page, ['usermodified' => $user->id]);
     }
 }

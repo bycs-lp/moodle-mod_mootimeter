@@ -22,15 +22,18 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import {useEffect, useState, DependencyList} from 'react';
-import {callWs, displayException, loadStrings} from './moodle';
+import {useEffect, useState, type DependencyList} from 'react';
+import {getStrings} from '@moodle/lms/core/stringUtils';
+import {ApiError, get} from './api';
+import {displayError} from './moodle';
+import type {Collection} from './types';
 
 /**
  * Load language strings of a component. Until they are loaded, every string is empty.
  *
- * @param {string} component
- * @param {string[]} keys
- * @returns {Record<string, string>}
+ * @param component
+ * @param keys
+ * @returns The strings keyed by their identifier.
  */
 export function useStrings(component: string, keys: readonly string[]): Record<string, string> {
     const [strings, setStrings] = useState<Record<string, string>>({});
@@ -38,9 +41,9 @@ export function useStrings(component: string, keys: readonly string[]): Record<s
 
     useEffect(() => {
         let active = true;
-        loadStrings(component, keys)
-            .then((loaded) => active && setStrings(loaded))
-            .catch(displayException);
+        getStrings(keys.map((key) => ({key, component})))
+            .then((values) => active && setStrings(Object.fromEntries(keys.map((key, index) => [key, values[index]]))))
+            .catch(displayError);
         return () => {
             active = false;
         };
@@ -50,32 +53,65 @@ export function useStrings(component: string, keys: readonly string[]): Record<s
 }
 
 /**
- * Call a web service whenever one of the dependencies changes.
+ * Get a resource of the REST API whenever one of the dependencies changes.
  *
- * Responses of outdated requests are ignored.
+ * Responses of outdated requests are ignored. Hidden pages are reported by the app, not by each view.
  *
- * @param {string} methodname
- * @param {object} args
- * @param {DependencyList} deps
- * @returns {T|null} the latest response, null until the first response arrived
+ * @param component
+ * @param path
+ * @param deps
+ * @returns The latest resource, null until the first response arrived.
  */
-export function useWebservice<T>(methodname: string, args: Record<string, unknown>, deps: DependencyList): T | null {
+export function useResource<T>(component: string, path: string, deps: DependencyList): T | null {
     const [data, setData] = useState<T | null>(null);
 
     useEffect(() => {
         let active = true;
-        callWs<T>(methodname, args)
-            .then((response) => active && setData(response))
+        get<T>(component, path)
+            .then((resource) => active && setData(resource))
             .catch((error) => {
-                // The app shows a notice when the page is hidden for participants.
-                if (error?.errorcode !== 'pagelocked') {
-                    displayException(error);
+                if (active && !(error instanceof ApiError && error.code === 'pagelocked')) {
+                    displayError(error);
                 }
             });
         return () => {
             active = false;
         };
-    }, deps);
+    }, [component, path, ...deps]);
 
     return data;
+}
+
+/** A page of a collection with the means to switch the page. */
+export type PagedCollection<T> = {
+    items: T[];
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    setPage: (page: number) => void;
+};
+
+/**
+ * Get a page of a collection of the REST API whenever the page or one of the dependencies changes.
+ *
+ * @param component
+ * @param path Path of the collection, optionally with query parameters.
+ * @param deps
+ * @returns The items of the current page, null until the first response arrived.
+ */
+export function useCollection<T>(component: string, path: string, deps: DependencyList): PagedCollection<T> | null {
+    const [page, setPage] = useState(1);
+    const separator = path.includes('?') ? '&' : '?';
+    const collection = useResource<Collection<T>>(component, `${path}${separator}page=${page}`, deps);
+
+    if (!collection) {
+        return null;
+    }
+    const {pageSize, totalItems} = collection.pagination;
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    if (page > totalPages) {
+        // The last items of the last page have been deleted.
+        setPage(totalPages);
+    }
+    return {items: collection.items, page, pageSize, totalPages, setPage};
 }
