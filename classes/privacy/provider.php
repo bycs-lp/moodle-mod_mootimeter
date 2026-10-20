@@ -151,7 +151,7 @@ class provider implements
         array $path,
     ) {
         $helper = new \mod_mootimeter\helper();
-        $toolpages = $helper->get_all_tools_of_instance($mootimeterinstance);
+        $toolpages = $helper->get_all_tools_of_instance($mootimeterinstance, false);
         foreach ($toolpages as $tool => $pages) {
             foreach ($pages as $page) {
                 $subpath = array_merge($path, [get_string('privacy:pagepath', 'mod_mootimeter', $page->id)]);
@@ -180,7 +180,7 @@ class provider implements
             $cm = get_coursemodule_from_id('mootimeter', $context->instanceid);
             if ($cm) {
                 $helper = new \mod_mootimeter\helper(['privacyexport' => 1]);
-                $toolpages = $helper->get_all_tools_of_instance($cm->instance);
+                $toolpages = $helper->get_all_tools_of_instance($cm->instance, false);
                 foreach ($toolpages as $tool => $pages) {
                     foreach ($pages as $page) {
                         // What to do first... Get sub plugins to delete their stuff.
@@ -213,7 +213,7 @@ class provider implements
             $cm = get_coursemodule_from_id('mootimeter', $context->instanceid);
             if ($cm) {
                 $helper = new \mod_mootimeter\helper();
-                $toolpages = $helper->get_all_tools_of_instance($cm->instance);
+                $toolpages = $helper->get_all_tools_of_instance($cm->instance, false);
                 $user = $contextlist->get_user();
 
                 foreach ($toolpages as $tool => $pages) {
@@ -247,7 +247,7 @@ class provider implements
         $cm = get_coursemodule_from_id('mootimeter', $context->instanceid);
         if ($cm) {
             $helper = new \mod_mootimeter\helper();
-            $toolpages = $helper->get_all_tools_of_instance($cm->instance);
+            $toolpages = $helper->get_all_tools_of_instance($cm->instance, false);
 
             foreach ($toolpages as $tool => $pages) {
                 foreach ($pages as $page) {
