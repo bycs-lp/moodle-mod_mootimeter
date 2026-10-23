@@ -88,4 +88,74 @@ final class store_answer_test extends \advanced_testcase {
         $this->assertSame(helper::ERRORCODE_OK, $result['code']);
         $this->assertSame(3, $DB->count_records('mootimetertool_wordcloud_answers', ['pageid' => $page->id]));
     }
+
+    #[\PHPUnit\Framework\Attributes\Group('baseline')]
+    /**
+     * The duplicate check ignores case, including multibyte case, in both directions.
+     *
+     * @covers \mootimetertool_wordcloud\external\store_answer::execute
+     */
+    public function test_duplicate_check_ignores_case(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        /** @var \mootimetertool_wordcloud_generator $toolgenerator */
+        $toolgenerator = $this->getDataGenerator()->get_plugin_generator('mootimetertool_wordcloud');
+        $course = $this->getDataGenerator()->create_course();
+        $page = $toolgenerator->create_wordcloud_page($course);
+        $helper = new helper();
+        $helper->set_tool_config($page->id, 'maxinputsperuser', 0);
+        $helper->set_tool_config($page->id, 'allowduplicateanswers', 0);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $toolgenerator->create_answer($page->id, $student->id, 'ÄPFEL');
+        $toolgenerator->create_answer($page->id, $student->id, 'cat');
+        $toolgenerator->create_answer($page->id, $student->id, 'Bird');
+        $this->setUser($student);
+
+        $expected = [
+            'äpfel' => helper::ERRORCODE_DUPLICATE_ANSWER,
+            'ÄPFEL' => helper::ERRORCODE_DUPLICATE_ANSWER,
+            'CAT' => helper::ERRORCODE_DUPLICATE_ANSWER,
+            'bird' => helper::ERRORCODE_DUPLICATE_ANSWER,
+        ];
+        foreach ($expected as $input => $code) {
+            $result = store_answer::execute($page->id, (string) $input);
+            $this->assertSame($code, $result['code'], 'Input: ' . $input);
+        }
+        $this->assertSame(3, $DB->count_records('mootimetertool_wordcloud_answers', ['pageid' => $page->id]));
+    }
+
+    #[\PHPUnit\Framework\Attributes\Group('baseline')]
+    /**
+     * The per-user cap counts only the rows of the current user.
+     *
+     * @covers \mootimetertool_wordcloud\external\store_answer::execute
+     */
+    public function test_cap_is_counted_per_user(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        /** @var \mootimetertool_wordcloud_generator $toolgenerator */
+        $toolgenerator = $this->getDataGenerator()->get_plugin_generator('mootimetertool_wordcloud');
+        $course = $this->getDataGenerator()->create_course();
+        $page = $toolgenerator->create_wordcloud_page($course);
+        $helper = new helper();
+        $helper->set_tool_config($page->id, 'maxinputsperuser', 2);
+        $helper->set_tool_config($page->id, 'allowduplicateanswers', 0);
+        $first = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $second = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $toolgenerator->create_answer($page->id, $first->id, 'Cat');
+        $toolgenerator->create_answer($page->id, $first->id, 'Dog');
+
+        $this->setUser($first);
+        $result = store_answer::execute($page->id, 'Mouse');
+        $this->assertSame(helper::ERRORCODE_TO_MANY_ANSWERS, $result['code']);
+
+        $this->setUser($second);
+        $result = store_answer::execute($page->id, 'Cat');
+        $this->assertSame(helper::ERRORCODE_OK, $result['code']);
+        $this->assertSame(3, $DB->count_records('mootimetertool_wordcloud_answers', ['pageid' => $page->id]));
+    }
 }

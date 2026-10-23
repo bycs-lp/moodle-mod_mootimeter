@@ -263,7 +263,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
     }
 
     /**
-     * Get a pure list of unique answers, without id etc.
+     * Get a pure list of the stored answers, one entry per row, without id etc.
      *
      * @param int $pageid
      * @param int $userid
@@ -273,15 +273,17 @@ class wordcloud extends \mod_mootimeter\toolhelper {
     public function get_answer_list_array(int $pageid, int $userid = 0): array {
         global $DB;
 
+        $select = 'pageid = :pageid';
         $params = [
             'pageid' => $pageid,
         ];
 
         if (!empty($userid)) {
+            $select .= ' AND usermodified = :usermodified';
             $params['usermodified'] = $userid;
         }
 
-        return array_keys($DB->get_records_menu(self::ANSWER_TABLE, $params, "", "answer"));
+        return $DB->get_fieldset_select(self::ANSWER_TABLE, 'answer', $select, $params);
     }
 
     /**

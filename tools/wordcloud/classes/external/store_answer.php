@@ -86,6 +86,7 @@ class store_answer extends external_api {
 
         $maxnumberofanswers = helper::get_tool_config($page->id, "maxinputsperuser");
         $wordcloud = new \mootimetertool_wordcloud\wordcloud();
+        // Count all stored rows of the user, not only distinct answer texts.
         $submittedcount = $DB->count_records(
             \mootimetertool_wordcloud\wordcloud::ANSWER_TABLE,
             ['pageid' => $page->id, 'usermodified' => $USER->id]
@@ -98,8 +99,12 @@ class store_answer extends external_api {
             ];
         }
 
-        $submittedanswers = array_map('core_text::strtolower', $wordcloud->get_answer_list_array($page->id, $USER->id));
-        // Use strtolower in order to ignore case sensitive inputs of users. This makes the result more precise.
+        $storedanswers = $wordcloud->get_answer_list_array($page->id, $USER->id);
+        // Lower case is only used for the comparison, the answers are still stored and shown as entered.
+        $submittedanswers = [];
+        foreach ($storedanswers as $storedanswer) {
+            $submittedanswers[] = \core_text::strtolower($storedanswer);
+        }
         if (
             !helper::get_tool_config($page->id, "allowduplicateanswers")
             && in_array(\core_text::strtolower($answer), $submittedanswers, true)
