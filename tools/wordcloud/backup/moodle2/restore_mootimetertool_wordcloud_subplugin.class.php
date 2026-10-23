@@ -29,8 +29,10 @@ class restore_mootimetertool_wordcloud_subplugin extends restore_subplugin {
     protected function define_page_subplugin_structure() {
         $paths = [];
 
-        $elepath = $this->get_pathfor('/mootimetertool_wordcloud_answers');
-        $paths[] = new restore_path_element('wordcloud_answers', $elepath);
+        if ($this->get_setting_value('userinfo')) {
+            $elepath = $this->get_pathfor('/mootimetertool_wordcloud_answers');
+            $paths[] = new restore_path_element('wordcloud_answers', $elepath);
+        }
 
         return $paths;
     }

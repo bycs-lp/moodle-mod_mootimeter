@@ -32,8 +32,10 @@ class restore_mootimetertool_quiz_subplugin extends restore_subplugin {
         $elepath = $this->get_pathfor('/mootimetertool_quiz_options');
         $paths[] = new restore_path_element('quiz_options', $elepath);
 
-        $elepath = $this->get_pathfor('/mootimetertool_quiz_answers');
-        $paths[] = new restore_path_element('quiz_answers', $elepath);
+        if ($this->get_setting_value('userinfo')) {
+            $elepath = $this->get_pathfor('/mootimetertool_quiz_answers');
+            $paths[] = new restore_path_element('quiz_answers', $elepath);
+        }
 
         return $paths;
     }
