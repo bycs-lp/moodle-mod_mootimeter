@@ -1,4 +1,4 @@
-import ChartJS from 'mootimetertool_quiz/chart.umd';
+import ChartJS from 'core/chartjs';
 import {call as fetchMany} from 'core/ajax';
 
 export const init = (id) => {

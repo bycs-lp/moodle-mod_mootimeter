@@ -146,6 +146,12 @@ class quiz extends \mod_mootimeter\toolhelper {
                                     'stepSize' => 1,
                                 ],
                             ],
+                            // Category axis: show every answer label.
+                            'y' => [
+                                'ticks' => [
+                                    'autoSkip' => false,
+                                ],
+                            ],
                         ],
                     ],
                     'backgroundColor' => explode(",", str_replace(' ', '', get_config('mod_mootimeter', 'chartcolors'))),
@@ -161,6 +167,7 @@ class quiz extends \mod_mootimeter\toolhelper {
                                 'min' => 0,
                                 'ticks' => [
                                     'stepSize' => 1,
+                                    'autoSkip' => false, // Category axis: show every answer label.
                                 ],
                             ],
                         ],
@@ -179,6 +186,7 @@ class quiz extends \mod_mootimeter\toolhelper {
                             'x' => [
                                 'ticks' => [
                                     'stepSize' => 1,
+                                    'autoSkip' => false, // Category axis: show every answer label.
                                 ],
                             ],
                             'y' => [
