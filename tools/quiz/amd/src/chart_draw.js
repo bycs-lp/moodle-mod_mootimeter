@@ -28,6 +28,34 @@ export const init = (id) => {
 };
 
 /**
+ * Chart.js plugin reserving space for the extra lines of multi-line labels in the last row of a horizontal legend.
+ *
+ * Chart.js only reserves one line per legend row and clips the legend to its box, which would cut off the extra lines.
+ */
+const multiLineLegendPlugin = {
+    id: 'mootimetertool_quiz_multilinelegend',
+    afterInit: (chart) => {
+        const legend = chart.legend;
+        if (!legend) {
+            return;
+        }
+        const fit = legend.fit;
+        legend.fit = function() {
+            fit.call(this);
+            if (!this.options.display || !this.isHorizontal() || !this.legendHitBoxes.length) {
+                return;
+            }
+            const lastrow = this.legendHitBoxes[this.legendHitBoxes.length - 1].row;
+            const maxlines = Math.max(...this.legendItems
+                .filter((item, i) => this.legendHitBoxes[i].row === lastrow)
+                .map((item) => (Array.isArray(item.text) ? item.text.length : 1)));
+            const lineheight = ChartJS.helpers.toFont(this.options.labels.font).lineHeight;
+            this.height = Math.min(this.height + (maxlines - 1) * lineheight, this.options.maxHeight || this.maxHeight);
+        };
+    },
+};
+
+/**
  * This is because the execution should be finished befor proceeding.
  * @param {int} pageid
  * @param {string} id
@@ -128,7 +156,8 @@ const getAnswers = async (pageid, id) => {
                     pointHoverRadius: chartsettings.pointHoverRadius,
                 }],
             },
-            options: chartsettings.options
+            options: chartsettings.options,
+            plugins: [multiLineLegendPlugin],
         };
 
         new ChartJS(document.getElementById(id), config);
