@@ -79,6 +79,9 @@ class quiz extends \mod_mootimeter\toolhelper {
     /** @var int Visualization id for pie chart */
     const VISUALIZATION_ID_CHART_PIE = 4;
 
+    /** @var int Maximum number of characters per line of a chart axis label */
+    const CHARTJS_LABEL_LINE_LENGTH = 26;
+
     /** @var int Default value of maximum count of answers */
     const MAXANSWERSDEFAULT = 1;
 
@@ -140,6 +143,8 @@ class quiz extends \mod_mootimeter\toolhelper {
                     'charttype' => "bar",
                     'options' => [
                         'indexAxis' => 'y',
+                        // Taller than wide so that multi-line answer labels do not overlap.
+                        'aspectRatio' => 0.6,
                         'scales' => [
                             'x' => [
                                 'ticks' => [
@@ -150,6 +155,7 @@ class quiz extends \mod_mootimeter\toolhelper {
                             'y' => [
                                 'ticks' => [
                                     'autoSkip' => false,
+                                    'font' => ['size' => 12],
                                 ],
                             ],
                         ],
@@ -162,12 +168,16 @@ class quiz extends \mod_mootimeter\toolhelper {
                     'charttype' => "line",
                     'options' => [
                         'indexAxis' => 'x',
+                        // Square so that rotated multi-line answer labels have enough height.
+                        'aspectRatio' => 1,
                         'scales' => [
                             'x' => [
                                 'min' => 0,
                                 'ticks' => [
                                     'stepSize' => 1,
                                     'autoSkip' => false, // Category axis: show every answer label.
+                                    'maxRotation' => 90,
+                                    'font' => ['size' => 12],
                                 ],
                             ],
                         ],
@@ -182,11 +192,15 @@ class quiz extends \mod_mootimeter\toolhelper {
                     'charttype' => "bar",
                     'options' => [
                         'indexAxis' => 'x',
+                        // Square so that rotated multi-line answer labels have enough height.
+                        'aspectRatio' => 1,
                         'scales' => [
                             'x' => [
                                 'ticks' => [
                                     'stepSize' => 1,
                                     'autoSkip' => false, // Category axis: show every answer label.
+                                    'maxRotation' => 90,
+                                    'font' => ['size' => 12],
                                 ],
                             ],
                             'y' => [
@@ -781,6 +795,11 @@ class quiz extends \mod_mootimeter\toolhelper {
             : self::VISUALIZATION_ID_CHART_BAR;
         $chartsettings = $this->get_visualization_settings_charjs($visualizationtype, $page->id);
 
+        // Multi-line labels would break the pie chart legend.
+        if ($visualizationtype != self::VISUALIZATION_ID_CHART_PIE) {
+            $labels = array_map([$this, 'wrap_chartjs_label'], $labels);
+        }
+
         $params = [
             'chartsettings' => json_encode($chartsettings),
             'labels' => json_encode($labels),
@@ -789,6 +808,32 @@ class quiz extends \mod_mootimeter\toolhelper {
         ];
 
         return $params;
+    }
+
+    /**
+     * Wrap a chart label into lines of at most CHARTJS_LABEL_LINE_LENGTH characters (Chart.js renders arrays as multi-line).
+     *
+     * Words longer than the line length are kept on their own line.
+     *
+     * @param string $label the answer option text
+     * @return string|array the unchanged label if it fits into one line, otherwise the lines
+     */
+    protected function wrap_chartjs_label(string $label): string|array {
+        if (\core_text::strlen($label) <= self::CHARTJS_LABEL_LINE_LENGTH) {
+            return $label;
+        }
+        $lines = [];
+        $line = '';
+        foreach (preg_split('/\s+/u', trim($label)) as $word) {
+            if ($line !== '' && \core_text::strlen($line . ' ' . $word) > self::CHARTJS_LABEL_LINE_LENGTH) {
+                $lines[] = $line;
+                $line = $word;
+            } else {
+                $line = ($line === '') ? $word : $line . ' ' . $word;
+            }
+        }
+        $lines[] = $line;
+        return $lines;
     }
 
     /**
