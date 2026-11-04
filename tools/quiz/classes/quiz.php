@@ -140,10 +140,29 @@ class quiz extends \mod_mootimeter\toolhelper {
                     'charttype' => "bar",
                     'options' => [
                         'indexAxis' => 'y',
+                        // Fill the wrapper so that multi-line answer labels have enough height.
+                        'maintainAspectRatio' => false,
+                        'plugins' => [
+                            'tooltip' => [
+                                'titleFont' => ['size' => 12],
+                                'bodyFont' => ['size' => 12],
+                            ],
+                            'legend' => [
+                                'labels' => ['font' => ['size' => 14]],
+                            ],
+                        ],
                         'scales' => [
                             'x' => [
                                 'ticks' => [
                                     'stepSize' => 1,
+                                    'font' => ['size' => 12],
+                                ],
+                            ],
+                            // Category axis: show every answer label.
+                            'y' => [
+                                'ticks' => [
+                                    'autoSkip' => false,
+                                    'font' => ['size' => 12],
                                 ],
                             ],
                         ],
@@ -156,11 +175,25 @@ class quiz extends \mod_mootimeter\toolhelper {
                     'charttype' => "line",
                     'options' => [
                         'indexAxis' => 'x',
+                        // Fill the wrapper so that rotated multi-line answer labels have enough height.
+                        'maintainAspectRatio' => false,
+                        'plugins' => [
+                            'tooltip' => [
+                                'titleFont' => ['size' => 12],
+                                'bodyFont' => ['size' => 12],
+                            ],
+                            'legend' => [
+                                'labels' => ['font' => ['size' => 14]],
+                            ],
+                        ],
                         'scales' => [
                             'x' => [
                                 'min' => 0,
                                 'ticks' => [
                                     'stepSize' => 1,
+                                    'autoSkip' => false, // Category axis: show every answer label.
+                                    'maxRotation' => 90,
+                                    'font' => ['size' => 12],
                                 ],
                             ],
                         ],
@@ -175,10 +208,24 @@ class quiz extends \mod_mootimeter\toolhelper {
                     'charttype' => "bar",
                     'options' => [
                         'indexAxis' => 'x',
+                        // Fill the wrapper so that rotated multi-line answer labels have enough height.
+                        'maintainAspectRatio' => false,
+                        'plugins' => [
+                            'tooltip' => [
+                                'titleFont' => ['size' => 12],
+                                'bodyFont' => ['size' => 12],
+                            ],
+                            'legend' => [
+                                'labels' => ['font' => ['size' => 14]],
+                            ],
+                        ],
                         'scales' => [
                             'x' => [
                                 'ticks' => [
                                     'stepSize' => 1,
+                                    'autoSkip' => false, // Category axis: show every answer label.
+                                    'maxRotation' => 90,
+                                    'font' => ['size' => 12],
                                 ],
                             ],
                             'y' => [
@@ -196,13 +243,24 @@ class quiz extends \mod_mootimeter\toolhelper {
                     'charttype' => "pie",
                     'options' => [
                         'responsive' => true,
+                        // Fill the wrapper so that the legend below the pie has enough height.
+                        'maintainAspectRatio' => false,
                         'title' => [
                             'display' => true,
                             'text' => self::get_tool_config($pageid, 'question'),
                         ],
                         'plugins' => [
+                            'tooltip' => [
+                                'titleFont' => ['size' => 12],
+                                'bodyFont' => ['size' => 12],
+                            ],
                             'legend' => [
-                                'position' => 'right',
+                                'position' => 'bottom',
+                                // Show the answers as a left-aligned list.
+                                'align' => 'start',
+                                // Default is half of the chart height, which cuts off the last multi-line legend items.
+                                'maxHeight' => 1000,
+                                'labels' => ['font' => ['size' => 12], 'boxWidth' => 20],
                             ],
                         ],
                     ],
@@ -782,6 +840,7 @@ class quiz extends \mod_mootimeter\toolhelper {
 
         return $params;
     }
+
 
     /**
      * Renders the result page of the quiz.
