@@ -95,8 +95,12 @@ final class delete_instance_test extends advanced_testcase {
         // Set user as teacher and trigger async deletion.
         $this->setUser($teacher);
 
-        // Trigger async deletion by calling course_delete_module().
-        course_delete_module($cm->id, true);
+        // Trigger async deletion.
+        if ($CFG->branch >= 502) {
+            \core_courseformat\formatactions::cm($course)->delete($cm->id, true);
+        } else { // Fallback for older Moodle versions (< 5.2) that don't have cmactions::delete().
+            course_delete_module($cm->id, true);
+        }
 
         // Verify that the adhoc task was created.
         $tasks = $DB->get_records('task_adhoc', ['classname' => '\core_course\task\course_delete_modules']);
