@@ -79,12 +79,6 @@ class quiz extends \mod_mootimeter\toolhelper {
     /** @var int Visualization id for pie chart */
     const VISUALIZATION_ID_CHART_PIE = 4;
 
-    /** @var int Maximum number of characters per line of a chart axis label */
-    const CHARTJS_LABEL_LINE_LENGTH = 26;
-
-    /** @var int Maximum number of characters per line of a bar chart label (fits into half of a mobile chart width) */
-    const CHARTJS_BAR_LABEL_LINE_LENGTH = 22;
-
     /** @var int Default value of maximum count of answers */
     const MAXANSWERSDEFAULT = 1;
 
@@ -149,6 +143,10 @@ class quiz extends \mod_mootimeter\toolhelper {
                         // Fill the wrapper so that multi-line answer labels have enough height.
                         'maintainAspectRatio' => false,
                         'plugins' => [
+                            'tooltip' => [
+                                'titleFont' => ['size' => 12],
+                                'bodyFont' => ['size' => 12],
+                            ],
                             'legend' => [
                                 'labels' => ['font' => ['size' => 14]],
                             ],
@@ -180,6 +178,10 @@ class quiz extends \mod_mootimeter\toolhelper {
                         // Fill the wrapper so that rotated multi-line answer labels have enough height.
                         'maintainAspectRatio' => false,
                         'plugins' => [
+                            'tooltip' => [
+                                'titleFont' => ['size' => 12],
+                                'bodyFont' => ['size' => 12],
+                            ],
                             'legend' => [
                                 'labels' => ['font' => ['size' => 14]],
                             ],
@@ -209,6 +211,10 @@ class quiz extends \mod_mootimeter\toolhelper {
                         // Fill the wrapper so that rotated multi-line answer labels have enough height.
                         'maintainAspectRatio' => false,
                         'plugins' => [
+                            'tooltip' => [
+                                'titleFont' => ['size' => 12],
+                                'bodyFont' => ['size' => 12],
+                            ],
                             'legend' => [
                                 'labels' => ['font' => ['size' => 14]],
                             ],
@@ -244,9 +250,13 @@ class quiz extends \mod_mootimeter\toolhelper {
                             'text' => self::get_tool_config($pageid, 'question'),
                         ],
                         'plugins' => [
+                            'tooltip' => [
+                                'titleFont' => ['size' => 12],
+                                'bodyFont' => ['size' => 12],
+                            ],
                             'legend' => [
                                 'position' => 'bottom',
-                                // Chart.js overestimates the width of multi-line legend items, centering would cut them off.
+                                // Show the answers as a left-aligned list.
                                 'align' => 'start',
                                 // Default is half of the chart height, which cuts off the last multi-line legend items.
                                 'maxHeight' => 1000,
@@ -821,17 +831,6 @@ class quiz extends \mod_mootimeter\toolhelper {
             : self::VISUALIZATION_ID_CHART_BAR;
         $chartsettings = $this->get_visualization_settings_charjs($visualizationtype, $page->id);
 
-        $linelength = ($visualizationtype == self::VISUALIZATION_ID_CHART_BAR)
-            ? self::CHARTJS_BAR_LABEL_LINE_LENGTH
-            : self::CHARTJS_LABEL_LINE_LENGTH;
-        $labels = array_map(fn(string $label) => $this->wrap_chartjs_label($label, $linelength), $labels);
-
-        // A horizontal legend uses a fixed row height, so add the height of the extra lines as padding between the rows.
-        if ($visualizationtype == self::VISUALIZATION_ID_CHART_PIE) {
-            $maxlines = max(array_map(fn($label) => is_array($label) ? count($label) : 1, $labels ?: ['']));
-            $chartsettings['options']['plugins']['legend']['labels']['padding'] = 10 + ($maxlines - 1) * 13;
-        }
-
         $params = [
             'chartsettings' => json_encode($chartsettings),
             'labels' => json_encode($labels),
@@ -842,32 +841,6 @@ class quiz extends \mod_mootimeter\toolhelper {
         return $params;
     }
 
-    /**
-     * Wrap a chart label into lines of at most $linelength characters (Chart.js renders arrays as multi-line).
-     *
-     * Words longer than the line length are kept on their own line.
-     *
-     * @param string $label the answer option text
-     * @param int $linelength maximum number of characters per line
-     * @return string|array the unchanged label if it fits into one line, otherwise the lines
-     */
-    protected function wrap_chartjs_label(string $label, int $linelength): string|array {
-        if (\core_text::strlen($label) <= $linelength) {
-            return $label;
-        }
-        $lines = [];
-        $line = '';
-        foreach (preg_split('/\s+/u', trim($label)) as $word) {
-            if ($line !== '' && \core_text::strlen($line . ' ' . $word) > $linelength) {
-                $lines[] = $line;
-                $line = $word;
-            } else {
-                $line = ($line === '') ? $word : $line . ' ' . $word;
-            }
-        }
-        $lines[] = $line;
-        return $lines;
-    }
 
     /**
      * Renders the result page of the quiz.

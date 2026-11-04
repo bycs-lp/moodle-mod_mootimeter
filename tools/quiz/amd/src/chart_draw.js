@@ -28,30 +28,191 @@ export const init = (id) => {
 };
 
 /**
- * Chart.js plugin reserving space for the extra lines of multi-line labels in the last row of a horizontal legend.
+ * Measure the width of the widest line of a (multi-line) label.
  *
- * Chart.js only reserves one line per legend row and clips the legend to its box, which would cut off the extra lines.
+ * @param {CanvasRenderingContext2D} ctx the canvas context
+ * @param {object} font the font as returned by ChartJS.helpers.toFont
+ * @param {string|string[]} label the label, arrays are rendered as multiple lines by Chart.js
+ * @returns {number} the width in pixels
  */
-const multiLineLegendPlugin = {
-    id: 'mootimetertool_quiz_multilinelegend',
+const measureLabel = (ctx, font, label) => {
+    ctx.save();
+    ctx.font = font.string;
+    const width = Math.max(0, ...[].concat(label).map((line) => ctx.measureText(String(line)).width));
+    ctx.restore();
+    return width;
+};
+
+/**
+ * Wrap a label into lines of at most maxwidth pixels (Chart.js renders arrays as multiple lines).
+ *
+ * Words wider than maxwidth are kept on their own line.
+ *
+ * @param {CanvasRenderingContext2D} ctx the canvas context
+ * @param {object} font the font as returned by ChartJS.helpers.toFont
+ * @param {string|string[]} label the label
+ * @param {number} maxwidth maximum width of a line in pixels
+ * @returns {string|string[]} the label as single string if it fits into one line, otherwise the lines
+ */
+const wrapLabel = (ctx, font, label, maxwidth) => {
+    const words = [].concat(label).join(' ').trim().split(/\s+/);
+    const lines = [];
+    let line = '';
+    words.forEach((word) => {
+        const candidate = line === '' ? word : line + ' ' + word;
+        if (line !== '' && measureLabel(ctx, font, candidate) > maxwidth) {
+            lines.push(line);
+            line = word;
+        } else {
+            line = candidate;
+        }
+    });
+    lines.push(line);
+    return lines.length > 1 ? lines : lines[0];
+};
+
+/**
+ * Number of lines of a label.
+ *
+ * @param {string|string[]} label the label
+ * @returns {number}
+ */
+const countLines = (label) => (Array.isArray(label) ? label.length : 1);
+
+/**
+ * Wrap the tick labels of a category axis according to the space available for the axis.
+ *
+ * @param {object} scale the Chart.js scale
+ */
+const wrapScaleTicks = (scale) => {
+    const font = ChartJS.helpers.toFont(scale.options.ticks.font);
+    const padding = scale.options.ticks.padding + 6;
+    const labels = scale.ticks.map((tick) => tick.label);
+    const wrapAll = (maxwidth) => labels.map((label) => wrapLabel(scale.ctx, font, label, maxwidth));
+    let wrapped;
+    if (scale.isHorizontal()) {
+        const tickwidth = scale.maxWidth / Math.max(labels.length, 1) - padding;
+        const maxheight = scale.maxHeight - padding;
+        // Prefer horizontal labels wrapped to the width of a tick.
+        wrapped = wrapAll(tickwidth);
+        const fits = wrapped.every((label) => measureLabel(scale.ctx, font, label) <= tickwidth
+            && countLines(label) * font.lineHeight <= maxheight);
+        if (!fits) {
+            // Chart.js rotates the labels: allow longer lines, but only as many lines as fit next to each other.
+            const maxlines = Math.max(1, Math.floor(tickwidth / font.lineHeight));
+            const widest = Math.max(...labels.map((label) => measureLabel(scale.ctx, font, label)));
+            let linewidth = Math.min(maxheight, widest / maxlines);
+            wrapped = wrapAll(linewidth);
+            // Word wrapping needs more lines than the ideal split, so widen the lines until they fit.
+            while (linewidth < maxheight && Math.max(...wrapped.map(countLines)) > maxlines) {
+                linewidth = Math.min(maxheight, linewidth * 1.1);
+                wrapped = wrapAll(linewidth);
+            }
+        }
+    } else {
+        wrapped = wrapAll(scale.maxWidth - padding);
+    }
+    scale.ticks.forEach((tick, i) => {
+        tick.label = wrapped[i];
+    });
+};
+
+/**
+ * Wrap the items of a horizontal legend according to the available width.
+ *
+ * Chart.js uses one fixed row height for horizontal legends, so the spacing between the rows is increased by the extra
+ * lines.
+ *
+ * @param {object} legend the Chart.js legend
+ */
+const wrapLegendItems = (legend) => {
+    const labels = legend.options.labels;
+    if (legend.mtmbasepadding === undefined) {
+        legend.mtmbasepadding = labels.padding;
+    }
+    labels.padding = legend.mtmbasepadding;
+    if (!legend.options.display || !legend.isHorizontal()) {
+        return;
+    }
+    const font = ChartJS.helpers.toFont(labels.font);
+    const boxwidth = labels.boxWidth ?? font.size;
+    const texts = legend.legendItems.map((item) => item.text);
+    // A larger row spacing also indents the items, so wrap again until the spacing is stable.
+    for (let i = 0; i < 3; i++) {
+        const maxwidth = legend.maxWidth - 2 * labels.padding - boxwidth - font.size / 2;
+        legend.legendItems.forEach((item, j) => {
+            item.text = wrapLabel(legend.ctx, font, texts[j], maxwidth);
+        });
+        const maxlines = Math.max(1, ...legend.legendItems.map((item) => countLines(item.text)));
+        const padding = legend.mtmbasepadding + (maxlines - 1) * font.lineHeight;
+        if (padding === labels.padding) {
+            break;
+        }
+        labels.padding = padding;
+    }
+};
+
+/**
+ * Fit a horizontal legend with multi-line items.
+ *
+ * Chart.js only reserves one line for the last row and measures multi-line items as if they were one line.
+ *
+ * @param {object} legend the Chart.js legend
+ */
+const fitMultiLineLegend = (legend) => {
+    if (!legend.options.display || !legend.isHorizontal() || !legend.legendHitBoxes.length) {
+        return;
+    }
+    const labels = legend.options.labels;
+    const font = ChartJS.helpers.toFont(labels.font);
+    const boxwidth = labels.boxWidth ?? font.size;
+    // Use the real width of the widest line for aligning the rows.
+    legend.lineWidths = [];
+    legend.legendHitBoxes.forEach((hitbox, i) => {
+        const width = boxwidth + font.size / 2 + measureLabel(legend.ctx, font, legend.legendItems[i].text);
+        legend.lineWidths[hitbox.row] = (legend.lineWidths[hitbox.row] || 0) + width + labels.padding;
+    });
+    // Reserve the extra lines of the last row, which would be clipped otherwise.
+    const lastrow = legend.legendHitBoxes[legend.legendHitBoxes.length - 1].row;
+    const maxlines = Math.max(...legend.legendItems
+        .filter((item, i) => legend.legendHitBoxes[i].row === lastrow)
+        .map((item) => countLines(item.text)));
+    legend.height = Math.min(legend.height + (maxlines - 1) * font.lineHeight, legend.options.maxHeight || legend.maxHeight);
+};
+
+/**
+ * Chart.js plugin wrapping long answer labels of all chart types according to the available space.
+ */
+const wrapLabelsPlugin = {
+    id: 'mootimetertool_quiz_wraplabels',
     afterInit: (chart) => {
         const legend = chart.legend;
-        if (!legend) {
-            return;
+        if (legend) {
+            // Chart.js rebuilds the legend items after the layout as well, so wrap them whenever they are built.
+            const buildLabels = legend.buildLabels;
+            legend.buildLabels = function() {
+                buildLabels.call(this);
+                wrapLegendItems(this);
+            };
+            const fit = legend.fit;
+            legend.fit = function() {
+                fit.call(this);
+                fitMultiLineLegend(this);
+            };
         }
-        const fit = legend.fit;
-        legend.fit = function() {
-            fit.call(this);
-            if (!this.options.display || !this.isHorizontal() || !this.legendHitBoxes.length) {
+    },
+    beforeLayout: (chart) => {
+        Object.values(chart.scales).forEach((scale) => {
+            if (scale.type !== 'category' || scale.mtmwraplabels) {
                 return;
             }
-            const lastrow = this.legendHitBoxes[this.legendHitBoxes.length - 1].row;
-            const maxlines = Math.max(...this.legendItems
-                .filter((item, i) => this.legendHitBoxes[i].row === lastrow)
-                .map((item) => (Array.isArray(item.text) ? item.text.length : 1)));
-            const lineheight = ChartJS.helpers.toFont(this.options.labels.font).lineHeight;
-            this.height = Math.min(this.height + (maxlines - 1) * lineheight, this.options.maxHeight || this.maxHeight);
-        };
+            const afterTickToLabelConversion = scale.afterTickToLabelConversion;
+            scale.afterTickToLabelConversion = function() {
+                afterTickToLabelConversion.call(this);
+                wrapScaleTicks(this);
+            };
+            scale.mtmwraplabels = true;
+        });
     },
 };
 
@@ -157,7 +318,7 @@ const getAnswers = async (pageid, id) => {
                 }],
             },
             options: chartsettings.options,
-            plugins: [multiLineLegendPlugin],
+            plugins: [wrapLabelsPlugin],
         };
 
         new ChartJS(document.getElementById(id), config);
