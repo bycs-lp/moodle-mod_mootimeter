@@ -1,5 +1,7 @@
 .button-icon-with-text {
-  @include flex-center-all;
+  display: flex;
+  align-items: center;
+  justify-content: start;
   gap: 0.5rem;
   cursor: pointer;
 
@@ -12,6 +14,9 @@
   }
 
   &:hover{
-    background-color: #a4a5ac;
+    color: $lernplatform-300;
+    .icon {
+      color: $lernplatform-300;
+    }
   }
 }
