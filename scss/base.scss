@@ -122,7 +122,7 @@ $feedback-success-100: #d9f6e0;
     will-change: filter;
     transition: filter 0.2s ease;
     &:hover {
-      filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--color-font, #000) 50%, transparent));
+      filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--bs-body-color, #000) 50%, transparent));
     }
   }
 }

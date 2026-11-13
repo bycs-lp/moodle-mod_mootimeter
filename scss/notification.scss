@@ -46,7 +46,7 @@
   }
 }
 
-.dark {
+[data-bs-theme="dark"] {
   .mootimeter-colcontent-preview-notification {
     background-color: $grey-500;
     color: $white-standard;

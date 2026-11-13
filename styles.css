@@ -69,7 +69,7 @@
   transition: filter 0.2s ease;
 }
 .mootimeter-colcontent-preview svg text:hover {
-  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--color-font, #000) 50%, transparent));
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--bs-body-color, #000) 50%, transparent));
 }
 
 @font-face {
@@ -264,18 +264,18 @@
   color: #fff;
 }
 
-.dark .mootimetercolpages {
+[data-bs-theme=dark] .mootimetercolpages {
   background-color: #fff;
 }
-.dark .mootimetercolpages ul li {
+[data-bs-theme=dark] .mootimetercolpages ul li {
   background-color: #e8e8ea;
   border-color: #a4a5ac;
 }
-.dark .mootimetercolpages ul li.pageunvisible {
+[data-bs-theme=dark] .mootimetercolpages ul li.pageunvisible {
   background: linear-gradient(to top left, rgb(232, 232, 234) 0%, rgb(232, 232, 234) calc(50% - 0.8px), rgb(96, 97, 109) 50%, rgb(232, 232, 234) calc(50% + 0.8px), rgb(232, 232, 234) 100%);
   color: #e8e8ea;
 }
-.dark .mootimetercolpages .mootimeter-render-loading {
+[data-bs-theme=dark] .mootimetercolpages .mootimeter-render-loading {
   text-align: center;
   color: #60616d;
 }
@@ -409,25 +409,25 @@
   flex-wrap: wrap;
 }
 
-.dark .mootimetercoledit {
+[data-bs-theme=dark] .mootimetercoledit {
   background-color: #e8e8ea;
   color: #00091e;
 }
-.dark .mootimetercoledit .mootimeter-colcontent-preview-notification p {
+[data-bs-theme=dark] .mootimetercoledit .mootimeter-colcontent-preview-notification p {
   color: #fff;
 }
-.dark .mootimetercoledit h4,
-.dark .mootimetercoledit h5,
-.dark .mootimetercoledit p,
-.dark .mootimetercoledit label,
-.dark .mootimetercoledit input {
+[data-bs-theme=dark] .mootimetercoledit h4,
+[data-bs-theme=dark] .mootimetercoledit h5,
+[data-bs-theme=dark] .mootimetercoledit p,
+[data-bs-theme=dark] .mootimetercoledit label,
+[data-bs-theme=dark] .mootimetercoledit input {
   color: #00091e;
 }
-.dark .mootimetercoledit .mootimeter-render-loading {
+[data-bs-theme=dark] .mootimetercoledit .mootimeter-render-loading {
   text-align: center;
   color: #fff;
 }
-.dark .mootimetercoledit .mootimeter-page-dropdown {
+[data-bs-theme=dark] .mootimetercoledit .mootimeter-page-dropdown {
   color: #303142;
 }
 
@@ -481,7 +481,7 @@
   display: block;
 }
 
-.dark .mootimeter-page-dropdown-content div {
+[data-bs-theme=dark] .mootimeter-page-dropdown-content div {
   background-color: #00091e;
   color: #fff;
 }
@@ -610,27 +610,27 @@
   flex: 0 0 0;
 }
 
-.dark .mootimetercolcontent {
+[data-bs-theme=dark] .mootimetercolcontent {
   background-color: #60616d;
 }
-.dark .mootimetercolcontent .mootimeter-content-menu {
+[data-bs-theme=dark] .mootimetercolcontent .mootimeter-content-menu {
   background-color: #fff;
 }
-.dark .mootimetercolcontent .mootimeter-colcontent-preview {
+[data-bs-theme=dark] .mootimetercolcontent .mootimeter-colcontent-preview {
   background-color: #303142;
 }
-.dark .mootimetercolcontent .mootimeter-colcontent-preview .mootimeter-btn-icon-only-transparent {
+[data-bs-theme=dark] .mootimetercolcontent .mootimeter-colcontent-preview .mootimeter-btn-icon-only-transparent {
   color: #fff;
 }
-.dark .mootimetercolcontent .mootimeter-colcontent-preview h3,
-.dark .mootimetercolcontent .mootimeter-colcontent-preview h4,
-.dark .mootimetercolcontent .mootimeter-colcontent-preview p,
-.dark .mootimetercolcontent .mootimeter-colcontent-preview small,
-.dark .mootimetercolcontent .mootimeter-colcontent-preview input,
-.dark .mootimetercolcontent .mootimeter-colcontent-preview label {
+[data-bs-theme=dark] .mootimetercolcontent .mootimeter-colcontent-preview h3,
+[data-bs-theme=dark] .mootimetercolcontent .mootimeter-colcontent-preview h4,
+[data-bs-theme=dark] .mootimetercolcontent .mootimeter-colcontent-preview p,
+[data-bs-theme=dark] .mootimetercolcontent .mootimeter-colcontent-preview small,
+[data-bs-theme=dark] .mootimetercolcontent .mootimeter-colcontent-preview input,
+[data-bs-theme=dark] .mootimetercolcontent .mootimeter-colcontent-preview label {
   color: #fff;
 }
-.dark .mootimetercolcontent .mootimeter-render-loading {
+[data-bs-theme=dark] .mootimetercolcontent .mootimeter-render-loading {
   color: #60616d;
 }
 
@@ -653,7 +653,7 @@
   border-left: 0.0625rem solid #60616d;
 }
 
-.dark .mootimetercontainer .vertical-divider {
+[data-bs-theme=dark] .mootimetercontainer .vertical-divider {
   border-color: #a4a5ac;
 }
 
@@ -677,7 +677,7 @@
   color: #fff;
 }
 
-.dark .mootimeter-pill {
+[data-bs-theme=dark] .mootimeter-pill {
   color: #00091e;
 }
 
@@ -724,7 +724,7 @@
   padding: 1.25rem;
 }
 
-.dark .mootimeter-colcontent-preview-notification {
+[data-bs-theme=dark] .mootimeter-colcontent-preview-notification {
   background-color: #00091e;
   color: #fff;
 }
@@ -843,7 +843,7 @@
   color: #d33f01;
 }
 
-.dark .mootimeter-checkbox.mootimeter-success label {
+[data-bs-theme=dark] .mootimeter-checkbox.mootimeter-success label {
   color: #00091e;
 }
 
@@ -941,7 +941,7 @@
   gap: 0.5rem;
 }
 
-.dark .mootimeter-checkbox-switch:checked::before {
+[data-bs-theme=dark] .mootimeter-checkbox-switch:checked::before {
   background-color: #fff;
 }
 
@@ -1176,22 +1176,22 @@
   margin: 0;
 }
 
-.dark .mootimeter-btn-icon {
+[data-bs-theme=dark] .mootimeter-btn-icon {
   background-color: #fff;
 }
-.dark .mootimeter-btn-icon .icon {
+[data-bs-theme=dark] .mootimeter-btn-icon .icon {
   color: #00091e;
 }
-.dark .mootimeter-btn-icon:hover {
+[data-bs-theme=dark] .mootimeter-btn-icon:hover {
   background: #a4a5ac;
 }
-.dark .mootimeter-btn-icon:hover .icon {
+[data-bs-theme=dark] .mootimeter-btn-icon:hover .icon {
   color: #fff;
 }
-.dark .mootimeter-btn-icon.active {
+[data-bs-theme=dark] .mootimeter-btn-icon.active {
   background-color: #d33f01;
 }
-.dark .mootimeter-btn-icon.active .icon {
+[data-bs-theme=dark] .mootimeter-btn-icon.active .icon {
   color: #fff;
 }
 
@@ -1238,7 +1238,7 @@
   color: #fff;
 }
 
-.dark .mootimeter-btn-icon-only-transparent {
+[data-bs-theme=dark] .mootimeter-btn-icon-only-transparent {
   color: #00091e;
 }
 
@@ -1272,14 +1272,14 @@
   color: #00091e;
 }
 
-.dark .mootimeter-btn-icon-only-rounded {
+[data-bs-theme=dark] .mootimeter-btn-icon-only-rounded {
   background-color: #303142;
   color: #fff;
 }
-.dark .mootimeter-btn-icon-only-rounded.active {
+[data-bs-theme=dark] .mootimeter-btn-icon-only-rounded.active {
   background-color: #d33f01;
 }
-.dark .mootimeter-btn-icon-only-rounded.disabled {
+[data-bs-theme=dark] .mootimeter-btn-icon-only-rounded.disabled {
   background-color: #a4a5ac;
 }
 

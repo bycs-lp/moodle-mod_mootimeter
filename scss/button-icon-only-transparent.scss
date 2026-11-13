@@ -19,7 +19,7 @@
   color: $white-standard;
 }
 
-.dark {
+[data-bs-theme="dark"] {
   .mootimeter-btn-icon-only-transparent {
     color: $grey-500;
   }
