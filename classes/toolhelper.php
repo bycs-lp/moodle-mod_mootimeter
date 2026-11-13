@@ -180,13 +180,19 @@ abstract class toolhelper extends helper {
      * @return array array of associative arrays representing the status of the course reset
      */
     public function reset_userdata(stdClass $data): array {
+        global $DB;
+
         $shortclassname = preg_replace('/.*\\\\/', '', get_class($this));
-        foreach (get_all_instances_in_course('mootimeter', get_course($data->courseid)) as $instance) {
-            $pages = $this->get_pages($instance->id);
-            $pages = array_filter($pages, fn($page) => $page->tool === $shortclassname);
-            foreach ($pages as $page) {
-                $this->delete_all_answers($this->get_answer_table(), $page->id);
-            }
+
+        // Select the pages directly: the course reset must cover hidden pages and activities
+        // regardless of the capabilities of the current user.
+        $sql = "SELECT p.*
+                  FROM {mootimeter_pages} p
+                  JOIN {mootimeter} m ON m.id = p.instance
+                 WHERE m.course = :courseid AND p.tool = :tool";
+        $pages = $DB->get_records_sql($sql, ['courseid' => $data->courseid, 'tool' => $shortclassname]);
+        foreach ($pages as $page) {
+            $this->delete_page_answers($this->get_answer_table(), $page);
         }
 
         return [

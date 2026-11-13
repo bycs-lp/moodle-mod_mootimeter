@@ -1128,8 +1128,6 @@ class helper {
      * @throws dml_exception
      */
     public function delete_all_answers(string $table, int $pageid): bool {
-        global $DB;
-
         $instance = self::get_instance_by_pageid($pageid);
         $cm = self::get_cm_by_instance($instance);
         $context = \context_module::instance($cm->id);
@@ -1138,10 +1136,26 @@ class helper {
             throw new \required_capability_exception($context, 'mod/mootimeter:moderator', 'nopermission', 'mod_mootimeter');
         }
 
-        $params = ['pageid' => $pageid];
-        $return = $DB->delete_records($table, $params);
-        $this->clear_caches($pageid);
-        $this->notify_data_changed($this->get_page($pageid), 'answers');
+        return $this->delete_page_answers($table, $this->get_page($pageid, false));
+    }
+
+    /**
+     * Delete all answers of a page without checking the capabilities of the current user.
+     *
+     * Callers are responsible for the permission check. This is used by the course reset,
+     * which may run as a user without moderator capability (e.g. cron or an already unenrolled user).
+     *
+     * @param string $table
+     * @param object $page
+     * @return bool
+     * @throws dml_exception
+     */
+    protected function delete_page_answers(string $table, object $page): bool {
+        global $DB;
+
+        $return = $DB->delete_records($table, ['pageid' => $page->id]);
+        $this->clear_caches($page->id);
+        $this->notify_data_changed($page, 'answers');
         return $return;
     }
 
