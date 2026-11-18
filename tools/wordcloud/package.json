@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "d3-cloud": "^1.2.9"
+    "d3-cloud": "^2.0.0"
   },
   "eslintIgnore": [
     "amd/src/d3_cloud.js"
