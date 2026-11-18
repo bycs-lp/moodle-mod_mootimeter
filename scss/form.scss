@@ -1,3 +1,8 @@
+.mootimeter-field-wrapper {
+  display: inline-block;
+  width: 4.5rem;
+}
+
 .input-with-checkbox-icon_wrapper {
   display: flex;
   flex-direction: column;
@@ -25,8 +30,7 @@
 
   label {
     span {
-      margin-left: 0 !important;
-      margin-right: 10px !important;
+      margin-right: 0 !important;
     }
   }
 }

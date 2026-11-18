@@ -1,19 +1,21 @@
 <div class="mootimeter-checkbox">
   <label>
-    <input
-      type="checkbox"
-      id="{{mtm-cb-without-label-id}}_{{uniqid}}"
-      class="mootimeter-checkbox-switch {{mtm-cb-without-label-classes}} {{additional_class}}"
-      {{mtm-cb-without-label-checked}}
-      {{#mtm-cb-without-label-name}}name="{{mtm-cb-without-label-name}}"{{/mtm-cb-without-label-name}}
+    <span class="mootimeter-field-wrapper mootimeter-checkbox-field-wrapper">
+      <input
+        type="checkbox"
+        id="{{mtm-cb-without-label-id}}_{{uniqid}}"
+        class="mootimeter-checkbox-switch {{mtm-cb-without-label-classes}} {{additional_class}}"
+        {{mtm-cb-without-label-checked}}
+        {{#mtm-cb-without-label-name}}name="{{mtm-cb-without-label-name}}"{{/mtm-cb-without-label-name}}
 
-      {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
-      {{#mtm-cb-without-label-ajaxmethode}}data-ajaxmethode="{{mtm-cb-without-label-ajaxmethode}}"{{/mtm-cb-without-label-ajaxmethode}}
-      {{#mtm-cb-without-label-name}}data-name="{{mtm-cb-without-label-name}}"{{/mtm-cb-without-label-name}}
-      {{{mtm-cb-without-label-dataset}}}
-    />
-    <span class="checkbox-icon-wrapper">
-      <i class="icon fa fa-check fa-light checkbox-icon" aria-hidden="true"></i>
+        {{#pageid}}data-pageid="{{pageid}}"{{/pageid}}
+        {{#mtm-cb-without-label-ajaxmethode}}data-ajaxmethode="{{mtm-cb-without-label-ajaxmethode}}"{{/mtm-cb-without-label-ajaxmethode}}
+        {{#mtm-cb-without-label-name}}data-name="{{mtm-cb-without-label-name}}"{{/mtm-cb-without-label-name}}
+        {{{mtm-cb-without-label-dataset}}}
+      />
+      <span class="checkbox-icon-wrapper">
+        <i class="icon fa fa-check fa-light checkbox-icon" aria-hidden="true"></i>
+      </span>
     </span>
   </label>
 </div>

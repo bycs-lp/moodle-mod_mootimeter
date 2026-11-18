@@ -7,7 +7,13 @@ import {execReloadPage as reloadPage} from 'mod_mootimeter/reload_page';
 import {removeGetParam} from 'mod_mootimeter/utils';
 
 export const init = async(id) => {
-    const pageid = document.getElementById('mootimeterstate').dataset.pageid;
+    const element = document.getElementById(id);
+    if (!element) {
+        return;
+    }
+
+    // Get pageid from the element's data attribute
+    const pageid = element.dataset.pageid;
 
     const modal = await ModalDeleteCancel.create({
         title: getString('delete', 'core'),
@@ -18,12 +24,10 @@ export const init = async(id) => {
         execDeletePage(pageid);
     });
 
-    const element = document.getElementById(id);
-    if (element) {
-        element.addEventListener('click', () => {
-            modal.show();
-        });
-    }
+    element.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent triggering page selection
+        modal.show();
+    });
 
     /**
      * Call to store input value
