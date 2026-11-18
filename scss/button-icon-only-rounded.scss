@@ -31,7 +31,7 @@
   }
 }
 
-.dark {
+[data-bs-theme="dark"] {
   .mootimeter-btn-icon-only-rounded {
     background-color: $grey-400;
     color: $white-standard;

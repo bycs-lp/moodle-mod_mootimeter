@@ -23,7 +23,7 @@
   }
 }
 
-.dark {
+[data-bs-theme="dark"] {
   .mootimeter-btn-icon {
     background-color: $white-standard;
     .icon {

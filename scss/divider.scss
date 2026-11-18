@@ -12,7 +12,7 @@
   }
 }
 
-.dark {
+[data-bs-theme="dark"] {
   .mootimetercontainer {
     .vertical-divider {
       border-color: $grey-200;

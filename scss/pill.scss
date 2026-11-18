@@ -21,7 +21,7 @@
   }
 }
 
-.dark {
+[data-bs-theme="dark"] {
   .mootimeter-pill {
     color: $grey-500;
   }

@@ -84,7 +84,7 @@
   }
 }
 
-.dark {
+[data-bs-theme="dark"] {
   .mootimetercoledit {
     background-color: $grey-100;
     color: $grey-500;
@@ -171,7 +171,7 @@
   }
 }
 
-.dark {
+[data-bs-theme="dark"] {
   .mootimeter-page-dropdown-content div {
     background-color: $grey-500;
     color: $white-standard;

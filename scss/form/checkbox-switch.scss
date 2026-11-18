@@ -46,7 +46,7 @@
   gap: 0.5rem;
 }
 
-.dark {
+[data-bs-theme="dark"] {
   .mootimeter-checkbox-switch {
     &:checked::before {
       background-color: $white-standard;
