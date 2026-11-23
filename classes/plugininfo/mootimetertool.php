@@ -28,7 +28,9 @@ namespace mod_mootimeter\plugininfo;
 
 use coding_exception;
 use cache_exception;
-use core\plugininfo\base, core_plugin_manager, moodle_url;
+use core\plugininfo\base;
+use core_plugin_manager;
+use moodle_url;
 use dml_exception;
 
 /**

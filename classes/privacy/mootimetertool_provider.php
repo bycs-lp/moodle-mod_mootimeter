@@ -24,6 +24,7 @@
  * @author      Peter Mayer <peter.mayer@isb.bayern.de>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 namespace mod_mootimeter\privacy;
 
 use core_privacy\local\request\contextlist;
