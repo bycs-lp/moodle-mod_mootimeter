@@ -26,8 +26,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_mootimeter';
-$plugin->release = '0.4';
-$plugin->version = 2026092200;
+$plugin->release = '0.5';
+$plugin->version = 2026112300;
 $plugin->requires = 2022112800;
 $plugin->maturity = MATURITY_ALPHA;
 $plugin->supported = [405, 503];
