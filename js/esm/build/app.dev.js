@@ -54,7 +54,11 @@ function useUpdates(cmId, pageId, refreshInterval) {
             setUpdates((old) => sameUpdates(old, latest) ? old : latest);
           }
         } catch (error) {
-          window.console.error(error);
+          if (error instanceof ApiError && [401, 403, 404].includes(error.status)) {
+            active = false;
+            displayError(error);
+            return;
+          }
         }
       }
       if (active) {
@@ -104,14 +108,14 @@ function Content({ pages, tools, pageId, view, isModerator, locked, toolprops, o
   if (!pages) {
     return /* @__PURE__ */ jsxDEV(Loading, {}, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 199,
+      lineNumber: 205,
       columnNumber: 16
     }, this);
   }
   if (isModerator && (view === "addpage" || !pageId)) {
     return /* @__PURE__ */ jsxDEV(AddPage, { tools, onAdd: onAddPage }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 202,
+      lineNumber: 208,
       columnNumber: 16
     }, this);
   }
@@ -122,18 +126,18 @@ function Content({ pages, tools, pageId, view, isModerator, locked, toolprops, o
     }
     return /* @__PURE__ */ jsxDEV("div", { className: "mootimeter-colcontent-preview mootimeter-width-s", children: /* @__PURE__ */ jsxDEV("h4", { children: message }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 211,
+      lineNumber: 217,
       columnNumber: 17
     }, this) }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 210,
+      lineNumber: 216,
       columnNumber: 13
     }, this);
   }
   if (!toolprops) {
     return /* @__PURE__ */ jsxDEV(Loading, {}, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 216,
+      lineNumber: 222,
       columnNumber: 16
     }, this);
   }
@@ -145,7 +149,7 @@ function Content({ pages, tools, pageId, view, isModerator, locked, toolprops, o
   }
   return /* @__PURE__ */ jsxDEV(ToolComponent, { specifier, ...toolprops }, `${specifier}-${pageId}`, false, {
     fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-    lineNumber: 224,
+    lineNumber: 230,
     columnNumber: 12
   }, this);
 }
@@ -166,17 +170,17 @@ function SettingsToggle({ open, onToggle }) {
       children: [
         /* @__PURE__ */ jsxDEV("i", { className: "icon fa fa-gear fa-light", "aria-hidden": "true" }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-          lineNumber: 252,
+          lineNumber: 258,
           columnNumber: 13
         }, this),
         /* @__PURE__ */ jsxDEV("span", { className: "mootimeter-settings-toggle-label", children: s.settings }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-          lineNumber: 253,
+          lineNumber: 259,
           columnNumber: 13
         }, this),
         /* @__PURE__ */ jsxDEV("i", { className: `icon fa ${open ? "fa-angle-double-left" : "fa-angle-double-right"} fa-light`, "aria-hidden": "true" }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-          lineNumber: 254,
+          lineNumber: 260,
           columnNumber: 13
         }, this)
       ]
@@ -185,7 +189,7 @@ function SettingsToggle({ open, onToggle }) {
     true,
     {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 243,
+      lineNumber: 249,
       columnNumber: 9
     },
     this
@@ -254,7 +258,7 @@ function App(props) {
       reordered.splice(position, 0, pages.find((p) => p.id === id));
       setPages(reordered.map((p, index) => ({ ...p, number: index + 1 })));
     }
-    patch("mod_mootimeter", `/pages/${id}`, { position }).then(refresh).catch(displayError);
+    patch("mod_mootimeter", `/pages/${id}`, { position }).catch(displayError).finally(refresh);
   }, "movePage");
   const toggleVisibility = /* @__PURE__ */ __name(async (item) => {
     try {
@@ -299,17 +303,17 @@ function App(props) {
             false,
             {
               fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-              lineNumber: 382,
+              lineNumber: 391,
               columnNumber: 29
             },
             this
           ) : /* @__PURE__ */ jsxDEV(Loading, {}, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-            lineNumber: 391,
+            lineNumber: 400,
             columnNumber: 29
           }, this) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-            lineNumber: 380,
+            lineNumber: 389,
             columnNumber: 21
           }, this),
           settings.show && toolprops && /* @__PURE__ */ jsxDEV("div", { className: "mootimetercol mootimetercoledit", id: "mootimeter-col-settings", children: /* @__PURE__ */ jsxDEV(
@@ -328,23 +332,23 @@ function App(props) {
             false,
             {
               fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-              lineNumber: 395,
+              lineNumber: 404,
               columnNumber: 29
             },
             this
           ) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-            lineNumber: 394,
+            lineNumber: 403,
             columnNumber: 25
           }, this),
           settings.toggle && /* @__PURE__ */ jsxDEV(SettingsToggle, { open: settingsOpen, onToggle: () => setSettingsOpen(!settingsOpen) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-            lineNumber: 409,
+            lineNumber: 418,
             columnNumber: 25
           }, this)
         ] }, void 0, true, {
           fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-          lineNumber: 379,
+          lineNumber: 388,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ jsxDEV("div", { className: "mootimetercol mootimetercolcontent", children: [
@@ -361,7 +365,7 @@ function App(props) {
             false,
             {
               fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-              lineNumber: 414,
+              lineNumber: 423,
               columnNumber: 25
             },
             this
@@ -382,23 +386,23 @@ function App(props) {
             false,
             {
               fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-              lineNumber: 423,
+              lineNumber: 432,
               columnNumber: 25
             },
             this
           ) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-            lineNumber: 422,
+            lineNumber: 431,
             columnNumber: 21
           }, this)
         ] }, void 0, true, {
           fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-          lineNumber: 412,
+          lineNumber: 421,
           columnNumber: 17
         }, this)
       ] }, void 0, true, {
         fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-        lineNumber: 378,
+        lineNumber: 387,
         columnNumber: 13
       }, this)
     },
@@ -406,7 +410,7 @@ function App(props) {
     false,
     {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 374,
+      lineNumber: 383,
       columnNumber: 9
     },
     this

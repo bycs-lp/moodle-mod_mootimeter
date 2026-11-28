@@ -26,7 +26,7 @@ const DENSITY_DIVISOR = 3;
 const MAX_SHRINK_ATTEMPTS = 3;
 const SHRINK_STEP = 0.85;
 const FONT_FAMILY = "Lexend, sans-serif";
-const COLORS = ["#c0580a", "#1a5fa8", "#b33000", "#2e7d32", "#6b3fa0", "#c2185b"];
+const COLORS_COUNT = 6;
 const layoutWords = /* @__PURE__ */ __name((answers, width, height) => {
   const sorted = [...answers].sort((a, b) => b.count - a.count);
   const maxcount = sorted[0].count;
@@ -112,14 +112,14 @@ function ResultsView({ page, settingsVersion, answersVersion }) {
   if (!results) {
     return /* @__PURE__ */ jsxDEV(Loading, {}, void 0, false, {
       fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-      lineNumber: 159,
+      lineNumber: 160,
       columnNumber: 16
     }, this);
   }
   if (!results.available) {
     return /* @__PURE__ */ jsxDEV("div", { className: "mootimeterfullwidth mootimeter-colcontent-preview mootimeter-width-xl mootimeter-vertical-align", children: s.no_answer_due_to_showteacherpermission }, void 0, false, {
       fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-      lineNumber: 164,
+      lineNumber: 165,
       columnNumber: 13
     }, this);
   }
@@ -133,7 +133,7 @@ function ResultsView({ page, settingsVersion, answersVersion }) {
       children: [
         !results.words.length && /* @__PURE__ */ jsxDEV("p", { children: s.no_answer }, void 0, false, {
           fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-          lineNumber: 174,
+          lineNumber: 175,
           columnNumber: 39
         }, this),
         layout && /* @__PURE__ */ jsxDEV(Fragment, { children: [
@@ -152,11 +152,11 @@ function ResultsView({ page, settingsVersion, answersVersion }) {
                   fontFamily: FONT_FAMILY,
                   fontSize: `${word.size}px`,
                   textAnchor: "middle",
-                  fill: COLORS[index % COLORS.length],
+                  style: { fill: `var(--mootimeter-wordcloud-${index % COLORS_COUNT + 1})` },
                   children: [
                     /* @__PURE__ */ jsxDEV("title", { children: `${word.text}: ${word.count}` }, void 0, false, {
                       fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-                      lineNumber: 194,
+                      lineNumber: 195,
                       columnNumber: 37
                     }, this),
                     word.text
@@ -166,13 +166,13 @@ function ResultsView({ page, settingsVersion, answersVersion }) {
                 true,
                 {
                   fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-                  lineNumber: 186,
+                  lineNumber: 187,
                   columnNumber: 33
                 },
                 this
               )) }, void 0, false, {
                 fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-                lineNumber: 184,
+                lineNumber: 185,
                 columnNumber: 25
               }, this)
             },
@@ -180,23 +180,23 @@ function ResultsView({ page, settingsVersion, answersVersion }) {
             false,
             {
               fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-              lineNumber: 177,
+              lineNumber: 178,
               columnNumber: 21
             },
             this
           ),
           /* @__PURE__ */ jsxDEV("ul", { id: listid, className: "sr-only", children: layout.words.map((word) => /* @__PURE__ */ jsxDEV("li", { children: `${word.text}: ${word.count}` }, word.text, false, {
             fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-            lineNumber: 201,
+            lineNumber: 202,
             columnNumber: 53
           }, this)) }, void 0, false, {
             fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-            lineNumber: 200,
+            lineNumber: 201,
             columnNumber: 21
           }, this)
         ] }, void 0, true, {
           fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-          lineNumber: 176,
+          lineNumber: 177,
           columnNumber: 17
         }, this)
       ]
@@ -205,7 +205,7 @@ function ResultsView({ page, settingsVersion, answersVersion }) {
     true,
     {
       fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/results.tsx",
-      lineNumber: 172,
+      lineNumber: 173,
       columnNumber: 9
     },
     this

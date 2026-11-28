@@ -1,0 +1,26 @@
+{
+  "addpage": {
+    "eject": "risky",
+    "wrap": "risky"
+  },
+  "app": {
+    "eject": "risky",
+    "wrap": "risky"
+  },
+  "contentmenu": {
+    "eject": "risky",
+    "wrap": "risky"
+  },
+  "pagelist": {
+    "eject": "risky",
+    "wrap": "risky"
+  },
+  "settingspanel": {
+    "eject": "risky",
+    "wrap": "risky"
+  },
+  "toolcomponent": {
+    "eject": "risky",
+    "wrap": "risky"
+  }
+}

@@ -38,6 +38,7 @@ abstract class api_exception extends moodle_exception implements response_aware_
      * @param string $component Component of the language string.
      * @param mixed $a Parameter of the language string.
      * @param array $details Field level details, list of ['field' => string, 'message' => string].
+     * @param string|null $debuginfo Information to aid the debugging, only shown with debugging enabled.
      */
     public function __construct(
         string $errorcode,
@@ -45,7 +46,8 @@ abstract class api_exception extends moodle_exception implements response_aware_
         mixed $a = null,
         /** @var array Field level details of the problem. */
         public readonly array $details = [],
+        ?string $debuginfo = null,
     ) {
-        parent::__construct($errorcode, $component, '', $a);
+        parent::__construct($errorcode, $component, '', $a, $debuginfo);
     }
 }

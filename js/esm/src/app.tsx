@@ -96,7 +96,13 @@ function useUpdates(cmId: number, pageId: number, refreshInterval: number): Upda
                         setUpdates((old) => (sameUpdates(old, latest) ? old : latest));
                     }
                 } catch (error) {
-                    window.console.error(error);
+                    // The session expired or the access was revoked, further requests would fail as well.
+                    if (error instanceof ApiError && [401, 403, 404].includes(error.status)) {
+                        active = false;
+                        displayError(error);
+                        return;
+                    }
+                    // Other failures, e.g. network interruptions, are transient and retried with the next poll.
                 }
             }
             if (active) {
@@ -343,7 +349,10 @@ export default function App(props: AppProps): React.JSX.Element {
             reordered.splice(position, 0, pages.find((p) => p.id === id) as PageListItem);
             setPages(reordered.map((p, index) => ({...p, number: index + 1})));
         }
-        patch('mod_mootimeter', `/pages/${id}`, {position}).then(refresh).catch(displayError);
+        patch('mod_mootimeter', `/pages/${id}`, {position})
+            .catch(displayError)
+            // Reload in any case, after a failure this restores the order of the server.
+            .finally(refresh);
     };
 
     const toggleVisibility = async(item: PageListItem) => {

@@ -41,8 +41,10 @@ class exporter {
     public static function export_pages(access $access): array {
         $pages = [];
         $number = 1;
-        foreach ((new helper())->get_pages($access->cm->instance, !$access->ismoderator) as $page) {
-            $question = format_string(helper::get_tool_config($page, 'question'), true, [
+        $records = (new helper())->get_pages($access->cm->instance, !$access->ismoderator);
+        $questions = helper::get_tool_configs(array_keys($records), 'question');
+        foreach ($records as $page) {
+            $question = format_string($questions[$page->id] ?? '', true, [
                 'context' => $access->context,
                 'escape' => false,
             ]);

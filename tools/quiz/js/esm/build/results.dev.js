@@ -86,14 +86,14 @@ function ResultsView({ page, settingsVersion, answersVersion }) {
   if (!response) {
     return /* @__PURE__ */ jsxDEV(Loading, {}, void 0, false, {
       fileName: "public/mod/mootimeter/tools/quiz/js/esm/src/results.tsx",
-      lineNumber: 137,
+      lineNumber: 158,
       columnNumber: 16
     }, this);
   }
   if (!results) {
     return /* @__PURE__ */ jsxDEV("div", { className: "mootimeterfullwidth mootimeter-colcontent-preview mootimeter-width-xl mootimeter-vertical-align", children: s.no_answer_due_to_showteacherpermission }, void 0, false, {
       fileName: "public/mod/mootimeter/tools/quiz/js/esm/src/results.tsx",
-      lineNumber: 142,
+      lineNumber: 163,
       columnNumber: 13
     }, this);
   }
@@ -108,19 +108,19 @@ function ResultsView({ page, settingsVersion, answersVersion }) {
         results.values[index]
       ] }, index, true, {
         fileName: "public/mod/mootimeter/tools/quiz/js/esm/src/results.tsx",
-        lineNumber: 154,
+        lineNumber: 175,
         columnNumber: 62
       }, this)) }, void 0, false, {
         fileName: "public/mod/mootimeter/tools/quiz/js/esm/src/results.tsx",
-        lineNumber: 153,
+        lineNumber: 174,
         columnNumber: 21
       }, this) }, void 0, false, {
         fileName: "public/mod/mootimeter/tools/quiz/js/esm/src/results.tsx",
-        lineNumber: 152,
+        lineNumber: 173,
         columnNumber: 17
       }, this) }, void 0, false, {
         fileName: "public/mod/mootimeter/tools/quiz/js/esm/src/results.tsx",
-        lineNumber: 151,
+        lineNumber: 172,
         columnNumber: 13
       }, this)
     },
@@ -128,7 +128,7 @@ function ResultsView({ page, settingsVersion, answersVersion }) {
     false,
     {
       fileName: "public/mod/mootimeter/tools/quiz/js/esm/src/results.tsx",
-      lineNumber: 149,
+      lineNumber: 170,
       columnNumber: 9
     },
     this

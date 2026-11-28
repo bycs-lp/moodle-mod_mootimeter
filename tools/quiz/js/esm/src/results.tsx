@@ -29,8 +29,29 @@ import {useResource, useStrings} from '@moodle/lms/mod_mootimeter/lib/hooks';
 import type {ToolViewProps} from '@moodle/lms/mod_mootimeter/lib/types';
 import {componentOf, type QuizResults} from './types';
 
-// Chart.js is loaded as untyped AMD module.
-const Chart: any = await requireAsync('core/chartjs');
+type ChartConfig = {
+    type: 'pie' | 'line' | 'bar';
+    data: {labels: string[]; datasets: Record<string, unknown>[]};
+    options: Record<string, unknown>;
+};
+
+/** The parts of a Chart.js chart that are used here. */
+type ChartInstance = {
+    canvas: HTMLCanvasElement;
+    config: {type: string};
+    data: ChartConfig['data'];
+    options: ChartConfig['options'];
+    update: (mode?: string) => void;
+    destroy: () => void;
+};
+
+type ChartModule = {
+    new (canvas: HTMLCanvasElement, config: ChartConfig): ChartInstance;
+    defaults: {font: {size: number}};
+};
+
+// Chart.js is loaded as AMD module without type declarations.
+const Chart = await requireAsync<ChartModule>('core/chartjs');
 Chart.defaults.font.size = 25;
 
 type Results = {
@@ -47,7 +68,7 @@ type Results = {
  * @param {string} label
  * @returns {object}
  */
-const getChartConfig = (results: Results, label: string): any => {
+const getChartConfig = (results: Results, label: string): ChartConfig => {
     const config = buildChartConfig(results, label);
     config.options.maintainAspectRatio = false;
     return config;
@@ -60,9 +81,9 @@ const getChartConfig = (results: Results, label: string): any => {
  * @param {string} label
  * @returns {object}
  */
-const buildChartConfig = (results: Results, label: string): any => {
+const buildChartConfig = (results: Results, label: string): ChartConfig => {
     const integerticks = {ticks: {stepSize: 1}};
-    const dataset: any = {label, data: results.values, backgroundColor: results.colors};
+    const dataset = {label, data: results.values, backgroundColor: results.colors};
     switch (results.visualization) {
         case 'pie':
             return {
@@ -104,7 +125,7 @@ export default function ResultsView({page, settingsVersion, answersVersion}: Too
     const s = useStrings('mootimetertool_quiz', ['no_answer_due_to_showteacherpermission', 'show_results']);
     const response = useResource<QuizResults>(componentOf(page), `/pages/${page.id}/results`, [settingsVersion, answersVersion]);
     const canvas = useRef<HTMLCanvasElement>(null);
-    const chart = useRef<any>(null);
+    const chart = useRef<ChartInstance | null>(null);
 
     const label = new DOMParser().parseFromString(page.questionHtml, 'text/html').body.textContent ?? '';
     const results: Results | null = response?.available ? {

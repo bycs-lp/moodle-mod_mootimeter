@@ -198,12 +198,34 @@ class wordcloud extends \mod_mootimeter\toolhelper {
      * @return array
      */
     public function export_answer(\stdClass $page, \stdClass $answer): array {
-        return [
+        return $this->export_answers($page, [$answer])[0];
+    }
+
+    /**
+     * Export answers, loading the names of the participants at once.
+     *
+     * @param \stdClass $page
+     * @param \stdClass[] $answers
+     * @return array[]
+     */
+    public function export_answers(\stdClass $page, array $answers): array {
+        $names = $this->get_participant_names($page, self::get_answer_userids($answers));
+        return array_map(fn(\stdClass $answer): array => [
             'id' => (int) $answer->id,
             'text' => (string) $answer->answer,
-            'fullName' => $this->get_participant_name($page, (int) $answer->usermodified),
+            'fullName' => $names[(int) $answer->usermodified],
             'createdAt' => api_util::format_datetime((int) $answer->timecreated),
-        ];
+        ], array_values($answers));
+    }
+
+    /**
+     * Get the authors of answers.
+     *
+     * @param \stdClass[] $answers
+     * @return int[]
+     */
+    private static function get_answer_userids(array $answers): array {
+        return array_map(fn(\stdClass $answer): int => (int) $answer->usermodified, array_values($answers));
     }
 
     /**
@@ -216,16 +238,14 @@ class wordcloud extends \mod_mootimeter\toolhelper {
         global $USER;
 
         $page = $access->get_page();
-        $ownanswers = [];
-        foreach ($this->get_answers(self::ANSWER_TABLE, $page->id) as $answer) {
-            if ((int) $answer->usermodified === (int) $USER->id) {
-                $ownanswers[] = $this->export_answer($page, $answer);
-            }
-        }
+        $ownanswers = array_filter(
+            $this->get_answers(self::ANSWER_TABLE, $page->id),
+            fn(\stdClass $answer): bool => (int) $answer->usermodified === (int) $USER->id,
+        );
 
         return [
             'pageId' => (int) $page->id,
-            'ownAnswers' => $ownanswers,
+            'ownAnswers' => $this->export_answers($page, $ownanswers),
             'maxAnswers' => $this->get_max_answers($page),
             'allowDuplicateAnswers' => $this->allows_duplicate_answers($page),
         ];
@@ -260,9 +280,11 @@ class wordcloud extends \mod_mootimeter\toolhelper {
         usort($summary, fn(array $a, array $b): int => $b[1] <=> $a[1] ?: strcmp($a[0], $b[0]));
 
         $answers = [];
-        foreach ($this->get_answers(self::ANSWER_TABLE, $page->id) as $answer) {
+        $records = $this->get_answers(self::ANSWER_TABLE, $page->id);
+        $names = $this->get_participant_names($page, self::get_answer_userids($records));
+        foreach ($records as $answer) {
             $answers[] = [
-                $this->get_participant_name($page, (int) $answer->usermodified),
+                $names[(int) $answer->usermodified],
                 (string) $answer->answer,
                 userdate($answer->timecreated, get_string('strftimedatetimeshortaccurate', 'core_langconfig')),
             ];

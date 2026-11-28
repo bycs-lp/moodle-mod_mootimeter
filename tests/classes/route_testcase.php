@@ -87,6 +87,12 @@ abstract class route_testcase extends \core\tests\router\route_testcase {
      * @return ResponseInterface
      */
     protected function api(string $method, string $path, ?array $body = null, bool $sesskey = true): ResponseInterface {
+        global $PAGE;
+
+        // Every HTTP request starts with a fresh page. Otherwise, e.g. the welcome message sent on enrolment has already
+        // set up the theme and require_login() fails to set the course.
+        $PAGE = new \moodle_page();
+
         $headers = ['HTTP_ACCEPT' => 'application/json'];
         if ($sesskey) {
             $headers[header_sesskey::NAME] = sesskey();

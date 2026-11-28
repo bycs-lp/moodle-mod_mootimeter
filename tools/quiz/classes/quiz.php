@@ -542,12 +542,24 @@ class quiz extends \mod_mootimeter\toolhelper {
      * @return array
      */
     public function export_response(\stdClass $page, array $response): array {
-        return [
+        return $this->export_responses($page, [$response])[0];
+    }
+
+    /**
+     * Export responses, loading the names of the participants at once.
+     *
+     * @param \stdClass $page
+     * @param array[] $responses see {@see self::get_responses()}
+     * @return array[]
+     */
+    public function export_responses(\stdClass $page, array $responses): array {
+        $names = $this->get_participant_names($page, array_column($responses, 'userid'));
+        return array_map(fn(array $response): array => [
             'id' => $response['id'],
-            'fullName' => $this->get_participant_name($page, $response['userid']),
+            'fullName' => $names[$response['userid']],
             'optionIds' => $response['optionids'],
             'createdAt' => api_util::format_datetime($response['timecreated']),
-        ];
+        ], array_values($responses));
     }
 
     /**
@@ -608,10 +620,12 @@ class quiz extends \mod_mootimeter\toolhelper {
         }
 
         $answers = [];
-        foreach ($this->get_responses($page) as $response) {
+        $responses = $this->get_responses($page);
+        $names = $this->get_participant_names($page, array_column($responses, 'userid'));
+        foreach ($responses as $response) {
             $texts = array_map(fn(int $optionid): string => $optiontexts[$optionid] ?? '', $response['optionids']);
             $answers[] = [
-                $this->get_participant_name($page, $response['userid']),
+                $names[$response['userid']],
                 implode(' | ', $texts),
                 userdate($response['timecreated'], get_string('strftimedatetimeshortaccurate', 'core_langconfig')),
             ];

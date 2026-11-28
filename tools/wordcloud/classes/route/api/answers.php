@@ -113,7 +113,7 @@ class answers {
         if ($text !== '') {
             $answers = array_filter($answers, fn(\stdClass $answer): bool => \core_text::strtolower($answer->answer) === $text);
         }
-        $items = array_map(fn(\stdClass $answer): array => $wordcloud->export_answer($mootimeterpage, $answer), $answers);
+        $items = $wordcloud->export_answers($mootimeterpage, $answers);
 
         return new payload_response(
             payload: api_util::collection(

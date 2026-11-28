@@ -140,12 +140,17 @@ class helper {
         global $DB;
 
         $toolhelper = self::get_toolhelper($tool);
+        $maxsortorder = $DB->get_field_sql(
+            "SELECT MAX(sortorder) FROM {mootimeter_pages} WHERE instance = :instance",
+            ['instance' => $cm->instance]
+        );
         $page = (object) [
             'instance' => $cm->instance,
             'tool' => $tool,
             'title' => '',
             'visible' => get_config('mod_mootimeter', 'default_new_page_visibility') ? self::PAGE_VISIBLE : self::PAGE_UNVISIBLE,
-            'sortorder' => count($this->get_pages($cm->instance)),
+            // Deleting pages leaves gaps, so the number of pages could collide with an existing sort order.
+            'sortorder' => $maxsortorder === null ? 0 : (int) $maxsortorder + 1,
             'timecreated' => self::now(),
             'timemodified' => self::now(),
         ];
@@ -263,6 +268,31 @@ class helper {
         $pageid = is_object($pageorid) ? $pageorid->id : $pageorid;
         $value = $DB->get_field('mootimeter_tool_settings', 'value', ['pageid' => $pageid, 'name' => $name]);
         return $value === false || $value === null ? $default : (string) $value;
+    }
+
+    /**
+     * Get a setting of several pages with one query.
+     *
+     * @param int[] $pageids
+     * @param string $name
+     * @return string[] values keyed by page id, pages without the setting are missing
+     */
+    public static function get_tool_configs(array $pageids, string $name): array {
+        global $DB;
+
+        // Activities without pages are valid, get_in_or_equal() does not accept an empty list.
+        if (!$pageids) {
+            return [];
+        }
+        [$insql, $params] = $DB->get_in_or_equal($pageids, SQL_PARAMS_NAMED);
+        $params['name'] = $name;
+        return $DB->get_records_select_menu(
+            'mootimeter_tool_settings',
+            "pageid $insql AND name = :name",
+            $params,
+            '',
+            'pageid, value'
+        );
     }
 
     /**

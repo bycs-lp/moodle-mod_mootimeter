@@ -27,6 +27,9 @@ use core\context\module as context_module;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class toolhelper extends helper {
+    /** @var int Number of users loaded with one query. */
+    const USER_CHUNK_SIZE = 500;
+
     /**
      * Get the column of the answer table holding the answer.
      *
@@ -97,18 +100,28 @@ abstract class toolhelper extends helper {
     }
 
     /**
-     * Get the name to show for the author of an answer.
+     * Get the names to show for the authors of answers, with one query per chunk of users.
      *
      * @param \stdClass $page
-     * @param int $userid
-     * @return string
+     * @param int[] $userids
+     * @return string[] names keyed by user id, an empty string for users that do not exist anymore
      */
-    public function get_participant_name(\stdClass $page, int $userid): string {
+    public function get_participant_names(\stdClass $page, array $userids): array {
+        global $DB;
+
+        $userids = array_values(array_unique($userids));
         if (!empty(self::get_tool_config($page, 'anonymousmode'))) {
-            return get_string('anonymous_name', 'mod_mootimeter');
+            return array_fill_keys($userids, get_string('anonymous_name', 'mod_mootimeter'));
         }
-        $user = \core\user::get_user($userid);
-        return $user ? fullname($user) : '';
+
+        $names = array_fill_keys($userids, '');
+        $fields = 'id, ' . \core_user\fields::for_name()->get_sql('', false, '', '', false)->selects;
+        foreach (array_chunk($userids, self::USER_CHUNK_SIZE) as $chunk) {
+            foreach ($DB->get_records_list('user', 'id', $chunk, '', $fields) as $user) {
+                $names[(int) $user->id] = fullname($user);
+            }
+        }
+        return $names;
     }
 
     /**

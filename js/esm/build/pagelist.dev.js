@@ -15,6 +15,7 @@ const LONGPRESS_MS = 600;
 function PageList(props) {
   const { pages, selected, isEditing, onSelect, onAddPage, onMove, onToggleVisibility } = props;
   const s = useStrings("mod_mootimeter", ["addpage", "dialogue_move_pagelistelement", "longpress_toggle_visibility"]);
+  const c = useStrings("core", ["hiddenfromstudents"]);
   const [dragged, setDragged] = useState(null);
   const [pressing, setPressing] = useState(null);
   const presstimer = useRef(void 0);
@@ -88,7 +89,7 @@ function PageList(props) {
               onKeyDown: (e) => moveByKey(e, page, index),
               children: /* @__PURE__ */ jsxDEV("i", { className: "fa fa-arrows", "aria-hidden": "true" }, void 0, false, {
                 fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-                lineNumber: 141,
+                lineNumber: 142,
                 columnNumber: 33
               }, this)
             },
@@ -96,7 +97,7 @@ function PageList(props) {
             false,
             {
               fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-              lineNumber: 134,
+              lineNumber: 135,
               columnNumber: 29
             },
             this
@@ -106,7 +107,7 @@ function PageList(props) {
             {
               type: "button",
               className: "mootimeter_page_select",
-              "aria-label": `${page.number} ${page.title}`,
+              "aria-label": [page.number, page.title, page.visible ? "" : c.hiddenfromstudents].filter(Boolean).join(" "),
               "aria-current": page.id === selected ? "page" : void 0,
               onClick: () => select(page.id),
               onPointerDown: (e) => startPress(e, page),
@@ -117,12 +118,12 @@ function PageList(props) {
               children: [
                 /* @__PURE__ */ jsxDEV("span", { className: "mootimeter_pages_count", children: page.number }, void 0, false, {
                   fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-                  lineNumber: 156,
+                  lineNumber: 159,
                   columnNumber: 29
                 }, this),
                 /* @__PURE__ */ jsxDEV("img", { src: page.iconUrl, width: "35px", className: "m-1", alt: "" }, void 0, false, {
                   fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-                  lineNumber: 157,
+                  lineNumber: 160,
                   columnNumber: 29
                 }, this)
               ]
@@ -131,7 +132,7 @@ function PageList(props) {
             true,
             {
               fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-              lineNumber: 144,
+              lineNumber: 145,
               columnNumber: 25
             },
             this
@@ -142,35 +143,35 @@ function PageList(props) {
       true,
       {
         fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-        lineNumber: 110,
+        lineNumber: 111,
         columnNumber: 21
       },
       this
     )) }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-      lineNumber: 108,
+      lineNumber: 109,
       columnNumber: 13
     }, this),
     isEditing && /* @__PURE__ */ jsxDEV("ul", { id: "mootimeter-addpage-button", children: /* @__PURE__ */ jsxDEV("li", { className: "d-flex mootimeter_addpage", title: s.addpage, children: /* @__PURE__ */ jsxDEV("button", { type: "button", className: "mootimeter_page_select", "aria-label": s.addpage, onClick: onAddPage, children: /* @__PURE__ */ jsxDEV("i", { className: "fa fa-plus p-1 mx-1 my-auto", "aria-hidden": "true" }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-      lineNumber: 166,
+      lineNumber: 169,
       columnNumber: 29
     }, this) }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-      lineNumber: 165,
+      lineNumber: 168,
       columnNumber: 25
     }, this) }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-      lineNumber: 164,
+      lineNumber: 167,
       columnNumber: 21
     }, this) }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-      lineNumber: 163,
+      lineNumber: 166,
       columnNumber: 17
     }, this)
   ] }, void 0, true, {
     fileName: "public/mod/mootimeter/js/esm/src/pagelist.tsx",
-    lineNumber: 107,
+    lineNumber: 108,
     columnNumber: 9
   }, this);
 }

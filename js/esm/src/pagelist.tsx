@@ -51,6 +51,7 @@ type PageListProps = {
 export default function PageList(props: PageListProps): React.JSX.Element {
     const {pages, selected, isEditing, onSelect, onAddPage, onMove, onToggleVisibility} = props;
     const s = useStrings('mod_mootimeter', ['addpage', 'dialogue_move_pagelistelement', 'longpress_toggle_visibility']);
+    const c = useStrings('core', ['hiddenfromstudents']);
     const [dragged, setDragged] = useState<number | null>(null);
     const [pressing, setPressing] = useState<number | null>(null);
     const presstimer = useRef<number | undefined>(undefined);
@@ -144,7 +145,9 @@ export default function PageList(props: PageListProps): React.JSX.Element {
                         <button
                             type="button"
                             className="mootimeter_page_select"
-                            aria-label={`${page.number} ${page.title}`}
+                            aria-label={
+                                [page.number, page.title, page.visible ? '' : c.hiddenfromstudents].filter(Boolean).join(' ')
+                            }
                             aria-current={page.id === selected ? 'page' : undefined}
                             onClick={() => select(page.id)}
                             onPointerDown={(e) => startPress(e, page)}

@@ -18,6 +18,7 @@ namespace mod_mootimeter\local;
 
 use core\context\module as context_module;
 use core\exception\moodle_exception;
+use core\exception\require_login_exception;
 use core_course\cm_info;
 use mod_mootimeter\exception\forbidden_exception;
 use mod_mootimeter\exception\not_found_exception;
@@ -74,11 +75,16 @@ final class access {
     public static function for_cm(cm_info $cm): self {
         try {
             require_login($cm->get_course(), false, $cm, false, true);
-        } catch (moodle_exception) {
+        } catch (moodle_exception $exception) {
+            // Besides require_login_exception, require_login() throws plain moodle_exceptions for denied access, e.g.
+            // usernotfullysetup or sitepolicynotagreed. Subclasses like dml_exception are real errors.
+            if (!$exception instanceof require_login_exception && get_class($exception) !== moodle_exception::class) {
+                throw $exception;
+            }
             if (!isloggedin()) {
                 throw new unauthenticated_exception('requireloginerror', 'error');
             }
-            throw new forbidden_exception('requireloginerror', 'error');
+            throw new forbidden_exception($exception->errorcode, $exception->module, $exception->a, [], $exception->debuginfo);
         }
 
         $context = context_module::instance($cm->id);

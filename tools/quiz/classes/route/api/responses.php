@@ -123,7 +123,7 @@ class responses {
         if ($optionid) {
             $responses = array_filter($responses, fn(array $item): bool => in_array($optionid, $item['optionids'], true));
         }
-        $items = array_map(fn(array $item): array => $tool->export_response($mootimeterpage, $item), $responses);
+        $items = $tool->export_responses($mootimeterpage, $responses);
 
         return new payload_response(
             payload: api_util::collection($request, $items, ['createdat' => 'createdAt', 'fullname' => 'fullName', 'id' => 'id']),

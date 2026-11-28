@@ -41,7 +41,8 @@ const DENSITY_DIVISOR = 3;
 const MAX_SHRINK_ATTEMPTS = 3;
 const SHRINK_STEP = 0.85;
 const FONT_FAMILY = 'Lexend, sans-serif';
-const COLORS = ['#c0580a', '#1a5fa8', '#b33000', '#2e7d32', '#6b3fa0', '#c2185b'];
+// Colours defined in styles.css with variants for the dark mode.
+const COLORS_COUNT = 6;
 
 type PlacedWord = PlacedCloudWord<Word & {size: number; rotate: number}>;
 
@@ -189,7 +190,7 @@ export default function ResultsView({page, settingsVersion, answersVersion}: Too
                                     fontFamily={FONT_FAMILY}
                                     fontSize={`${word.size}px`}
                                     textAnchor="middle"
-                                    fill={COLORS[index % COLORS.length]}
+                                    style={{fill: `var(--mootimeter-wordcloud-${(index % COLORS_COUNT) + 1})`}}
                                 >
                                     <title>{`${word.text}: ${word.count}`}</title>
                                     {word.text}

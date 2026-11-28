@@ -76,6 +76,12 @@ final class helper_test extends \advanced_testcase {
 
         // The quiz hook creates two empty answer options.
         $this->assertEquals(2, $DB->count_records('mootimetertool_quiz_options', ['pageid' => $second->id]));
+
+        // After deleting the first page, a new page is still appended behind the remaining one.
+        $helper->delete_page($first);
+        $third = $helper->create_page($cm, 'quiz');
+        $this->assertEquals(2, $third->sortorder);
+        $this->assertSame([$second->id, $third->id], array_keys($helper->get_pages($mootimeter->id)));
     }
 
     /**
