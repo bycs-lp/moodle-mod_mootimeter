@@ -14,6 +14,7 @@ import { patch, remove } from "./lib/api";
 import { IconButton } from "./lib/components";
 import { useStrings } from "./lib/hooks";
 import { confirmDelete, displayError } from "./lib/moodle";
+import SubmissionControls from "./submissioncontrols";
 import ToolComponent from "./toolcomponent";
 function ContentMenu(props) {
   const { page, isModerator, view, fullscreen, onView, onFullscreen, refresh } = props;
@@ -52,19 +53,24 @@ function ContentMenu(props) {
         false,
         {
           fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
-          lineNumber: 77,
+          lineNumber: 78,
           columnNumber: 21
         },
         this
       ),
+      /* @__PURE__ */ jsxDEV(SubmissionControls, { page, refresh }, void 0, false, {
+        fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
+        lineNumber: 86,
+        columnNumber: 21
+      }, this),
       /* @__PURE__ */ jsxDEV(ToolComponent, { specifier: page.components.menu, ...props }, void 0, false, {
         fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
-        lineNumber: 85,
+        lineNumber: 87,
         columnNumber: 21
       }, this),
       /* @__PURE__ */ jsxDEV(IconButton, { icon: "fa-trash", title: s.tooltip_delete_all_answers, onClick: deleteAllAnswers }, void 0, false, {
         fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
-        lineNumber: 86,
+        lineNumber: 88,
         columnNumber: 21
       }, this),
       /* @__PURE__ */ jsxDEV(
@@ -78,19 +84,19 @@ function ContentMenu(props) {
         false,
         {
           fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
-          lineNumber: 87,
+          lineNumber: 89,
           columnNumber: 21
         },
         this
       ),
       /* @__PURE__ */ jsxDEV("div", { className: "vertical-divider" }, void 0, false, {
         fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
-        lineNumber: 92,
+        lineNumber: 94,
         columnNumber: 21
       }, this)
     ] }, void 0, true, {
       fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
-      lineNumber: 76,
+      lineNumber: 77,
       columnNumber: 17
     }, this),
     /* @__PURE__ */ jsxDEV(
@@ -104,7 +110,7 @@ function ContentMenu(props) {
       false,
       {
         fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
-        lineNumber: 95,
+        lineNumber: 97,
         columnNumber: 13
       },
       this
@@ -120,7 +126,7 @@ function ContentMenu(props) {
       false,
       {
         fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
-        lineNumber: 101,
+        lineNumber: 103,
         columnNumber: 17
       },
       this
@@ -137,14 +143,14 @@ function ContentMenu(props) {
       false,
       {
         fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
-        lineNumber: 107,
+        lineNumber: 109,
         columnNumber: 13
       },
       this
     )
   ] }, void 0, true, {
     fileName: "public/mod/mootimeter/js/esm/src/contentmenu.tsx",
-    lineNumber: 74,
+    lineNumber: 75,
     columnNumber: 9
   }, this);
 }

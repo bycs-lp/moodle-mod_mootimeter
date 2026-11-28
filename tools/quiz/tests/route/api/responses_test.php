@@ -93,14 +93,30 @@ final class responses_test extends route_testcase {
     }
 
     /**
-     * Answering is closed once the correction is shown.
+     * Answering is closed once the correction is shown and while the submission of the page is closed.
      */
     public function test_create_response_closed(): void {
         $this->setAdminUser();
-        (new quiz())->update_settings($this->page, ['correctionShown' => true]);
+        $quiz = new quiz();
+        $quiz->update_settings($this->page, ['correctionShown' => true]);
 
         $this->setUser($this->student);
-        $this->assert_problem($this->api('POST', $this->path, ['optionIds' => [$this->optionids[0]]]), 409, 'answeringclosed');
+        $this->assert_problem($this->api('POST', $this->path, ['optionIds' => [$this->optionids[0]]]), 409, 'submissionclosed');
+
+        // Opening the submission hides the correction again.
+        $quiz->set_submission_open($this->page, true);
+        $this->assertFalse($quiz->is_answer_correction_shown($this->page));
+        $response = $this->api('POST', $this->path, ['optionIds' => [$this->optionids[0]]]);
+        $this->assert_valid_response($response, 201);
+        $responseid = $this->payload($response)['id'];
+
+        $quiz->set_submission_open($this->page, false);
+        $this->assert_problem($this->api('POST', $this->path, ['optionIds' => [$this->optionids[1]]]), 409, 'submissionclosed');
+        $this->assert_problem($this->api('DELETE', $this->path . '/' . $responseid), 409, 'submissionclosed');
+
+        // Moderators can still delete responses.
+        $this->setUser($this->teacher);
+        $this->assertSame(204, $this->api('DELETE', $this->path . '/' . $responseid)->getStatusCode());
     }
 
     /**

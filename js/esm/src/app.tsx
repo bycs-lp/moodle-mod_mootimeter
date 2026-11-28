@@ -30,9 +30,10 @@ import {ApiError, get, getAll, patch, post} from './lib/api';
 import {Loading} from './lib/components';
 import {useStrings} from './lib/hooks';
 import {addToast, displayError, enableEditMode} from './lib/moodle';
-import type {AppProps, PageInfo, PageListItem, ToolInfo, ToolViewProps, Updates, View} from './lib/types';
+import type {AppProps, PageInfo, PageListItem, Participation, ToolInfo, ToolViewProps, Updates, View} from './lib/types';
 import PageList from './pagelist';
 import SettingsPanel from './settingspanel';
+import StatusBar from './statusbar';
 import ToolComponent from './toolcomponent';
 
 const MIN_REFRESH_INTERVAL = 1000;
@@ -64,25 +65,36 @@ const updateUrl = (pageid: number, view: View, fullscreen: boolean) => {
 };
 
 /**
- * Whether two update revisions are equal.
+ * Whether two polling results are equal, apart from the server time.
  *
  * @param {Updates} a
  * @param {Updates} b
  * @returns {boolean}
  */
 const sameUpdates = (a: Updates, b: Updates): boolean =>
-    a.pageList === b.pageList && a.settings === b.settings && a.answers === b.answers;
+    a.pageList === b.pageList && a.settings === b.settings && a.answers === b.answers
+    && JSON.stringify(a.participation) === JSON.stringify(b.participation);
+
+// Differences of the clock offset below this many milliseconds are ignored, they are within the network latency.
+const OFFSET_TOLERANCE = 500;
+
+const NO_PARTICIPATION: Participation = {available: false, groupId: 0, answered: 0, active: 0, enrolled: 0};
 
 /**
  * Poll the revisions of the data of the activity while the browser tab is visible.
  *
  * @param {number} cmId
  * @param {number} pageId the page shown
+ * @param {number} groupId group of the participation
  * @param {number} refreshInterval polling interval in milliseconds
- * @returns {Updates}
+ * @returns {{updates: Updates, serverOffset: number}}
  */
-function useUpdates(cmId: number, pageId: number, refreshInterval: number): Updates {
-    const [updates, setUpdates] = useState<Updates>({pageList: 0, settings: 0, answers: 0});
+function useUpdates(cmId: number, pageId: number, groupId: number, refreshInterval: number) {
+    const [updates, setUpdates] = useState<Updates>(
+        {pageList: 0, settings: 0, answers: 0, serverTime: '', participation: NO_PARTICIPATION}
+    );
+    // Milliseconds the clock of the server is ahead of the local clock, countdowns use the time of the server.
+    const [serverOffset, setServerOffset] = useState(0);
 
     useEffect(() => {
         let active = true;
@@ -91,9 +103,14 @@ function useUpdates(cmId: number, pageId: number, refreshInterval: number): Upda
         const poll = async() => {
             if (!document.hidden) {
                 try {
-                    const latest = await get<Updates>('mod_mootimeter', `/instances/${cmId}/updates?pageid=${pageId}`);
+                    const latest = await get<Updates>(
+                        'mod_mootimeter',
+                        `/instances/${cmId}/updates?pageid=${pageId}&groupid=${groupId}`,
+                    );
                     if (active) {
                         setUpdates((old) => (sameUpdates(old, latest) ? old : latest));
+                        const offset = Date.parse(latest.serverTime) - Date.now();
+                        setServerOffset((old) => (Math.abs(old - offset) < OFFSET_TOLERANCE ? old : offset));
                     }
                 } catch (error) {
                     // The session expired or the access was revoked, further requests would fail as well.
@@ -114,9 +131,29 @@ function useUpdates(cmId: number, pageId: number, refreshInterval: number): Upda
             active = false;
             window.clearTimeout(timer);
         };
-    }, [cmId, pageId, refreshInterval]);
+    }, [cmId, pageId, groupId, refreshInterval]);
 
-    return updates;
+    return {updates, serverOffset};
+}
+
+/**
+ * The group of the participation counter, remembered per activity for the browser session.
+ *
+ * @param {AppProps} props
+ * @returns {[number, Function]}
+ */
+function useGroup(props: AppProps): [number, (groupId: number) => void] {
+    const key = `mod_mootimeter_group_${props.cmId}`;
+    const allowed = (id: number) => (id === 0 ? props.allowAllGroups : props.groups.some((group) => group.id === id));
+    const [groupId, setGroupId] = useState(() => {
+        const stored = Number(window.sessionStorage.getItem(key) ?? NaN);
+        return Number.isInteger(stored) && allowed(stored) ? stored : props.groupId;
+    });
+    const select = (id: number) => {
+        window.sessionStorage.setItem(key, String(id));
+        setGroupId(id);
+    };
+    return [groupId, select];
 }
 
 /**
@@ -287,7 +324,8 @@ export default function App(props: AppProps): React.JSX.Element {
 
     useEffect(() => updateUrl(pageId, view, fullscreen), [pageId, view, fullscreen]);
 
-    const updates = useUpdates(cmId, pageId, props.refreshInterval);
+    const [groupId, setGroupId] = useGroup(props);
+    const {updates, serverOffset} = useUpdates(cmId, pageId, groupId, props.refreshInterval);
 
     useEffect(() => {
         let active = true;
@@ -419,7 +457,7 @@ export default function App(props: AppProps): React.JSX.Element {
                     )}
                 </div>
                 <div className="mootimetercol mootimetercolcontent">
-                    {showContentMenu && toolprops && (
+                    {showContentMenu && toolprops && (<>
                         <ContentMenu
                             {...toolprops}
                             view={view}
@@ -427,7 +465,18 @@ export default function App(props: AppProps): React.JSX.Element {
                             onView={setView}
                             onFullscreen={setFullscreen}
                         />
-                    )}
+                        <StatusBar
+                            page={toolprops.page}
+                            isModerator={isModerator}
+                            serverOffset={serverOffset}
+                            participation={updates.participation}
+                            groupMode={props.groupMode}
+                            groups={props.groups}
+                            allowAllGroups={props.allowAllGroups}
+                            onGroup={setGroupId}
+                            onExpired={refresh}
+                        />
+                    </>)}
                     <div className="mootimeter-content-wrapper" id="mootimeter-pagecontent">
                         <Content
                             pages={pages}

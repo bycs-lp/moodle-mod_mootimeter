@@ -39,6 +39,7 @@ final class app implements react_component_renderable, renderable {
      * @param bool $ismoderator Whether the current user moderates the activity.
      * @param bool $isediting Whether the editing mode is active.
      * @param int $refreshinterval Interval of the update polling in milliseconds.
+     * @param array $groupoptions Groups of the participation counter, see participation::get_group_options().
      */
     public function __construct(
         /** @var int Course module id. */
@@ -55,6 +56,8 @@ final class app implements react_component_renderable, renderable {
         private readonly bool $isediting,
         /** @var int Interval of the update polling in milliseconds. */
         private readonly int $refreshinterval,
+        /** @var array Groups of the participation counter, see participation::get_group_options(). */
+        private readonly array $groupoptions,
     ) {
     }
 
@@ -73,6 +76,14 @@ final class app implements react_component_renderable, renderable {
             'isModerator' => $this->ismoderator,
             'isEditing' => $this->isediting,
             'refreshInterval' => $this->refreshinterval,
+            'groupMode' => $this->groupoptions['mode'],
+            'allowAllGroups' => $this->groupoptions['allowall'],
+            'groups' => array_map(
+                fn(int $id, string $name): array => ['id' => $id, 'name' => $name],
+                array_keys($this->groupoptions['groups']),
+                array_values($this->groupoptions['groups']),
+            ),
+            'groupId' => $this->groupoptions['active'],
         ];
     }
 }

@@ -145,6 +145,19 @@ final class access {
     }
 
     /**
+     * Require that participants can still change their answers on the page. Moderators may always moderate.
+     *
+     * @return self
+     * @throws \mod_mootimeter\exception\conflict_exception if the submission is closed
+     */
+    public function require_submission_open_for_participants(): self {
+        if (!$this->ismoderator) {
+            (new helper())->require_submission_open($this->get_page());
+        }
+        return $this;
+    }
+
+    /**
      * Get the page.
      *
      * @return \stdClass

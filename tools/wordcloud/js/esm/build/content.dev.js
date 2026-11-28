@@ -15,7 +15,7 @@ import { Loading, Notification, QuestionHeader } from "@moodle/lms/mod_mootimete
 import { useResource, useStrings } from "@moodle/lms/mod_mootimeter/lib/hooks";
 import { confirmDelete, displayError } from "@moodle/lms/mod_mootimeter/lib/moodle";
 import { COMPONENT } from "./types";
-function Content({ page, settingsVersion, answersVersion, refresh }) {
+function Content({ page, isModerator, settingsVersion, answersVersion, refresh }) {
   const s = useStrings("mootimetertool_wordcloud", ["submit", "type_answer"]);
   const m = useStrings("mod_mootimeter", ["delete_single_answer_dialog_title", "delete_single_answer_dialog_question"]);
   const c = useStrings("core", ["delete"]);
@@ -60,7 +60,7 @@ function Content({ page, settingsVersion, answersVersion, refresh }) {
     }, this),
     /* @__PURE__ */ jsxDEV("div", { className: "filter_mathjaxloader_equation", id: "mtmt_wordcloud_pills", children: data.ownAnswers.map((item) => /* @__PURE__ */ jsxDEV("div", { className: "mootimeter-pill mootimeter-pill-inline", children: /* @__PURE__ */ jsxDEV("span", { children: [
       item.text,
-      /* @__PURE__ */ jsxDEV(
+      (page.submissionOpen || isModerator) && /* @__PURE__ */ jsxDEV(
         "button",
         {
           type: "button",
@@ -79,7 +79,7 @@ function Content({ page, settingsVersion, answersVersion, refresh }) {
         {
           fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/content.tsx",
           lineNumber: 83,
-          columnNumber: 29
+          columnNumber: 70
         },
         this
       )
@@ -96,7 +96,7 @@ function Content({ page, settingsVersion, answersVersion, refresh }) {
       lineNumber: 78,
       columnNumber: 13
     }, this),
-    /* @__PURE__ */ jsxDEV("form", { onSubmit: submit, className: "d-flex flex-column gap-3", children: [
+    page.submissionOpen && /* @__PURE__ */ jsxDEV("form", { onSubmit: submit, className: "d-flex flex-column gap-3", children: [
       /* @__PURE__ */ jsxDEV(
         "input",
         {
@@ -128,7 +128,7 @@ function Content({ page, settingsVersion, answersVersion, refresh }) {
     ] }, void 0, true, {
       fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/content.tsx",
       lineNumber: 97,
-      columnNumber: 13
+      columnNumber: 37
     }, this)
   ] }, void 0, true, {
     fileName: "public/mod/mootimeter/tools/wordcloud/js/esm/src/content.tsx",

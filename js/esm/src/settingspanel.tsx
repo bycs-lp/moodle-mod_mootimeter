@@ -24,7 +24,7 @@
 
 import React from 'react';
 import {patch, remove} from './lib/api';
-import {Divider, TextSetting, TransparentButton} from './lib/components';
+import {CheckboxSetting, Divider, NumberSetting, TextSetting, TransparentButton} from './lib/components';
 import {useStrings} from './lib/hooks';
 import {confirmDelete, displayError} from './lib/moodle';
 import type {ToolViewProps} from './lib/types';
@@ -49,6 +49,9 @@ export default function SettingsPanel(props: SettingsPanelProps): React.JSX.Elem
         'enter_question',
         'question',
         'settings',
+        'autopublishresults',
+        'participationvisible',
+        'countdowndefault',
     ]);
     const c = useStrings('core', ['areyousure']);
 
@@ -85,9 +88,26 @@ export default function SettingsPanel(props: SettingsPanelProps): React.JSX.Elem
                 onSave={(question) => save({question})}
             />
 
+            <CheckboxSetting
+                value={page.autoPublishResults}
+                label={s.autopublishresults}
+                onSave={(autoPublishResults) => save({autoPublishResults})}
+            />
+            <CheckboxSetting
+                value={page.participationVisible}
+                label={s.participationvisible}
+                onSave={(participationVisible) => save({participationVisible})}
+            />
+
             <Divider />
 
             <ToolComponent specifier={page.components.settings} {...props} />
+            {/* Below the anonymous mode, the last entry of the settings of every tool. */}
+            <NumberSetting
+                value={page.countdownDefaultSeconds}
+                label={s.countdowndefault}
+                onSave={(countdownDefaultSeconds) => save({countdownDefaultSeconds})}
+            />
         </div>
     );
 }

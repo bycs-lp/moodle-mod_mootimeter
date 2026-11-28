@@ -27,7 +27,6 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['add_question_option'] = "Add answer option";
-$string['answeringclosed'] = 'Answering is closed because the correct answers are shown.';
 $string['answeroptions'] = "Answer options";
 $string['answers_max_number'] = 'Maximum number of answers that can be selected per participant (0: unlimited)';
 $string['atleastoneanswer'] = 'You need to select at least one answer';

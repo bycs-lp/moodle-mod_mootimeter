@@ -10,7 +10,7 @@ import { jsxDEV } from "react/jsx-dev-runtime";
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 import { patch, remove } from "./lib/api";
-import { Divider, TextSetting, TransparentButton } from "./lib/components";
+import { CheckboxSetting, Divider, NumberSetting, TextSetting, TransparentButton } from "./lib/components";
 import { useStrings } from "./lib/hooks";
 import { confirmDelete, displayError } from "./lib/moodle";
 import ToolComponent from "./toolcomponent";
@@ -22,7 +22,10 @@ function SettingsPanel(props) {
     "delete_page",
     "enter_question",
     "question",
-    "settings"
+    "settings",
+    "autopublishresults",
+    "participationvisible",
+    "countdowndefault"
   ]);
   const c = useStrings("core", ["areyousure"]);
   const save = /* @__PURE__ */ __name((body) => patch("mod_mootimeter", `/pages/${page.id}`, body).then(refresh), "save");
@@ -38,7 +41,7 @@ function SettingsPanel(props) {
     /* @__PURE__ */ jsxDEV("div", { className: "mootimeter-header-wrapper", children: [
       /* @__PURE__ */ jsxDEV("h4", { children: page.toolName }, void 0, false, {
         fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
-        lineNumber: 70,
+        lineNumber: 73,
         columnNumber: 17
       }, this),
       /* @__PURE__ */ jsxDEV("div", { className: "d-flex", children: [
@@ -53,24 +56,24 @@ function SettingsPanel(props) {
           false,
           {
             fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
-            lineNumber: 72,
+            lineNumber: 75,
             columnNumber: 21
           },
           this
         ),
         /* @__PURE__ */ jsxDEV(TransparentButton, { icon: "fa-trash", title: s.delete_page, onClick: deletePage }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
-          lineNumber: 77,
+          lineNumber: 80,
           columnNumber: 21
         }, this)
       ] }, void 0, true, {
         fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
-        lineNumber: 71,
+        lineNumber: 74,
         columnNumber: 17
       }, this)
     ] }, void 0, true, {
       fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
-      lineNumber: 69,
+      lineNumber: 72,
       columnNumber: 13
     }, this),
     /* @__PURE__ */ jsxDEV(
@@ -85,24 +88,72 @@ function SettingsPanel(props) {
       false,
       {
         fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
-        lineNumber: 81,
+        lineNumber: 84,
+        columnNumber: 13
+      },
+      this
+    ),
+    /* @__PURE__ */ jsxDEV(
+      CheckboxSetting,
+      {
+        value: page.autoPublishResults,
+        label: s.autopublishresults,
+        onSave: (autoPublishResults) => save({ autoPublishResults })
+      },
+      void 0,
+      false,
+      {
+        fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
+        lineNumber: 91,
+        columnNumber: 13
+      },
+      this
+    ),
+    /* @__PURE__ */ jsxDEV(
+      CheckboxSetting,
+      {
+        value: page.participationVisible,
+        label: s.participationvisible,
+        onSave: (participationVisible) => save({ participationVisible })
+      },
+      void 0,
+      false,
+      {
+        fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
+        lineNumber: 96,
         columnNumber: 13
       },
       this
     ),
     /* @__PURE__ */ jsxDEV(Divider, {}, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
-      lineNumber: 88,
+      lineNumber: 102,
       columnNumber: 13
     }, this),
     /* @__PURE__ */ jsxDEV(ToolComponent, { specifier: page.components.settings, ...props }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
-      lineNumber: 90,
+      lineNumber: 104,
       columnNumber: 13
-    }, this)
+    }, this),
+    /* @__PURE__ */ jsxDEV(
+      NumberSetting,
+      {
+        value: page.countdownDefaultSeconds,
+        label: s.countdowndefault,
+        onSave: (countdownDefaultSeconds) => save({ countdownDefaultSeconds })
+      },
+      void 0,
+      false,
+      {
+        fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
+        lineNumber: 106,
+        columnNumber: 13
+      },
+      this
+    )
   ] }, void 0, true, {
     fileName: "public/mod/mootimeter/js/esm/src/settingspanel.tsx",
-    lineNumber: 68,
+    lineNumber: 71,
     columnNumber: 9
   }, this);
 }

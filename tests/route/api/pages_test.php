@@ -157,6 +157,56 @@ final class pages_test extends route_testcase {
     }
 
     /**
+     * Moderators open and close the submission and control the countdown.
+     */
+    public function test_update_page_submission(): void {
+        $clock = $this->mock_clock_with_frozen(1000);
+        $page = $this->create_page('wordcloud');
+        $path = '/pages/' . $page->id;
+
+        $this->setUser($this->teacher);
+        $payload = $this->payload($this->api('GET', $path));
+        $this->assertTrue($payload['submissionOpen']);
+        $this->assertNull($payload['closesAt']);
+
+        $response = $this->api('PATCH', $path, ['submissionOpen' => false, 'autoPublishResults' => true]);
+        $this->assert_valid_response($response);
+        $payload = $this->payload($response);
+        $this->assertFalse($payload['submissionOpen']);
+        $this->assertTrue($payload['autoPublishResults']);
+
+        $payload = $this->payload($this->api('PATCH', $path, ['countdownSeconds' => 60, 'participationVisible' => true]));
+        $this->assertTrue($payload['submissionOpen']);
+        $this->assertTrue($payload['participationVisible']);
+        $this->assertSame(\mod_mootimeter\route\api_util::format_datetime(1060), $payload['closesAt']);
+
+        $payload = $this->payload($this->api('PATCH', $path, ['countdownExtendSeconds' => 30]));
+        $this->assertSame(\mod_mootimeter\route\api_util::format_datetime(1090), $payload['closesAt']);
+
+        // Participants see the closed submission and the published results once the countdown expired.
+        $clock->bump(90);
+        $this->setUser($this->student);
+        $payload = $this->payload($this->api('GET', $path));
+        $this->assertFalse($payload['submissionOpen']);
+        $this->assertNull($payload['closesAt']);
+        $this->assertTrue($payload['canViewResults']);
+        $this->assert_problem($this->api('PATCH', $path, ['submissionOpen' => true]), 403, 'nopermissions');
+
+        $this->setUser($this->teacher);
+        $this->assert_problem($this->api('PATCH', $path, ['countdownExtendSeconds' => 30]), 409, 'nocountdown');
+        $this->assert_problem($this->api('PATCH', $path, ['countdownSeconds' => 1]), 422, 'invalidcountdown');
+        $this->assert_problem($this->api('PATCH', $path, ['countdownSeconds' => DAYSECS + 1]), 422, 'invalidcountdown');
+        $this->assert_problem($this->api('PATCH', $path, ['countdownDefaultSeconds' => 1]), 422, 'invalidcountdown');
+        $payload = $this->payload($this->api('PATCH', $path, ['countdownDefaultSeconds' => 90]));
+        $this->assertSame(90, $payload['countdownDefaultSeconds']);
+
+        $this->assert_valid_response($this->api('PATCH', $path, ['countdownSeconds' => 60]));
+        $payload = $this->payload($this->api('PATCH', $path, ['countdownSeconds' => 0]));
+        $this->assertTrue($payload['submissionOpen']);
+        $this->assertNull($payload['closesAt']);
+    }
+
+    /**
      * Moderators can delete pages.
      */
     public function test_delete_page(): void {

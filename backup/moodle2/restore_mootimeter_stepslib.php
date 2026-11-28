@@ -94,6 +94,11 @@ class restore_mootimeter_activity_structure_step extends restore_activity_struct
         $data = (object) $data;
         $oldid = $data->id;
 
+        // A restored activity starts with open submissions.
+        if (in_array($data->name, \mod_mootimeter\helper::SUBMISSION_STATE_SETTINGS, true)) {
+            return;
+        }
+
         $data->pageid = $this->get_mappingid('mootimeter_page_id', $data->pageid);
 
         $newid = $DB->insert_record('mootimeter_tool_settings', $data);

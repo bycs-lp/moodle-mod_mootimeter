@@ -35,6 +35,16 @@ export type AppProps = {
     isModerator: boolean;
     isEditing: boolean;
     refreshInterval: number;
+    // Moodle group mode of the activity: 0 none, 1 separate, 2 visible groups.
+    groupMode: number;
+    allowAllGroups: boolean;
+    groups: GroupInfo[];
+    groupId: number;
+};
+
+export type GroupInfo = {
+    id: number;
+    name: string;
 };
 
 export type Pagination = {
@@ -84,13 +94,28 @@ export type PageInfo = {
     canViewResults: boolean;
     anonymousMode: boolean;
     hasAnswers: boolean;
+    submissionOpen: boolean;
+    closesAt: string | null;
+    countdownDefaultSeconds: number;
+    autoPublishResults: boolean;
+    participationVisible: boolean;
     components: ToolComponents;
+};
+
+export type Participation = {
+    available: boolean;
+    groupId: number;
+    answered: number;
+    active: number;
+    enrolled: number;
 };
 
 export type Updates = {
     pageList: number;
     settings: number;
     answers: number;
+    serverTime: string;
+    participation: Participation;
 };
 
 /**

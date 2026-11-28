@@ -32,7 +32,10 @@ class backup_mootimeter_activity_structure_step extends backup_activity_structur
         $mootimeter = new backup_nested_element(
             'mootimeter',
             ['id'],
-            ['course', 'name', 'intro', 'introformat', 'timecreated', 'timemodified']
+            [
+                'course', 'name', 'intro', 'introformat', 'timecreated', 'timemodified', 'completionanswerpages',
+                'completionanswerall', 'completioncorrectpages',
+            ]
         );
         $mootimeter->set_source_table('mootimeter', ['id' => backup::VAR_ACTIVITYID]);
         $mootimeter->annotate_files('mod_mootimeter', 'intro', null);

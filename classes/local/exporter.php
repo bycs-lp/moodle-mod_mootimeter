@@ -16,9 +16,11 @@
 
 namespace mod_mootimeter\local;
 
+use core\clock;
+use core\di;
 use core\url;
-use core_course\cm_info;
 use mod_mootimeter\helper;
+use mod_mootimeter\route\api_util;
 
 /**
  * Representations of mootimeter resources in the REST API, see the schemas in mod_mootimeter\route\schema.
@@ -99,23 +101,50 @@ class exporter {
             'canViewResults' => $helper->can_view_results($page, $access->ismoderator),
             'anonymousMode' => !empty(helper::get_tool_config($page, 'anonymousmode')),
             'hasAnswers' => $helper->has_answers($page),
+            'submissionOpen' => $helper->is_submission_open($page),
+            'closesAt' => ($end = $helper->get_countdown_end($page)) ? api_util::format_datetime($end) : null,
+            'countdownDefaultSeconds' => $helper->get_default_countdown($page),
+            'autoPublishResults' => !empty(helper::get_tool_config($page, 'autopublishresults')),
+            'participationVisible' => !empty(helper::get_tool_config($page, 'participationvisible')),
             'components' => $toolhelper->get_react_components(),
         ];
     }
 
     /**
-     * Export the revisions of the data, clients reload data whose revision changed.
+     * Export the revisions of the data, clients reload data whose revision changed, and the live participation.
      *
-     * @param cm_info $cm
+     * @param access $access access to the activity
      * @param \stdClass|null $page the page the client shows
+     * @param int $groupid group of the participation, 0 for all participants
      * @return array
      */
-    public static function export_updates(cm_info $cm, ?\stdClass $page): array {
+    public static function export_updates(access $access, ?\stdClass $page, int $groupid): array {
         $helper = new helper();
         return [
-            'pageList' => $helper->get_data_changed((int) $cm->instance, helper::CHANGE_PAGELIST),
+            'pageList' => $helper->get_data_changed((int) $access->cm->instance, helper::CHANGE_PAGELIST),
             'settings' => $page ? $helper->get_data_changed((int) $page->id, helper::CHANGE_SETTINGS) : 0,
             'answers' => $page ? $helper->get_data_changed((int) $page->id, helper::CHANGE_ANSWERS) : 0,
+            'serverTime' => di::get(clock::class)->now()->format(DATE_RFC3339_EXTENDED),
+            'participation' => self::export_participation($access, $page, $groupid),
         ];
+    }
+
+    /**
+     * Export the live participation of a page, if the current user may see it.
+     *
+     * @param access $access access to the activity
+     * @param \stdClass|null $page
+     * @param int $groupid group of the participation, 0 for all participants
+     * @return array
+     */
+    public static function export_participation(access $access, ?\stdClass $page, int $groupid): array {
+        $participation = di::get(participation::class);
+        $available = $page
+            && ($access->ismoderator || !empty(helper::get_tool_config($page, 'participationvisible')))
+            && $participation->can_view_group($access, $groupid);
+        if (!$available) {
+            return ['available' => false, 'groupId' => $groupid, 'answered' => 0, 'active' => 0, 'enrolled' => 0];
+        }
+        return ['available' => true, 'groupId' => $groupid] + $participation->get_counts($access, $page, $groupid);
     }
 }

@@ -16,6 +16,7 @@
 
 namespace mod_mootimeter\route\api;
 
+use core\di;
 use core\param;
 use core\router\route;
 use core\router\schema\objects\schema_object;
@@ -31,6 +32,7 @@ use mod_mootimeter\exception\validation_exception;
 use mod_mootimeter\helper;
 use mod_mootimeter\local\access;
 use mod_mootimeter\local\exporter;
+use mod_mootimeter\local\participation;
 use mod_mootimeter\plugininfo\mootimetertool;
 use mod_mootimeter\route\api_util;
 use mod_mootimeter\route\schema\collection;
@@ -179,9 +181,13 @@ class instances {
         method: ['GET'],
         title: 'Get the revisions of the data of an activity',
         description: 'Clients poll this resource and reload the data whose revision changed. The revisions are opaque '
-            . 'increasing numbers. Hidden pages are ignored for participants.',
+            . 'increasing numbers. Hidden pages are ignored for participants. The first polling participant starts the '
+            . 'default countdown of the page. Polling participants count as active '
+            . 'participants of the page. The participation is only available to moderators and, if enabled for the page, '
+            . 'to participants who may see the requested group.',
         queryparams: [
             new query_parameter(name: 'pageid', type: param::INT, description: 'The page shown by the client.'),
+            new query_parameter(name: 'groupid', type: param::INT, description: 'Group of the participation, 0 for all.'),
         ],
         responses: [
             new response(statuscode: 200, content: [new json_media_type(schema: new \mod_mootimeter\route\schema\updates())]),
@@ -198,8 +204,11 @@ class instances {
     ): payload_response {
         global $DB;
 
+        global $USER;
+
         $access = access::for_cm($mootimetercm);
-        $pageid = (int) ($request->getQueryParams()['pageid'] ?? 0);
+        $params = $request->getQueryParams();
+        $pageid = (int) ($params['pageid'] ?? 0);
         $page = null;
         if ($pageid) {
             $page = $DB->get_record('mootimeter_pages', ['id' => $pageid, 'instance' => $mootimetercm->instance]) ?: null;
@@ -208,8 +217,14 @@ class instances {
             }
         }
 
+        $participation = di::get(participation::class);
+        if ($page && !$access->ismoderator) {
+            $participation->record_presence($page, (int) $USER->id);
+            (new helper())->start_default_countdown($page);
+        }
+
         return new payload_response(
-            payload: exporter::export_updates($mootimetercm, $page),
+            payload: exporter::export_updates($access, $page, (int) ($params['groupid'] ?? 0)),
             request: $request,
             response: $response,
         );

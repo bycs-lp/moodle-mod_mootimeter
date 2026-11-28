@@ -37,6 +37,14 @@ function mootimeter_supports($feature) {
             return MOD_PURPOSE_COLLABORATION;
         case FEATURE_BACKUP_MOODLE2:
             return true;
+        case FEATURE_GROUPS:
+            return true;
+        case FEATURE_GROUPINGS:
+            return true;
+        case FEATURE_COMPLETION_TRACKS_VIEWS:
+            return true;
+        case FEATURE_COMPLETION_HAS_RULES:
+            return true;
         default:
             return null;
     }
@@ -204,6 +212,33 @@ function mootimeter_trigger_event_course_module_viewed(object $moduleinstance, o
 }
 
 /**
+ * Add the custom completion rules to the course module info.
+ *
+ * @param stdClass $coursemodule The course module record.
+ * @return cached_cm_info|false
+ */
+function mootimeter_get_coursemodule_info($coursemodule) {
+    global $DB;
+
+    $fields = 'id, name, intro, introformat, completionanswerpages, completionanswerall, completioncorrectpages';
+    if (!$mootimeter = $DB->get_record('mootimeter', ['id' => $coursemodule->instance], $fields)) {
+        return false;
+    }
+
+    $result = new cached_cm_info();
+    $result->name = $mootimeter->name;
+    if ($coursemodule->showdescription) {
+        $result->content = format_module_intro('mootimeter', $mootimeter, $coursemodule->id, false);
+    }
+    if ($coursemodule->completion == COMPLETION_TRACKING_AUTOMATIC) {
+        foreach (\mod_mootimeter\completion\custom_completion::get_defined_custom_rules() as $rule) {
+            $result->customdata['customcompletionrules'][$rule] = (int) $mootimeter->$rule;
+        }
+    }
+    return $result;
+}
+
+/**
  * Callback function for the form definition of the reset course functionality.
  *
  * @param MoodleQuickform $mform The mform object to use
@@ -237,6 +272,9 @@ function mootimeter_reset_course_form_defaults(stdClass $course): array {
  */
 function mootimeter_reset_userdata(stdClass $data): array {
     $status = [];
+
+    // A reset course starts with open submissions.
+    (new \mod_mootimeter\helper())->open_submissions_in_course((int) $data->courseid);
 
     foreach (\mod_mootimeter\helper::get_installed_tools() as $tool) {
         if (!empty($data->{'reset_mootimetertool_' . $tool . '_answers'})) {

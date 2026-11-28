@@ -28,7 +28,7 @@ export type Answer = {
     id: number;
     text: string;
     fullName: string;
-    createdAt: string;
+    createdAt: string | null;
 };
 
 export type WordcloudData = {

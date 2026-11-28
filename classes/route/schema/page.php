@@ -45,6 +45,11 @@ class page extends schema_object implements referenced_object {
             'canViewResults' => new field(param::BOOL, 'Whether the current user may see the results.'),
             'anonymousMode' => new field(param::BOOL, 'Whether the answers are anonymous. Can not change once answers exist.'),
             'hasAnswers' => new field(param::BOOL, 'Whether answers exist.'),
+            'submissionOpen' => new field(param::BOOL, 'Whether participants can submit and change answers.'),
+            'closesAt' => new field(param::RAW, 'End of the running countdown, null without countdown.', format: 'date-time'),
+            'countdownDefaultSeconds' => new field(param::INT, 'Countdown started by the first participant, 0 for none.'),
+            'autoPublishResults' => new field(param::BOOL, 'Whether the results are published once the submission is closed.'),
+            'participationVisible' => new field(param::BOOL, 'Whether participants see the participation counter.'),
             'components' => new schema_object(content: [
                 'content' => new field(param::RAW, 'ESM specifier of the question view.'),
                 'settings' => new field(param::RAW, 'ESM specifier of the settings view.'),

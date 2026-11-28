@@ -125,6 +125,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
     public function submit_answer(\stdClass $page, string $text): \stdClass {
         global $DB, $USER;
 
+        $this->require_submission_open($page);
         $text = $this->validate_text($text);
         $ownanswers = array_filter(
             $this->get_answers(self::ANSWER_TABLE, $page->id),
@@ -187,7 +188,7 @@ class wordcloud extends \mod_mootimeter\toolhelper {
      * @param \stdClass $answer
      */
     public function delete_answer(\stdClass $page, \stdClass $answer): void {
-        $this->delete_answers($page, ['id' => $answer->id]);
+        $this->delete_answers($page, ['id' => $answer->id, 'usermodified' => $answer->usermodified]);
     }
 
     /**
@@ -210,11 +211,13 @@ class wordcloud extends \mod_mootimeter\toolhelper {
      */
     public function export_answers(\stdClass $page, array $answers): array {
         $names = $this->get_participant_names($page, self::get_answer_userids($answers));
+        // The time of anonymous answers could be matched with the completion times of the participants.
+        $anonymous = $this->is_anonymous($page);
         return array_map(fn(\stdClass $answer): array => [
             'id' => (int) $answer->id,
             'text' => (string) $answer->answer,
             'fullName' => $names[(int) $answer->usermodified],
-            'createdAt' => api_util::format_datetime((int) $answer->timecreated),
+            'createdAt' => $anonymous ? null : api_util::format_datetime((int) $answer->timecreated),
         ], array_values($answers));
     }
 
@@ -281,12 +284,17 @@ class wordcloud extends \mod_mootimeter\toolhelper {
 
         $answers = [];
         $records = $this->get_answers(self::ANSWER_TABLE, $page->id);
+        $timeformat = get_string('strftimedatetimeshortaccurate', 'core_langconfig');
+        $anonymous = $this->is_anonymous($page);
+        if ($anonymous) {
+            $records = $this->order_anonymously($page, $records, fn(\stdClass $answer): int => (int) $answer->id);
+        }
         $names = $this->get_participant_names($page, self::get_answer_userids($records));
         foreach ($records as $answer) {
             $answers[] = [
                 $names[(int) $answer->usermodified],
                 (string) $answer->answer,
-                userdate($answer->timecreated, get_string('strftimedatetimeshortaccurate', 'core_langconfig')),
+                $anonymous ? '' : userdate($answer->timecreated, $timeformat),
             ];
         }
 

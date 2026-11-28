@@ -92,7 +92,7 @@ function Content({ page, isModerator, settingsVersion, refresh }) {
         type: single ? "radio" : "checkbox",
         name: `mtmt_quiz_${page.id}`,
         checked: selected.includes(option.id),
-        disabled: data.correctionShown,
+        disabled: !page.submissionOpen,
         wrapperclass: (data.correctionShown ? "mootimeter-highlighter" : "") + (data.correctionShown && option.isCorrect ? " mootimeter-success" : ""),
         label: option.textHtml || !isModerator ? /* @__PURE__ */ jsxDEV(FormattedHtml, { html: option.textHtml }, void 0, false, {
           fileName: "public/mod/mootimeter/tools/quiz/js/esm/src/content.tsx",
@@ -114,7 +114,7 @@ function Content({ page, isModerator, settingsVersion, refresh }) {
       lineNumber: 106,
       columnNumber: 13
     }, this),
-    !data.correctionShown && /* @__PURE__ */ jsxDEV("div", { className: "mootimeter-colcontent-preview-send", children: [
+    page.submissionOpen && /* @__PURE__ */ jsxDEV("div", { className: "mootimeter-colcontent-preview-send", children: [
       /* @__PURE__ */ jsxDEV("button", { type: "button", className: "mootimeter-btn mootimeter-btn-full", onClick: submit, children: s.submit_answer }, void 0, false, {
         fileName: "public/mod/mootimeter/tools/quiz/js/esm/src/content.tsx",
         lineNumber: 128,

@@ -26,6 +26,7 @@ use core\router\schema\response\payload_response;
 use core\router\schema\response\response;
 use core\router\scope\scopeset;
 use mod_mootimeter\exception\conflict_exception;
+use mod_mootimeter\exception\validation_exception;
 use mod_mootimeter\helper;
 use mod_mootimeter\local\access;
 use mod_mootimeter\local\exporter;
@@ -90,7 +91,8 @@ class pages {
     #[route(
         method: ['PATCH'],
         title: 'Change a page',
-        description: 'Only the given properties are changed. The anonymous mode can not be changed once answers exist.',
+        description: 'Only the given properties are changed. The anonymous mode can not be changed once answers exist. '
+            . 'Opening or closing the submission stops a running countdown, starting a countdown opens the submission.',
         headerparams: [new \mod_mootimeter\route\parameters\header_sesskey()],
         requestbody: new request_body(
             content: new payload_response_type(
@@ -100,6 +102,21 @@ class pages {
                     'position' => new field(param::INT, 'Zero based position in the page list of the activity.'),
                     'resultsPublished' => new field(param::BOOL, 'Whether participants may see the results.'),
                     'anonymousMode' => new field(param::BOOL, 'Whether the answers are anonymous.'),
+                    'submissionOpen' => new field(param::BOOL, 'Whether participants can submit and change answers.'),
+                    'countdownSeconds' => new field(
+                        param::INT,
+                        'Start a countdown closing the submission after this many seconds, 0 stops the countdown.',
+                    ),
+                    'countdownExtendSeconds' => new field(param::INT, 'Extend the running countdown by this many seconds.'),
+                    'countdownDefaultSeconds' => new field(
+                        param::INT,
+                        'Countdown started when the first participant shows the page, 0 for none.',
+                    ),
+                    'autoPublishResults' => new field(
+                        param::BOOL,
+                        'Whether the results are published once the submission is closed.',
+                    ),
+                    'participationVisible' => new field(param::BOOL, 'Whether participants see the participation counter.'),
                 ]),
             ),
             required: true,
@@ -110,6 +127,7 @@ class pages {
             new \mod_mootimeter\route\response\forbidden_response(),
             new \mod_mootimeter\route\response\not_found_response(),
             new \mod_mootimeter\route\response\conflict_response(),
+            new \mod_mootimeter\route\response\validation_response(),
         ],
     )]
     #[scopeset(
@@ -148,12 +166,58 @@ class pages {
         if (array_key_exists('position', $body)) {
             $helper->move_page($page, (int) $body['position']);
         }
+        if (array_key_exists('autoPublishResults', $body)) {
+            $helper->set_tool_config($page, 'autopublishresults', $body['autoPublishResults'] ? '1' : '0');
+        }
+        if (array_key_exists('participationVisible', $body)) {
+            $helper->set_tool_config($page, 'participationvisible', $body['participationVisible'] ? '1' : '0');
+        }
+        if (array_key_exists('submissionOpen', $body)) {
+            $helper->set_submission_open($page, (bool) $body['submissionOpen']);
+        }
+        if (array_key_exists('countdownSeconds', $body)) {
+            $seconds = (int) $body['countdownSeconds'];
+            if ($seconds === 0) {
+                $helper->cancel_countdown($page);
+            } else {
+                $helper->start_countdown($page, self::validate_countdown_seconds('countdownSeconds', $seconds));
+            }
+        }
+        if (array_key_exists('countdownDefaultSeconds', $body)) {
+            $seconds = (int) $body['countdownDefaultSeconds'];
+            if ($seconds !== 0) {
+                self::validate_countdown_seconds('countdownDefaultSeconds', $seconds);
+            }
+            $helper->set_default_countdown($page, $seconds);
+        }
+        if (array_key_exists('countdownExtendSeconds', $body)) {
+            $seconds = (int) $body['countdownExtendSeconds'];
+            $helper->extend_countdown($page, self::validate_countdown_seconds('countdownExtendSeconds', $seconds));
+        }
 
         return new payload_response(
             payload: exporter::export_page(access::for_page($helper->get_page($page->id))),
             request: $request,
             response: $response,
         );
+    }
+
+    /**
+     * Validate the duration of a countdown.
+     *
+     * @param string $field name of the field in the request body
+     * @param int $seconds
+     * @return int the seconds
+     * @throws validation_exception if the duration is out of range
+     */
+    protected static function validate_countdown_seconds(string $field, int $seconds): int {
+        if ($seconds < helper::COUNTDOWN_MIN || $seconds > helper::COUNTDOWN_MAX) {
+            $range = (object) ['min' => helper::COUNTDOWN_MIN, 'max' => helper::COUNTDOWN_MAX];
+            throw new validation_exception('invalidcountdown', 'mod_mootimeter', $range, [
+                ['field' => $field, 'message' => get_string('invalidcountdown', 'mod_mootimeter', $range)],
+            ]);
+        }
+        return $seconds;
     }
 
     /**

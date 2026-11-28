@@ -32,6 +32,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(\mod_mootimeter\route\api_util::class)]
 #[CoversClass(\mod_mootimeter\route\parameters\path_mootimeter::class)]
 #[CoversClass(\mod_mootimeter\local\access::class)]
+#[CoversClass(\mod_mootimeter\local\exporter::class)]
+#[CoversClass(\mod_mootimeter\local\participation::class)]
 final class instances_test extends route_testcase {
     #[\Override]
     protected function setUp(): void {
@@ -158,5 +160,57 @@ final class instances_test extends route_testcase {
         $payload = $this->payload($this->api('GET', $path . '?pageid=' . $hidden->id));
         $this->assertSame(0, $payload['settings']);
         $this->assertSame(0, $payload['answers']);
+    }
+
+    /**
+     * The first participant who shows the page starts its default countdown, moderators do not.
+     */
+    public function test_get_updates_starts_default_countdown(): void {
+        $this->mock_clock_with_frozen(1000);
+        $page = $this->create_page('wordcloud');
+        $this->setAdminUser();
+        (new helper())->set_default_countdown($page, 120);
+        $path = '/instances/' . $this->mootimeter->cmid . '/updates?pageid=' . $page->id;
+
+        $this->setUser($this->teacher);
+        $this->assert_valid_response($this->api('GET', $path));
+        $this->assertSame(0, (new helper())->get_countdown_end($page));
+
+        $this->setUser($this->student);
+        $this->assert_valid_response($this->api('GET', $path));
+        $this->assertSame(1120, (new helper())->get_countdown_end($page));
+    }
+
+    /**
+     * Polling participants count as active, moderators always get the participation and participants only if enabled.
+     */
+    public function test_get_updates_participation(): void {
+        $this->mock_clock_with_frozen(1000);
+        $page = $this->create_page('wordcloud');
+        $path = '/instances/' . $this->mootimeter->cmid . '/updates?pageid=' . $page->id;
+
+        $this->setUser($this->student);
+        $payload = $this->payload($this->api('GET', $path));
+        $this->assertFalse($payload['participation']['available']);
+        $this->assertNotEmpty($payload['serverTime']);
+        (new \mootimetertool_wordcloud\wordcloud())->submit_answer($page, 'Answer');
+
+        $this->setUser($this->teacher);
+        $response = $this->api('GET', $path);
+        $this->assert_valid_response($response);
+        $participation = $this->payload($response)['participation'];
+        $this->assertTrue($participation['available']);
+        $this->assertSame(['answered' => 1, 'active' => 1, 'enrolled' => 1], array_intersect_key(
+            $participation,
+            ['answered' => 0, 'active' => 0, 'enrolled' => 0],
+        ));
+
+        $this->setAdminUser();
+        (new helper())->set_tool_config($page, 'participationvisible', '1');
+        $this->setUser($this->student);
+        $this->assertTrue($this->payload($this->api('GET', $path))['participation']['available']);
+
+        // Without groups there is only the participation of all participants.
+        $this->assertFalse($this->payload($this->api('GET', $path . '&groupid=5'))['participation']['available']);
     }
 }

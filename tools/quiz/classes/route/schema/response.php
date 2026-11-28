@@ -39,7 +39,7 @@ class response extends schema_object implements referenced_object {
             'id' => new field(param::INT, 'Id of the response.'),
             'fullName' => new field(param::TEXT, 'Name of the participant, a placeholder in the anonymous mode.'),
             'optionIds' => new list_of(new field(param::INT), 'Ids of the selected options.'),
-            'createdAt' => new field(param::RAW, 'Time of the first submission.', format: 'date-time'),
+            'createdAt' => new field(param::RAW, 'Time of the first submission, null in the anonymous mode.', format: 'date-time'),
         ]);
     }
 }

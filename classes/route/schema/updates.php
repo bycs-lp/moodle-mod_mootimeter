@@ -37,6 +37,14 @@ class updates extends schema_object implements referenced_object {
             'pageList' => new field(param::INT, 'Revision of the page list.'),
             'settings' => new field(param::INT, 'Revision of the settings of the page, 0 without page.'),
             'answers' => new field(param::INT, 'Revision of the answers of the page, 0 without page.'),
+            'serverTime' => new field(param::RAW, 'Current time of the server, to synchronise countdowns.', format: 'date-time'),
+            'participation' => new schema_object(content: [
+                'available' => new field(param::BOOL, 'Whether the current user may see the participation of the page.'),
+                'groupId' => new field(param::INT, 'Group of the participation, 0 for all participants.'),
+                'answered' => new field(param::INT, 'Participants who answered.'),
+                'active' => new field(param::INT, 'Participants who showed the page within the last 30 seconds or more.'),
+                'enrolled' => new field(param::INT, 'Participants with an active enrolment who can view the activity.'),
+            ]),
         ]);
     }
 }

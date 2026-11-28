@@ -110,7 +110,7 @@ export default function Content({page, isModerator, settingsVersion, refresh}: T
                         type={single ? 'radio' : 'checkbox'}
                         name={`mtmt_quiz_${page.id}`}
                         checked={selected.includes(option.id)}
-                        disabled={data.correctionShown}
+                        disabled={!page.submissionOpen}
                         wrapperclass={
                             (data.correctionShown ? 'mootimeter-highlighter' : '')
                             + (data.correctionShown && option.isCorrect ? ' mootimeter-success' : '')
@@ -123,7 +123,7 @@ export default function Content({page, isModerator, settingsVersion, refresh}: T
                 ))}
             </div>
 
-            {!data.correctionShown && (
+            {page.submissionOpen && (
                 <div className="mootimeter-colcontent-preview-send">
                     <button type="button" className="mootimeter-btn mootimeter-btn-full" onClick={submit}>
                         {s.submit_answer}

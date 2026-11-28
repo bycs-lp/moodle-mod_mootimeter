@@ -144,4 +144,43 @@ final class answers_test extends route_testcase {
 
         $this->assert_problem($this->api('POST', '/pages/' . $hidden->id . '/answers', ['text' => 'Moodle']), 403, 'pagelocked');
     }
+
+    /**
+     * Participants can neither add nor delete answers while the submission is closed, moderators can still moderate.
+     */
+    public function test_closed_submission(): void {
+        $this->setUser($this->student);
+        $answerid = $this->payload($this->api('POST', $this->path, ['text' => 'Moodle']))['id'];
+
+        $this->setAdminUser();
+        (new \mod_mootimeter\helper())->set_submission_open($this->page, false);
+
+        $this->setUser($this->student);
+        $this->assert_problem($this->api('POST', $this->path, ['text' => 'Other']), 409, 'submissionclosed');
+        $this->assert_problem($this->api('DELETE', $this->path . '/' . $answerid), 409, 'submissionclosed');
+
+        $this->setUser($this->teacher);
+        $this->assert_problem($this->api('POST', $this->path, ['text' => 'Other']), 409, 'submissionclosed');
+        $this->assertSame(204, $this->api('DELETE', $this->path . '/' . $answerid)->getStatusCode());
+    }
+
+    /**
+     * The answers of anonymous pages neither reveal the time nor the order of submission.
+     */
+    public function test_anonymous_answers(): void {
+        $this->setAdminUser();
+        (new \mod_mootimeter\helper())->set_tool_config($this->page, 'anonymousmode', '1');
+        foreach (['One', 'Two', 'Three', 'Four'] as $text) {
+            $this->setUser($this->getDataGenerator()->create_and_enrol($this->course, 'student'));
+            $this->api('POST', $this->path, ['text' => $text]);
+        }
+
+        $this->setUser($this->teacher);
+        $ascending = $this->payload($this->api('GET', $this->path . '?sort=id'))['items'];
+        $descending = $this->payload($this->api('GET', $this->path . '?sort=-id'))['items'];
+        $this->assertCount(4, $ascending);
+        $this->assertSame($ascending, $descending);
+        $this->assertSame([null], array_unique(array_column($ascending, 'createdAt')));
+        $this->assertSame([get_string('anonymous_name', 'mod_mootimeter')], array_unique(array_column($ascending, 'fullName')));
+    }
 }

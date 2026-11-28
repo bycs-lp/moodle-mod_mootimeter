@@ -36,7 +36,7 @@ import {COMPONENT, type WordcloudData} from './types';
  * @param {ToolViewProps} props
  * @returns {React.JSX.Element}
  */
-export default function Content({page, settingsVersion, answersVersion, refresh}: ToolViewProps): React.JSX.Element {
+export default function Content({page, isModerator, settingsVersion, answersVersion, refresh}: ToolViewProps): React.JSX.Element {
     const s = useStrings('mootimetertool_wordcloud', ['submit', 'type_answer']);
     const m = useStrings('mod_mootimeter', ['delete_single_answer_dialog_title', 'delete_single_answer_dialog_question']);
     const c = useStrings('core', ['delete']);
@@ -80,7 +80,7 @@ export default function Content({page, settingsVersion, answersVersion, refresh}
                     <div className="mootimeter-pill mootimeter-pill-inline" key={item.id}>
                         <span>
                             {item.text}
-                            <button
+                            {(page.submissionOpen || isModerator) && <button
                                 type="button"
                                 className="btn btn-link p-0 ms-1"
                                 title={c.delete}
@@ -88,13 +88,13 @@ export default function Content({page, settingsVersion, answersVersion, refresh}
                                 onClick={() => remove(item.id)}
                             >
                                 <i className="fa fa-times fa-light" aria-hidden="true"></i>
-                            </button>
+                            </button>}
                         </span>
                     </div>
                 ))}
             </div>
 
-            <form onSubmit={submit} className="d-flex flex-column gap-3">
+            {page.submissionOpen && <form onSubmit={submit} className="d-flex flex-column gap-3">
                 <input
                     type="text"
                     className="mootimeter-input mootimeterfullwidth mtmt-wc-answerinput"
@@ -108,7 +108,7 @@ export default function Content({page, settingsVersion, answersVersion, refresh}
                     }}
                 />
                 <button type="submit" className="mootimeter-btn mootimeter-btn-full">{s.submit}</button>
-            </form>
+            </form>}
         </div>
     );
 }

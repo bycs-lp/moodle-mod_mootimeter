@@ -54,7 +54,7 @@ export type QuizResponse = {
     id: number;
     fullName: string;
     optionIds: number[];
-    createdAt: string;
+    createdAt: string | null;
 };
 
 /**

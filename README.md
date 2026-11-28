@@ -39,6 +39,20 @@ Requests authenticated by the session cookie have to send the session key in the
 `X-Moodle-Sesskey` for changes. Collections support the query parameters `page`, `pagesize` and `sort`.
 Errors are returned as problem details (RFC 9457, `application/problem+json`) with a stable `code`.
 
+## Live sessions ##
+
+Moderators can open and close the submission of each page and start a countdown that closes it
+automatically. The state is derived from the stored settings and the time of the server, no cron job is
+needed. Optionally, the results are published once the submission is closed.
+
+The participation counter shows how many of the active participants answered and how many participants
+can take part, filtered by group in the group modes. Active participants are the ones who showed the page
+within the last 30 seconds (or two polling intervals). They are tracked in the application cache
+`mod_mootimeter/presence` only, without database writes and without any persistent personal data.
+
+**The application caches of the plugin must be stored in a cache store shared by all web servers (e.g.
+Redis).** With a store local to each web server, every server counts only its own requests.
+
 ## Frontend development ##
 
 The React sources live in `js/esm/src` of the plugin and of each tool (`tools/<tool>/js/esm/src`).

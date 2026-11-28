@@ -22,7 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import {useEffect, useState, type DependencyList} from 'react';
+import {useEffect, useRef, useState, type DependencyList} from 'react';
 import {getStrings} from '@moodle/lms/core/stringUtils';
 import {ApiError, get} from './api';
 import {displayError} from './moodle';
@@ -114,4 +114,39 @@ export function useCollection<T>(component: string, path: string, deps: Dependen
         setPage(totalPages);
     }
     return {items: collection.items, page, pageSize, totalPages, setPage};
+}
+
+/**
+ * Get the remaining seconds of a countdown, updated every quarter second.
+ *
+ * @param closesAt End of the countdown as ISO 8601 date and time, null without countdown.
+ * @param offset Milliseconds the clock of the server is ahead of the local clock.
+ * @param onExpired Called once when the countdown reaches zero.
+ * @returns The remaining seconds, null without countdown.
+ */
+export function useCountdown(closesAt: string | null, offset: number, onExpired: () => void): number | null {
+    const end = closesAt === null ? null : Date.parse(closesAt);
+    const remainingAt = (): number | null =>
+        (end === null ? null : Math.max(0, Math.ceil((end - Date.now() - offset) / 1000)));
+    const [remaining, setRemaining] = useState<number | null>(remainingAt);
+    const expired = useRef(onExpired);
+    expired.current = onExpired;
+
+    useEffect(() => {
+        setRemaining(remainingAt());
+        if (end === null) {
+            return undefined;
+        }
+        const timer = window.setInterval(() => {
+            const value = remainingAt();
+            setRemaining(value);
+            if (value === 0) {
+                window.clearInterval(timer);
+                expired.current();
+            }
+        }, 250);
+        return () => window.clearInterval(timer);
+    }, [end, offset]);
+
+    return remaining;
 }

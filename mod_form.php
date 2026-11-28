@@ -69,4 +69,88 @@ class mod_mootimeter_mod_form extends moodleform_mod {
         // Add standard buttons.
         $this->add_action_buttons();
     }
+
+    #[\Override]
+    public function add_completion_rules() {
+        $mform = $this->_form;
+        $suffix = $this->get_suffix();
+        $groups = [];
+
+        foreach (['completionanswerpages', 'completioncorrectpages'] as $rule) {
+            $enabled = $rule . 'enabled' . $suffix;
+            $number = $rule . $suffix;
+            $group = [
+                $mform->createElement('checkbox', $enabled, '', get_string($rule, 'mod_mootimeter')),
+                $mform->createElement('text', $number, '', ['size' => 3]),
+            ];
+            $mform->setType($number, PARAM_INT);
+            $groups[] = $rule . 'group' . $suffix;
+            $mform->addGroup($group, $rule . 'group' . $suffix, '', ' ', false);
+            $mform->hideIf($number, $enabled, 'notchecked');
+            $mform->addHelpButton($rule . 'group' . $suffix, $rule, 'mod_mootimeter');
+        }
+
+        $answerall = 'completionanswerall' . $suffix;
+        $mform->addElement('checkbox', $answerall, '', get_string('completionanswerall', 'mod_mootimeter'));
+        $mform->addHelpButton($answerall, 'completionanswerall', 'mod_mootimeter');
+        $groups[] = $answerall;
+
+        return $groups;
+    }
+
+    #[\Override]
+    public function completion_rule_enabled($data) {
+        $suffix = $this->get_suffix();
+        foreach (['completionanswerpages', 'completioncorrectpages'] as $rule) {
+            if (!empty($data[$rule . 'enabled' . $suffix]) && !empty($data[$rule . $suffix])) {
+                return true;
+            }
+        }
+        return !empty($data['completionanswerall' . $suffix]);
+    }
+
+    #[\Override]
+    public function data_preprocessing(&$defaultvalues) {
+        parent::data_preprocessing($defaultvalues);
+
+        $suffix = $this->get_suffix();
+        foreach (['completionanswerpages', 'completioncorrectpages'] as $rule) {
+            // The number is preset with 1, it only applies once the checkbox is ticked.
+            $defaultvalues[$rule . 'enabled' . $suffix] = empty($defaultvalues[$rule . $suffix]) ? 0 : 1;
+            if (empty($defaultvalues[$rule . $suffix])) {
+                $defaultvalues[$rule . $suffix] = 1;
+            }
+        }
+    }
+
+    #[\Override]
+    public function data_postprocessing($data) {
+        parent::data_postprocessing($data);
+
+        if (empty($data->completionunlocked)) {
+            return;
+        }
+        $suffix = $this->get_suffix();
+        $completion = $data->{'completion' . $suffix} ?? COMPLETION_TRACKING_NONE;
+        $automatic = $completion == COMPLETION_TRACKING_AUTOMATIC;
+        foreach (['completionanswerpages', 'completioncorrectpages'] as $rule) {
+            if (!$automatic || empty($data->{$rule . 'enabled' . $suffix})) {
+                $data->{$rule . $suffix} = 0;
+            }
+        }
+        $data->{'completionanswerall' . $suffix} = $automatic && !empty($data->{'completionanswerall' . $suffix}) ? 1 : 0;
+    }
+
+    #[\Override]
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+
+        $suffix = $this->get_suffix();
+        foreach (['completionanswerpages', 'completioncorrectpages'] as $rule) {
+            if (!empty($data[$rule . 'enabled' . $suffix]) && (int) $data[$rule . $suffix] < 1) {
+                $errors[$rule . 'group' . $suffix] = get_string('completionpagesatleastone', 'mod_mootimeter');
+            }
+        }
+        return $errors;
+    }
 }

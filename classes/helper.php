@@ -22,6 +22,7 @@ use core\exception\coding_exception;
 use core\plugin_manager;
 use core_cache\cache;
 use core_course\cm_info;
+use mod_mootimeter\exception\conflict_exception;
 
 /**
  * Pages, settings and answers of mootimeter activities.
@@ -45,6 +46,14 @@ class helper {
     const CHANGE_SETTINGS = 'settings';
     /** @var string Change identifier of the answers of a page. */
     const CHANGE_ANSWERS = 'answers';
+
+    /** @var string[] Settings holding whether the submission of a page is closed. */
+    const SUBMISSION_STATE_SETTINGS = ['submissionclosed', 'closesat', 'countdownautostarted'];
+
+    /** @var int Shortest countdown in seconds. */
+    const COUNTDOWN_MIN = 5;
+    /** @var int Longest countdown in seconds. */
+    const COUNTDOWN_MAX = DAYSECS;
 
     /**
      * Get the current time.
@@ -158,6 +167,9 @@ class helper {
 
         $toolhelper->hook_after_new_page_created($page);
         $this->notify_data_changed((int) $cm->instance, self::CHANGE_PAGELIST);
+        if ((int) $page->visible === self::PAGE_VISIBLE) {
+            $this->queue_completion_recalculation((int) $cm->instance);
+        }
 
         return $page;
     }
@@ -176,6 +188,8 @@ class helper {
         $DB->update_record('mootimeter_pages', $page);
         $this->notify_data_changed((int) $page->instance, self::CHANGE_PAGELIST);
         $this->notify_data_changed((int) $page->id, self::CHANGE_SETTINGS);
+        // Only visible pages count for the completion.
+        $this->queue_completion_recalculation((int) $page->instance);
     }
 
     /**
@@ -223,6 +237,7 @@ class helper {
 
         $this->clear_caches($page->id);
         $this->notify_data_changed((int) $page->instance, self::CHANGE_PAGELIST);
+        $this->queue_completion_recalculation((int) $page->instance);
     }
 
     /**
@@ -340,6 +355,7 @@ class helper {
 
         $this->clear_caches($pageid);
         $this->notify_data_changed($pageid, self::CHANGE_ANSWERS);
+        $this->update_completion((int) $this->get_page($pageid)->instance, (int) $USER->id);
         return $answerids;
     }
 
@@ -355,6 +371,8 @@ class helper {
     /**
      * Delete answers of a page matching the conditions.
      *
+     * With the condition usermodified only the completion of this user is recalculated, otherwise the one of all users.
+     *
      * @param \stdClass $page
      * @param array $conditions additional conditions for the answer table
      */
@@ -364,6 +382,11 @@ class helper {
         $DB->delete_records(self::get_toolhelper($page->tool)->get_answer_table(), ['pageid' => $page->id] + $conditions);
         $this->clear_caches($page->id);
         $this->notify_data_changed((int) $page->id, self::CHANGE_ANSWERS);
+        if (isset($conditions['usermodified'])) {
+            $this->update_completion((int) $page->instance, (int) $conditions['usermodified']);
+        } else {
+            $this->queue_completion_recalculation((int) $page->instance);
+        }
     }
 
     /**
@@ -462,12 +485,245 @@ class helper {
     /**
      * Whether the current user may see the results of a page.
      *
+     * With the automatic publication the results are visible once the submission is closed, also after a countdown
+     * expired without any request in between.
+     *
      * @param \stdClass $page
      * @param bool $ismoderator
      * @return bool
      */
     public function can_view_results(\stdClass $page, bool $ismoderator): bool {
-        return $ismoderator || !empty(self::get_tool_config($page, 'showonteacherpermission'));
+        if ($ismoderator || !empty(self::get_tool_config($page, 'showonteacherpermission'))) {
+            return true;
+        }
+        return !empty(self::get_tool_config($page, 'autopublishresults')) && !$this->is_submission_open($page);
+    }
+
+    /**
+     * Whether answers can be submitted to a page.
+     *
+     * The state is derived from the stored settings and the current time, so an expired countdown closes the
+     * submission without any write.
+     *
+     * @param \stdClass $page
+     * @return bool
+     */
+    public function is_submission_open(\stdClass $page): bool {
+        if (!empty(self::get_tool_config($page, 'submissionclosed'))) {
+            return false;
+        }
+        $closesat = (int) self::get_tool_config($page, 'closesat', '0');
+        if ($closesat && $closesat <= self::now()) {
+            return false;
+        }
+        return self::get_toolhelper($page->tool)->is_submission_open_tool($page);
+    }
+
+    /**
+     * Require that answers can be submitted to a page.
+     *
+     * @param \stdClass $page
+     * @throws conflict_exception if the submission is closed
+     */
+    public function require_submission_open(\stdClass $page): void {
+        if (!$this->is_submission_open($page)) {
+            throw new conflict_exception('submissionclosed', 'mod_mootimeter');
+        }
+    }
+
+    /**
+     * Get the end of the running countdown of a page.
+     *
+     * @param \stdClass $page
+     * @return int timestamp, 0 if no countdown is running
+     */
+    public function get_countdown_end(\stdClass $page): int {
+        $closesat = (int) self::get_tool_config($page, 'closesat', '0');
+        if (!empty(self::get_tool_config($page, 'submissionclosed')) || $closesat <= self::now()) {
+            return 0;
+        }
+        return $closesat;
+    }
+
+    /**
+     * Open the submissions of all pages of the activities in a course.
+     *
+     * @param int $courseid
+     */
+    public function open_submissions_in_course(int $courseid): void {
+        global $DB;
+
+        [$insql, $params] = $DB->get_in_or_equal(self::SUBMISSION_STATE_SETTINGS, SQL_PARAMS_NAMED);
+        $pageids = $DB->get_fieldset_sql(
+            "SELECT p.id
+               FROM {mootimeter_pages} p
+               JOIN {mootimeter} m ON m.id = p.instance
+              WHERE m.course = :courseid",
+            ['courseid' => $courseid]
+        );
+        foreach (array_chunk($pageids, 500) as $chunk) {
+            [$pagesql, $pageparams] = $DB->get_in_or_equal($chunk, SQL_PARAMS_NAMED, 'page');
+            $DB->delete_records_select('mootimeter_tool_settings', "pageid $pagesql AND name $insql", $pageparams + $params);
+            foreach ($chunk as $pageid) {
+                $this->notify_data_changed((int) $pageid, self::CHANGE_SETTINGS);
+            }
+        }
+    }
+
+    /**
+     * Open or close the submission of a page. Both stop a running countdown.
+     *
+     * @param \stdClass $page
+     * @param bool $open
+     */
+    public function set_submission_open(\stdClass $page, bool $open): void {
+        // Once the submission is controlled, the default countdown must not start anymore.
+        $this->set_tool_config($page, 'countdownautostarted', '1');
+        $this->set_tool_config($page, 'submissionclosed', $open ? '0' : '1');
+        $this->set_tool_config($page, 'closesat', '0');
+        if ($open) {
+            self::get_toolhelper($page->tool)->hook_submission_opened($page);
+        }
+    }
+
+    /**
+     * Open the submission of a page and close it automatically after the given duration.
+     *
+     * @param \stdClass $page
+     * @param int $seconds
+     */
+    public function start_countdown(\stdClass $page, int $seconds): void {
+        $this->set_submission_open($page, true);
+        $this->set_tool_config($page, 'closesat', (string) (self::now() + $seconds));
+    }
+
+    /**
+     * Stop the countdown of a page, the submission stays open.
+     *
+     * @param \stdClass $page
+     */
+    public function cancel_countdown(\stdClass $page): void {
+        $this->set_tool_config($page, 'countdownautostarted', '1');
+        $this->set_tool_config($page, 'closesat', '0');
+    }
+
+    /**
+     * Get the countdown that starts when the first participant shows the page.
+     *
+     * @param \stdClass $page
+     * @return int seconds, 0 for none
+     */
+    public function get_default_countdown(\stdClass $page): int {
+        return (int) self::get_tool_config($page, 'countdowndefault', '0');
+    }
+
+    /**
+     * Set the countdown that starts when the first participant shows the page. It starts again after a change.
+     *
+     * @param \stdClass $page
+     * @param int $seconds 0 for none
+     */
+    public function set_default_countdown(\stdClass $page, int $seconds): void {
+        $this->set_tool_config($page, 'countdowndefault', (string) $seconds);
+        $this->set_tool_config($page, 'countdownautostarted', '0');
+    }
+
+    /**
+     * Start the default countdown of a page, unless it already started or the submission is controlled otherwise.
+     *
+     * Called when a participant shows the page, so the countdown starts with the first participant.
+     *
+     * @param \stdClass $page
+     * @return bool whether the countdown has been started
+     */
+    public function start_default_countdown(\stdClass $page): bool {
+        $seconds = $this->get_default_countdown($page);
+        $armed = $seconds && empty(self::get_tool_config($page, 'countdownautostarted'));
+        if (!$armed || !$this->is_submission_open($page) || $this->get_countdown_end($page)) {
+            return false;
+        }
+        $this->start_countdown($page, $seconds);
+        return true;
+    }
+
+    /**
+     * Extend the running countdown of a page.
+     *
+     * @param \stdClass $page
+     * @param int $seconds
+     * @throws conflict_exception if no countdown is running
+     */
+    public function extend_countdown(\stdClass $page, int $seconds): void {
+        $end = $this->get_countdown_end($page);
+        if (!$end) {
+            throw new conflict_exception('nocountdown', 'mod_mootimeter');
+        }
+        $this->set_tool_config($page, 'closesat', (string) min($end + $seconds, self::now() + self::COUNTDOWN_MAX));
+    }
+
+    /**
+     * Get the ids of the users who answered on a page, cached.
+     *
+     * @param \stdClass $page
+     * @return int[]
+     */
+    public function get_answering_userids(\stdClass $page): array {
+        global $DB;
+
+        $cache = cache::make('mod_mootimeter', 'answers');
+        $cachekey = 'users_' . $page->id;
+        $userids = $cache->get($cachekey);
+        if ($userids === false) {
+            $table = self::get_toolhelper($page->tool)->get_answer_table();
+            $userids = array_map('intval', $DB->get_fieldset_sql(
+                "SELECT DISTINCT usermodified FROM {" . $table . "} WHERE pageid = :pageid",
+                ['pageid' => $page->id]
+            ));
+            $cache->set($cachekey, $userids);
+        }
+        return $userids;
+    }
+
+    /**
+     * Whether the activity tracks the completion with at least one custom rule of mootimeter.
+     *
+     * @param cm_info $cm
+     * @return bool
+     */
+    protected static function uses_custom_completion(cm_info $cm): bool {
+        if ((int) $cm->completion !== COMPLETION_TRACKING_AUTOMATIC) {
+            return false;
+        }
+        return (bool) array_filter($cm->customdata['customcompletionrules'] ?? []);
+    }
+
+    /**
+     * Recalculate the completion of a user after the answers of the user changed.
+     *
+     * @param int $instanceid
+     * @param int $userid
+     */
+    public function update_completion(int $instanceid, int $userid): void {
+        global $CFG;
+
+        $cm = self::get_cm_by_instance($instanceid);
+        if (!self::uses_custom_completion($cm)) {
+            return;
+        }
+        require_once($CFG->libdir . '/completionlib.php');
+        (new \completion_info($cm->get_course()))->update_state($cm, COMPLETION_UNKNOWN, $userid);
+    }
+
+    /**
+     * Recalculate the completion of all participants in the background after changes affecting everybody.
+     *
+     * @param int $instanceid
+     */
+    public function queue_completion_recalculation(int $instanceid): void {
+        $cm = self::get_cm_by_instance($instanceid);
+        if (self::uses_custom_completion($cm)) {
+            \mod_mootimeter\task\recalculate_completion::queue((int) $cm->id);
+        }
     }
 
     /**
@@ -477,7 +733,6 @@ class helper {
      */
     public function clear_caches(int $pageid): void {
         $cache = cache::make('mod_mootimeter', 'answers');
-        $cache->delete('answers_' . $pageid);
-        $cache->delete('cnt_' . $pageid);
+        $cache->delete_many(['answers_' . $pageid, 'cnt_' . $pageid, 'users_' . $pageid]);
     }
 }

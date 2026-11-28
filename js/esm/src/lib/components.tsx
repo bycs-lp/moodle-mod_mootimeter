@@ -143,10 +143,12 @@ type QuestionHeaderProps = {
  * @returns {React.JSX.Element}
  */
 export function QuestionHeader({page, children}: QuestionHeaderProps): React.JSX.Element {
+    const s = useStrings('mod_mootimeter', ['submissionclosed']);
     return (
         <div className="mootimeter-colcontent-preview-header filter_mathjaxloader_equation">
             <div className="mootimeter-pill"><span>{page.toolName}</span></div>
             <FormattedHtml tag="h4" html={page.questionHtml} />
+            {!page.submissionOpen && <Notification type="info" icon="fa-lock" text={s.submissionclosed} />}
             {children}
         </div>
     );
@@ -387,7 +389,8 @@ export function Loading(): React.JSX.Element {
 export type OverviewRow = {
     id: number;
     fullName: string;
-    createdAt: string;
+    // Null in the anonymous mode.
+    createdAt: string | null;
 };
 
 type OverviewTableProps<T extends OverviewRow> = {
@@ -416,8 +419,9 @@ function useRowTimes(rows: OverviewRow[]): Record<number, string> {
 
     useEffect(() => {
         let active = true;
-        formatUserDates(rows.map((row) => Math.floor(Date.parse(row.createdAt) / 1000)))
-            .then((formatted) => active && setTimes(Object.fromEntries(rows.map((row, index) => [row.id, formatted[index]]))))
+        const dated = rows.filter((row) => row.createdAt !== null);
+        formatUserDates(dated.map((row) => Math.floor(Date.parse(row.createdAt as string) / 1000)))
+            .then((formatted) => active && setTimes(Object.fromEntries(dated.map((row, index) => [row.id, formatted[index]]))))
             .catch(displayError);
         return () => {
             active = false;

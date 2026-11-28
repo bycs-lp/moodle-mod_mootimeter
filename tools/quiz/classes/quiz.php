@@ -125,6 +125,75 @@ class quiz extends \mod_mootimeter\toolhelper {
         return $this->supports_correct_options() && !empty(self::get_tool_config($page, 'showanswercorrection'));
     }
 
+    /**
+     * Get the pages a user answered with exactly the correct options: all correct ones and no other.
+     *
+     * Pages without correct options can not be answered correctly.
+     *
+     * @param int[] $pageids
+     * @param int $userid
+     * @return int[]
+     */
+    #[\Override]
+    public function get_correct_pageids(array $pageids, int $userid): array {
+        global $DB;
+
+        if (!$pageids || !$this->supports_correct_options()) {
+            return [];
+        }
+        [$insql, $params] = $DB->get_in_or_equal($pageids, SQL_PARAMS_NAMED);
+
+        $correct = [];
+        $rs = $DB->get_recordset_select(
+            $this->get_answer_option_table(),
+            "pageid $insql AND optioniscorrect = 1",
+            $params,
+            '',
+            'id, pageid'
+        );
+        foreach ($rs as $option) {
+            $correct[(int) $option->pageid][] = (int) $option->id;
+        }
+        $rs->close();
+
+        $selected = [];
+        $rs = $DB->get_recordset_select(
+            $this->get_answer_table(),
+            "pageid $insql AND usermodified = :userid",
+            $params + ['userid' => $userid],
+            '',
+            'id, pageid, optionid'
+        );
+        foreach ($rs as $answer) {
+            $selected[(int) $answer->pageid][] = (int) $answer->optionid;
+        }
+        $rs->close();
+
+        $pages = [];
+        foreach ($correct as $pageid => $optionids) {
+            $chosen = array_unique($selected[$pageid] ?? []);
+            sort($chosen);
+            sort($optionids);
+            if ($chosen === $optionids) {
+                $pages[] = $pageid;
+            }
+        }
+        return $pages;
+    }
+
+    #[\Override]
+    public function is_submission_open_tool(\stdClass $page): bool {
+        // Participants must not answer once they can see the correct options.
+        return !$this->is_answer_correction_shown($page);
+    }
+
+    #[\Override]
+    public function hook_submission_opened(\stdClass $page): void {
+        if ($this->is_answer_correction_shown($page)) {
+            $this->set_tool_config($page, 'showanswercorrection', '0');
+        }
+    }
+
     #[\Override]
     public function hook_after_new_page_created(\stdClass $page): void {
         $this->create_option($page, '', false);
@@ -216,6 +285,10 @@ class quiz extends \mod_mootimeter\toolhelper {
         $option->id = $DB->insert_record($this->get_answer_option_table(), $option);
 
         $this->notify_data_changed((int) $page->id, self::CHANGE_SETTINGS);
+        if (!empty($option->optioniscorrect)) {
+            // A new correct option changes which responses are correct.
+            $this->queue_completion_recalculation((int) $page->instance);
+        }
         return $option;
     }
 
@@ -234,11 +307,16 @@ class quiz extends \mod_mootimeter\toolhelper {
         if ($text !== null) {
             $option->optiontext = trim(param::TEXT->clean($text));
         }
+        $correctchanged = false;
         if ($iscorrect !== null && $this->supports_correct_options()) {
+            $correctchanged = (int) $option->optioniscorrect !== (int) $iscorrect;
             $option->optioniscorrect = (int) $iscorrect;
         }
         $option->timemodified = self::now();
         $DB->update_record($this->get_answer_option_table(), $option);
+        if ($correctchanged) {
+            $this->queue_completion_recalculation((int) $page->instance);
+        }
 
         $this->clear_caches($page->id);
         $this->notify_data_changed((int) $page->id, self::CHANGE_SETTINGS);
@@ -263,6 +341,7 @@ class quiz extends \mod_mootimeter\toolhelper {
         $this->clear_caches($page->id);
         $this->notify_data_changed((int) $page->id, self::CHANGE_SETTINGS);
         $this->notify_data_changed((int) $page->id, self::CHANGE_ANSWERS);
+        $this->queue_completion_recalculation((int) $page->instance);
     }
 
     /**
@@ -360,10 +439,8 @@ class quiz extends \mod_mootimeter\toolhelper {
     public function submit_response(\stdClass $page, array $optionids): array {
         global $USER;
 
+        $this->require_submission_open($page);
         $optionids = $this->validate_selection($page, $optionids);
-        if ($this->is_answer_correction_shown($page)) {
-            throw new conflict_exception('answeringclosed', 'mootimetertool_quiz');
-        }
         $this->write_response($page, (int) $USER->id, $optionids);
         return $this->get_response_of_user($page, (int) $USER->id);
     }
@@ -421,6 +498,7 @@ class quiz extends \mod_mootimeter\toolhelper {
 
         $this->clear_caches($page->id);
         $this->notify_data_changed((int) $page->id, self::CHANGE_ANSWERS);
+        $this->update_completion((int) $page->instance, $userid);
     }
 
     /**
@@ -554,11 +632,13 @@ class quiz extends \mod_mootimeter\toolhelper {
      */
     public function export_responses(\stdClass $page, array $responses): array {
         $names = $this->get_participant_names($page, array_column($responses, 'userid'));
+        // The time of anonymous responses could be matched with the completion times of the participants.
+        $anonymous = $this->is_anonymous($page);
         return array_map(fn(array $response): array => [
             'id' => $response['id'],
             'fullName' => $names[$response['userid']],
             'optionIds' => $response['optionids'],
-            'createdAt' => api_util::format_datetime($response['timecreated']),
+            'createdAt' => $anonymous ? null : api_util::format_datetime($response['timecreated']),
         ], array_values($responses));
     }
 
@@ -621,13 +701,18 @@ class quiz extends \mod_mootimeter\toolhelper {
 
         $answers = [];
         $responses = $this->get_responses($page);
+        $timeformat = get_string('strftimedatetimeshortaccurate', 'core_langconfig');
+        $anonymous = $this->is_anonymous($page);
+        if ($anonymous) {
+            $responses = $this->order_anonymously($page, $responses, fn(array $response): int => $response['id']);
+        }
         $names = $this->get_participant_names($page, array_column($responses, 'userid'));
         foreach ($responses as $response) {
             $texts = array_map(fn(int $optionid): string => $optiontexts[$optionid] ?? '', $response['optionids']);
             $answers[] = [
                 $names[$response['userid']],
                 implode(' | ', $texts),
-                userdate($response['timecreated'], get_string('strftimedatetimeshortaccurate', 'core_langconfig')),
+                $anonymous ? '' : userdate($response['timecreated'], $timeformat),
             ];
         }
 

@@ -1,6 +1,6 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
-import { jsxDEV } from "react/jsx-dev-runtime";
+import { Fragment, jsxDEV } from "react/jsx-dev-runtime";
 /**
  * The mootimeter application.
  *
@@ -19,6 +19,7 @@ import { useStrings } from "./lib/hooks";
 import { addToast, displayError, enableEditMode } from "./lib/moodle";
 import PageList from "./pagelist";
 import SettingsPanel from "./settingspanel";
+import StatusBar from "./statusbar";
 import ToolComponent from "./toolcomponent";
 const MIN_REFRESH_INTERVAL = 1e3;
 const updateUrl = /* @__PURE__ */ __name((pageid, view, fullscreen) => {
@@ -39,9 +40,14 @@ const updateUrl = /* @__PURE__ */ __name((pageid, view, fullscreen) => {
   });
   window.history.replaceState(null, "", url);
 }, "updateUrl");
-const sameUpdates = /* @__PURE__ */ __name((a, b) => a.pageList === b.pageList && a.settings === b.settings && a.answers === b.answers, "sameUpdates");
-function useUpdates(cmId, pageId, refreshInterval) {
-  const [updates, setUpdates] = useState({ pageList: 0, settings: 0, answers: 0 });
+const sameUpdates = /* @__PURE__ */ __name((a, b) => a.pageList === b.pageList && a.settings === b.settings && a.answers === b.answers && JSON.stringify(a.participation) === JSON.stringify(b.participation), "sameUpdates");
+const OFFSET_TOLERANCE = 500;
+const NO_PARTICIPATION = { available: false, groupId: 0, answered: 0, active: 0, enrolled: 0 };
+function useUpdates(cmId, pageId, groupId, refreshInterval) {
+  const [updates, setUpdates] = useState(
+    { pageList: 0, settings: 0, answers: 0, serverTime: "", participation: NO_PARTICIPATION }
+  );
+  const [serverOffset, setServerOffset] = useState(0);
   useEffect(() => {
     let active = true;
     let timer;
@@ -49,9 +55,14 @@ function useUpdates(cmId, pageId, refreshInterval) {
     const poll = /* @__PURE__ */ __name(async () => {
       if (!document.hidden) {
         try {
-          const latest = await get("mod_mootimeter", `/instances/${cmId}/updates?pageid=${pageId}`);
+          const latest = await get(
+            "mod_mootimeter",
+            `/instances/${cmId}/updates?pageid=${pageId}&groupid=${groupId}`
+          );
           if (active) {
             setUpdates((old) => sameUpdates(old, latest) ? old : latest);
+            const offset = Date.parse(latest.serverTime) - Date.now();
+            setServerOffset((old) => Math.abs(old - offset) < OFFSET_TOLERANCE ? old : offset);
           }
         } catch (error) {
           if (error instanceof ApiError && [401, 403, 404].includes(error.status)) {
@@ -70,10 +81,24 @@ function useUpdates(cmId, pageId, refreshInterval) {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [cmId, pageId, refreshInterval]);
-  return updates;
+  }, [cmId, pageId, groupId, refreshInterval]);
+  return { updates, serverOffset };
 }
 __name(useUpdates, "useUpdates");
+function useGroup(props) {
+  const key = `mod_mootimeter_group_${props.cmId}`;
+  const allowed = /* @__PURE__ */ __name((id) => id === 0 ? props.allowAllGroups : props.groups.some((group) => group.id === id), "allowed");
+  const [groupId, setGroupId] = useState(() => {
+    const stored = Number(window.sessionStorage.getItem(key) ?? NaN);
+    return Number.isInteger(stored) && allowed(stored) ? stored : props.groupId;
+  });
+  const select = /* @__PURE__ */ __name((id) => {
+    window.sessionStorage.setItem(key, String(id));
+    setGroupId(id);
+  }, "select");
+  return [groupId, select];
+}
+__name(useGroup, "useGroup");
 function usePage(pageId, version, onMissing) {
   const [page, setPage] = useState(null);
   useEffect(() => {
@@ -108,14 +133,14 @@ function Content({ pages, tools, pageId, view, isModerator, locked, toolprops, o
   if (!pages) {
     return /* @__PURE__ */ jsxDEV(Loading, {}, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 205,
+      lineNumber: 242,
       columnNumber: 16
     }, this);
   }
   if (isModerator && (view === "addpage" || !pageId)) {
     return /* @__PURE__ */ jsxDEV(AddPage, { tools, onAdd: onAddPage }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 208,
+      lineNumber: 245,
       columnNumber: 16
     }, this);
   }
@@ -126,18 +151,18 @@ function Content({ pages, tools, pageId, view, isModerator, locked, toolprops, o
     }
     return /* @__PURE__ */ jsxDEV("div", { className: "mootimeter-colcontent-preview mootimeter-width-s", children: /* @__PURE__ */ jsxDEV("h4", { children: message }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 217,
+      lineNumber: 254,
       columnNumber: 17
     }, this) }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 216,
+      lineNumber: 253,
       columnNumber: 13
     }, this);
   }
   if (!toolprops) {
     return /* @__PURE__ */ jsxDEV(Loading, {}, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 222,
+      lineNumber: 259,
       columnNumber: 16
     }, this);
   }
@@ -149,7 +174,7 @@ function Content({ pages, tools, pageId, view, isModerator, locked, toolprops, o
   }
   return /* @__PURE__ */ jsxDEV(ToolComponent, { specifier, ...toolprops }, `${specifier}-${pageId}`, false, {
     fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-    lineNumber: 230,
+    lineNumber: 267,
     columnNumber: 12
   }, this);
 }
@@ -170,17 +195,17 @@ function SettingsToggle({ open, onToggle }) {
       children: [
         /* @__PURE__ */ jsxDEV("i", { className: "icon fa fa-gear fa-light", "aria-hidden": "true" }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-          lineNumber: 258,
+          lineNumber: 295,
           columnNumber: 13
         }, this),
         /* @__PURE__ */ jsxDEV("span", { className: "mootimeter-settings-toggle-label", children: s.settings }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-          lineNumber: 259,
+          lineNumber: 296,
           columnNumber: 13
         }, this),
         /* @__PURE__ */ jsxDEV("i", { className: `icon fa ${open ? "fa-angle-double-left" : "fa-angle-double-right"} fa-light`, "aria-hidden": "true" }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-          lineNumber: 260,
+          lineNumber: 297,
           columnNumber: 13
         }, this)
       ]
@@ -189,7 +214,7 @@ function SettingsToggle({ open, onToggle }) {
     true,
     {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 249,
+      lineNumber: 286,
       columnNumber: 9
     },
     this
@@ -209,7 +234,8 @@ function App(props) {
   const [pagesReload, setPagesReload] = useState(0);
   const refresh = useCallback(() => setLocalVersion((version) => version + 1), []);
   useEffect(() => updateUrl(pageId, view, fullscreen), [pageId, view, fullscreen]);
-  const updates = useUpdates(cmId, pageId, props.refreshInterval);
+  const [groupId, setGroupId] = useGroup(props);
+  const { updates, serverOffset } = useUpdates(cmId, pageId, groupId, props.refreshInterval);
   useEffect(() => {
     let active = true;
     getAll("mod_mootimeter", `/instances/${cmId}/pages?sort=number`).then((list) => active && setPages(list)).catch(displayError);
@@ -303,17 +329,17 @@ function App(props) {
             false,
             {
               fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-              lineNumber: 391,
+              lineNumber: 429,
               columnNumber: 29
             },
             this
           ) : /* @__PURE__ */ jsxDEV(Loading, {}, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-            lineNumber: 400,
+            lineNumber: 438,
             columnNumber: 29
           }, this) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-            lineNumber: 389,
+            lineNumber: 427,
             columnNumber: 21
           }, this),
           settings.show && toolprops && /* @__PURE__ */ jsxDEV("div", { className: "mootimetercol mootimetercoledit", id: "mootimeter-col-settings", children: /* @__PURE__ */ jsxDEV(
@@ -332,44 +358,72 @@ function App(props) {
             false,
             {
               fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-              lineNumber: 404,
+              lineNumber: 442,
               columnNumber: 29
             },
             this
           ) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-            lineNumber: 403,
+            lineNumber: 441,
             columnNumber: 25
           }, this),
           settings.toggle && /* @__PURE__ */ jsxDEV(SettingsToggle, { open: settingsOpen, onToggle: () => setSettingsOpen(!settingsOpen) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-            lineNumber: 418,
+            lineNumber: 456,
             columnNumber: 25
           }, this)
         ] }, void 0, true, {
           fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-          lineNumber: 388,
+          lineNumber: 426,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ jsxDEV("div", { className: "mootimetercol mootimetercolcontent", children: [
-          showContentMenu && toolprops && /* @__PURE__ */ jsxDEV(
-            ContentMenu,
-            {
-              ...toolprops,
-              view,
-              fullscreen,
-              onView: setView,
-              onFullscreen: setFullscreen
-            },
-            void 0,
-            false,
-            {
-              fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-              lineNumber: 423,
-              columnNumber: 25
-            },
-            this
-          ),
+          showContentMenu && toolprops && /* @__PURE__ */ jsxDEV(Fragment, { children: [
+            /* @__PURE__ */ jsxDEV(
+              ContentMenu,
+              {
+                ...toolprops,
+                view,
+                fullscreen,
+                onView: setView,
+                onFullscreen: setFullscreen
+              },
+              void 0,
+              false,
+              {
+                fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
+                lineNumber: 461,
+                columnNumber: 25
+              },
+              this
+            ),
+            /* @__PURE__ */ jsxDEV(
+              StatusBar,
+              {
+                page: toolprops.page,
+                isModerator,
+                serverOffset,
+                participation: updates.participation,
+                groupMode: props.groupMode,
+                groups: props.groups,
+                allowAllGroups: props.allowAllGroups,
+                onGroup: setGroupId,
+                onExpired: refresh
+              },
+              void 0,
+              false,
+              {
+                fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
+                lineNumber: 468,
+                columnNumber: 25
+              },
+              this
+            )
+          ] }, void 0, true, {
+            fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
+            lineNumber: 460,
+            columnNumber: 55
+          }, this),
           /* @__PURE__ */ jsxDEV("div", { className: "mootimeter-content-wrapper", id: "mootimeter-pagecontent", children: /* @__PURE__ */ jsxDEV(
             Content,
             {
@@ -386,23 +440,23 @@ function App(props) {
             false,
             {
               fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-              lineNumber: 432,
+              lineNumber: 481,
               columnNumber: 25
             },
             this
           ) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-            lineNumber: 431,
+            lineNumber: 480,
             columnNumber: 21
           }, this)
         ] }, void 0, true, {
           fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-          lineNumber: 421,
+          lineNumber: 459,
           columnNumber: 17
         }, this)
       ] }, void 0, true, {
         fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-        lineNumber: 387,
+        lineNumber: 425,
         columnNumber: 13
       }, this)
     },
@@ -410,7 +464,7 @@ function App(props) {
     false,
     {
       fileName: "public/mod/mootimeter/js/esm/src/app.tsx",
-      lineNumber: 383,
+      lineNumber: 421,
       columnNumber: 9
     },
     this

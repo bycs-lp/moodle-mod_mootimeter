@@ -29,6 +29,7 @@ import {IconButton} from './lib/components';
 import {useStrings} from './lib/hooks';
 import {confirmDelete, displayError} from './lib/moodle';
 import type {ToolViewProps, View} from './lib/types';
+import SubmissionControls from './submissioncontrols';
 import ToolComponent from './toolcomponent';
 
 type ContentMenuProps = ToolViewProps & {
@@ -82,6 +83,7 @@ export default function ContentMenu(props: ContentMenuProps): React.JSX.Element 
                         active={page.resultsPublished}
                         onClick={toggleResultsVisibility}
                     />
+                    <SubmissionControls page={page} refresh={refresh} />
                     <ToolComponent specifier={page.components.menu} {...props} />
                     <IconButton icon="fa-trash" title={s.tooltip_delete_all_answers} onClick={deleteAllAnswers} />
                     <IconButton

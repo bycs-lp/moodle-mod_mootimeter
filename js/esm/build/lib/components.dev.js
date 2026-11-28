@@ -102,25 +102,31 @@ function FormattedHtml({ html, tag = "span", className = "" }) {
 }
 __name(FormattedHtml, "FormattedHtml");
 function QuestionHeader({ page, children }) {
+  const s = useStrings("mod_mootimeter", ["submissionclosed"]);
   return /* @__PURE__ */ jsxDEV("div", { className: "mootimeter-colcontent-preview-header filter_mathjaxloader_equation", children: [
     /* @__PURE__ */ jsxDEV("div", { className: "mootimeter-pill", children: /* @__PURE__ */ jsxDEV("span", { children: page.toolName }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-      lineNumber: 148,
+      lineNumber: 149,
       columnNumber: 46
     }, this) }, void 0, false, {
-      fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-      lineNumber: 148,
-      columnNumber: 13
-    }, this),
-    /* @__PURE__ */ jsxDEV(FormattedHtml, { tag: "h4", html: page.questionHtml }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
       lineNumber: 149,
       columnNumber: 13
     }, this),
+    /* @__PURE__ */ jsxDEV(FormattedHtml, { tag: "h4", html: page.questionHtml }, void 0, false, {
+      fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
+      lineNumber: 150,
+      columnNumber: 13
+    }, this),
+    !page.submissionOpen && /* @__PURE__ */ jsxDEV(Notification, { type: "info", icon: "fa-lock", text: s.submissionclosed }, void 0, false, {
+      fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
+      lineNumber: 151,
+      columnNumber: 38
+    }, this),
     children
   ] }, void 0, true, {
     fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-    lineNumber: 147,
+    lineNumber: 148,
     columnNumber: 9
   }, this);
 }
@@ -143,32 +149,32 @@ function Choice({ type, checked, label, onChange, name, disabled = false, wrappe
       false,
       {
         fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-        lineNumber: 179,
+        lineNumber: 181,
         columnNumber: 17
       },
       this
     ),
     /* @__PURE__ */ jsxDEV("span", { className: `${iconprefix}-icon-wrapper`, children: /* @__PURE__ */ jsxDEV("i", { className: `icon fa fa-check fa-light ${iconprefix}-icon`, "aria-hidden": "true" }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-      lineNumber: 188,
+      lineNumber: 190,
       columnNumber: 21
     }, this) }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-      lineNumber: 187,
+      lineNumber: 189,
       columnNumber: 17
     }, this),
     /* @__PURE__ */ jsxDEV("span", { children: label }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-      lineNumber: 190,
+      lineNumber: 192,
       columnNumber: 17
     }, this)
   ] }, void 0, true, {
     fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-    lineNumber: 178,
+    lineNumber: 180,
     columnNumber: 13
   }, this) }, void 0, false, {
     fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-    lineNumber: 177,
+    lineNumber: 179,
     columnNumber: 9
   }, this);
 }
@@ -207,7 +213,7 @@ function TextSetting({ value, placeholder, label, onSave }) {
     false,
     {
       fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-      lineNumber: 231,
+      lineNumber: 233,
       columnNumber: 9
     },
     this
@@ -242,7 +248,7 @@ function NumberSetting({ value, label, min = 0, onSave }) {
         false,
         {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 277,
+          lineNumber: 279,
           columnNumber: 21
         },
         this
@@ -258,7 +264,7 @@ function NumberSetting({ value, label, min = 0, onSave }) {
           onClick: () => store(Number(current) + 1),
           children: /* @__PURE__ */ jsxDEV("i", { className: "icon fa fa-sort-up fa-light", "aria-hidden": "true" }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-            lineNumber: 294,
+            lineNumber: 296,
             columnNumber: 25
           }, this)
         },
@@ -266,7 +272,7 @@ function NumberSetting({ value, label, min = 0, onSave }) {
         false,
         {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 286,
+          lineNumber: 288,
           columnNumber: 21
         },
         this
@@ -282,7 +288,7 @@ function NumberSetting({ value, label, min = 0, onSave }) {
           onClick: () => store(Number(current) - 1),
           children: /* @__PURE__ */ jsxDEV("i", { className: "icon fa fa-sort-down fa-light", "aria-hidden": "true" }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-            lineNumber: 304,
+            lineNumber: 306,
             columnNumber: 25
           }, this)
         },
@@ -290,24 +296,24 @@ function NumberSetting({ value, label, min = 0, onSave }) {
         false,
         {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 296,
+          lineNumber: 298,
           columnNumber: 21
         },
         this
       )
     ] }, void 0, true, {
       fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-      lineNumber: 276,
+      lineNumber: 278,
       columnNumber: 17
     }, this),
     label
   ] }, void 0, true, {
     fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-    lineNumber: 275,
+    lineNumber: 277,
     columnNumber: 13
   }, this) }, void 0, false, {
     fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-    lineNumber: 274,
+    lineNumber: 276,
     columnNumber: 9
   }, this);
 }
@@ -324,7 +330,7 @@ function CheckboxSetting({ value, label, disabled = false, onSave }) {
   }, "change");
   return /* @__PURE__ */ jsxDEV(Choice, { type: "checkbox", checked: current, label, disabled, onChange: change }, void 0, false, {
     fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-    lineNumber: 338,
+    lineNumber: 340,
     columnNumber: 12
   }, this);
 }
@@ -343,7 +349,7 @@ function AnonymousModeSetting({ page, onStored }) {
     false,
     {
       fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-      lineNumber: 355,
+      lineNumber: 357,
       columnNumber: 9
     },
     this
@@ -353,7 +359,7 @@ __name(AnonymousModeSetting, "AnonymousModeSetting");
 function Divider() {
   return /* @__PURE__ */ jsxDEV("hr", { className: "divider" }, void 0, false, {
     fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-    lineNumber: 370,
+    lineNumber: 372,
     columnNumber: 12
   }, this);
 }
@@ -363,14 +369,14 @@ function Loading() {
   return /* @__PURE__ */ jsxDEV("div", { className: "mootimeter-render-loading", role: "status", children: [
     /* @__PURE__ */ jsxDEV("span", { className: "spinner-border spinner-border-sm", "aria-hidden": "true" }, void 0, false, {
       fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-      lineNumber: 382,
+      lineNumber: 384,
       columnNumber: 13
     }, this),
     " ",
     s.loading
   ] }, void 0, true, {
     fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-    lineNumber: 381,
+    lineNumber: 383,
     columnNumber: 9
   }, this);
 }
@@ -380,7 +386,8 @@ function useRowTimes(rows) {
   const key = rows.map((row) => `${row.id}:${row.createdAt}`).join(",");
   useEffect(() => {
     let active = true;
-    formatUserDates(rows.map((row) => Math.floor(Date.parse(row.createdAt) / 1e3))).then((formatted) => active && setTimes(Object.fromEntries(rows.map((row, index) => [row.id, formatted[index]])))).catch(displayError);
+    const dated = rows.filter((row) => row.createdAt !== null);
+    formatUserDates(dated.map((row) => Math.floor(Date.parse(row.createdAt) / 1e3))).then((formatted) => active && setTimes(Object.fromEntries(dated.map((row, index) => [row.id, formatted[index]])))).catch(displayError);
     return () => {
       active = false;
     };
@@ -402,23 +409,23 @@ function OverviewTable(props) {
     /* @__PURE__ */ jsxDEV("table", { className: "table", children: [
       /* @__PURE__ */ jsxDEV("caption", { className: "sr-only", children: m.show_answer_overview }, void 0, false, {
         fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-        lineNumber: 451,
+        lineNumber: 455,
         columnNumber: 17
       }, this),
       /* @__PURE__ */ jsxDEV("thead", { children: /* @__PURE__ */ jsxDEV("tr", { children: [
         /* @__PURE__ */ jsxDEV("th", { scope: "col", children: "#" }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 454,
+          lineNumber: 458,
           columnNumber: 25
         }, this),
         /* @__PURE__ */ jsxDEV("th", { scope: "col", children: s.name }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 455,
+          lineNumber: 459,
           columnNumber: 25
         }, this),
         /* @__PURE__ */ jsxDEV("th", { scope: "col", children: s.answer }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 456,
+          lineNumber: 460,
           columnNumber: 25
         }, this),
         /* @__PURE__ */ jsxDEV("th", { scope: "col", children: [
@@ -427,76 +434,76 @@ function OverviewTable(props) {
           s.time
         ] }, void 0, true, {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 457,
+          lineNumber: 461,
           columnNumber: 25
         }, this),
         /* @__PURE__ */ jsxDEV("th", { scope: "col", children: s.options }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 458,
+          lineNumber: 462,
           columnNumber: 25
         }, this)
       ] }, void 0, true, {
         fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-        lineNumber: 453,
+        lineNumber: 457,
         columnNumber: 21
       }, this) }, void 0, false, {
         fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-        lineNumber: 452,
+        lineNumber: 456,
         columnNumber: 17
       }, this),
       /* @__PURE__ */ jsxDEV("tbody", { children: [
         !rows.length && /* @__PURE__ */ jsxDEV("tr", { children: /* @__PURE__ */ jsxDEV("td", { colSpan: 5, children: s.nothingtodisplay }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 464,
+          lineNumber: 468,
           columnNumber: 29
         }, this) }, void 0, false, {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 463,
+          lineNumber: 467,
           columnNumber: 25
         }, this),
         rows.map((row, index) => /* @__PURE__ */ jsxDEV("tr", { children: [
           /* @__PURE__ */ jsxDEV("td", { children: offset + index + 1 }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-            lineNumber: 469,
+            lineNumber: 473,
             columnNumber: 29
           }, this),
           /* @__PURE__ */ jsxDEV("td", { children: row.fullName }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-            lineNumber: 470,
+            lineNumber: 474,
             columnNumber: 29
           }, this),
           /* @__PURE__ */ jsxDEV("td", { children: renderAnswer(row) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-            lineNumber: 471,
+            lineNumber: 475,
             columnNumber: 29
           }, this),
           /* @__PURE__ */ jsxDEV("td", { children: times[row.id] ?? "" }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-            lineNumber: 472,
+            lineNumber: 476,
             columnNumber: 29
           }, this),
           /* @__PURE__ */ jsxDEV("td", { children: /* @__PURE__ */ jsxDEV(IconButton, { icon: "fa-trash", title: s.delete, onClick: () => remove(row) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-            lineNumber: 474,
+            lineNumber: 478,
             columnNumber: 33
           }, this) }, void 0, false, {
             fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-            lineNumber: 473,
+            lineNumber: 477,
             columnNumber: 29
           }, this)
         ] }, row.id, true, {
           fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-          lineNumber: 468,
+          lineNumber: 472,
           columnNumber: 25
         }, this))
       ] }, void 0, true, {
         fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-        lineNumber: 461,
+        lineNumber: 465,
         columnNumber: 17
       }, this)
     ] }, void 0, true, {
       fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-      lineNumber: 450,
+      lineNumber: 454,
       columnNumber: 13
     }, this),
     totalPages > 1 && /* @__PURE__ */ jsxDEV(
@@ -513,14 +520,14 @@ function OverviewTable(props) {
       false,
       {
         fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-        lineNumber: 481,
+        lineNumber: 485,
         columnNumber: 17
       },
       this
     )
   ] }, void 0, true, {
     fileName: "public/mod/mootimeter/js/esm/src/lib/components.tsx",
-    lineNumber: 449,
+    lineNumber: 453,
     columnNumber: 9
   }, this);
 }

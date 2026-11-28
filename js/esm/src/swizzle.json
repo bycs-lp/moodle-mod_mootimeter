@@ -19,6 +19,14 @@
     "eject": "risky",
     "wrap": "risky"
   },
+  "statusbar": {
+    "eject": "risky",
+    "wrap": "risky"
+  },
+  "submissioncontrols": {
+    "eject": "risky",
+    "wrap": "risky"
+  },
   "toolcomponent": {
     "eject": "risky",
     "wrap": "risky"

@@ -38,7 +38,7 @@ class answer extends schema_object implements referenced_object {
             'id' => new field(param::INT, 'Id of the answer.'),
             'text' => new field(param::TEXT, 'The submitted word or statement.'),
             'fullName' => new field(param::TEXT, 'Name of the participant, a placeholder in the anonymous mode.'),
-            'createdAt' => new field(param::RAW, 'Time of the submission.', format: 'date-time'),
+            'createdAt' => new field(param::RAW, 'Time of the submission, null in the anonymous mode.', format: 'date-time'),
         ]);
     }
 }

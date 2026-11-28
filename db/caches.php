@@ -33,4 +33,18 @@ $definitions = [
     'lastupdated' => [
         'mode' => \core_cache\store::MODE_APPLICATION,
     ],
+    // Participants showing a page, sharded per time bucket. Must be shared by all web servers.
+    'presence' => [
+        'mode' => \core_cache\store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'ttl' => 300,
+    ],
+    // Moderators, group members and the number of possible participants of an activity.
+    'participation' => [
+        'mode' => \core_cache\store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'ttl' => 60,
+    ],
 ];

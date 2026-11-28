@@ -287,4 +287,142 @@ final class helper_test extends \advanced_testcase {
         $helper->set_tool_config($page, 'showonteacherpermission', '1');
         $this->assertTrue($helper->can_view_results($page, false));
     }
+
+    /**
+     * The submission is open by default, can be closed manually or by a countdown and is closed by the quiz correction.
+     */
+    public function test_submission_state(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $clock = $this->mock_clock_with_frozen(1000);
+
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
+        $page = $this->get_generator()->create_page(['instance' => $mootimeter->id, 'tool' => 'quiz']);
+        $this->assertTrue($helper->is_submission_open($page));
+        $this->assertSame(0, $helper->get_countdown_end($page));
+
+        $helper->set_submission_open($page, false);
+        $this->assertFalse($helper->is_submission_open($page));
+        $helper->set_submission_open($page, true);
+        $this->assertTrue($helper->is_submission_open($page));
+
+        // An expired countdown closes the submission without any write.
+        $helper->start_countdown($page, 30);
+        $this->assertSame(1030, $helper->get_countdown_end($page));
+        $clock->bump(29);
+        $this->assertTrue($helper->is_submission_open($page));
+        $clock->bump(1);
+        $this->assertFalse($helper->is_submission_open($page));
+        $this->assertSame(0, $helper->get_countdown_end($page));
+
+        // Starting a countdown opens a closed submission, cancelling keeps it open.
+        $helper->set_submission_open($page, false);
+        $helper->start_countdown($page, 10);
+        $this->assertTrue($helper->is_submission_open($page));
+        $helper->cancel_countdown($page);
+        $clock->bump(20);
+        $this->assertTrue($helper->is_submission_open($page));
+
+        // Showing the correction of a quiz closes the submission, opening it hides the correction.
+        $quiz = helper::get_toolhelper('quiz');
+        $quiz->update_settings($page, ['correctionShown' => true]);
+        $this->assertFalse($helper->is_submission_open($page));
+        $helper->set_submission_open($page, true);
+        $this->assertTrue($helper->is_submission_open($page));
+        $this->assertFalse($quiz->is_answer_correction_shown($page));
+    }
+
+    /**
+     * Only a running countdown can be extended, at most to the longest countdown.
+     */
+    public function test_extend_countdown(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $this->mock_clock_with_frozen(1000);
+
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
+        $page = $this->get_generator()->create_page(['instance' => $mootimeter->id]);
+
+        $helper->start_countdown($page, 30);
+        $helper->extend_countdown($page, 60);
+        $this->assertSame(1090, $helper->get_countdown_end($page));
+        $helper->extend_countdown($page, helper::COUNTDOWN_MAX);
+        $this->assertSame(1000 + helper::COUNTDOWN_MAX, $helper->get_countdown_end($page));
+
+        $helper->set_submission_open($page, false);
+        $this->expectException(\mod_mootimeter\exception\conflict_exception::class);
+        $helper->extend_countdown($page, 30);
+    }
+
+    /**
+     * The default countdown starts once, unless the moderator already controls the submission, and again after a change.
+     */
+    public function test_start_default_countdown(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $this->mock_clock_with_frozen(1000);
+
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
+        $page = $this->get_generator()->create_page(['instance' => $mootimeter->id]);
+        $this->assertFalse($helper->start_default_countdown($page));
+
+        $helper->set_default_countdown($page, 60);
+        $this->assertTrue($helper->start_default_countdown($page));
+        $this->assertSame(1060, $helper->get_countdown_end($page));
+        $helper->cancel_countdown($page);
+        $this->assertFalse($helper->start_default_countdown($page));
+
+        // After a change of the default it starts again, but not while the moderator closed the submission.
+        $helper->set_submission_open($page, false);
+        $helper->set_default_countdown($page, 30);
+        $this->assertFalse($helper->start_default_countdown($page));
+        $helper->set_submission_open($page, true);
+        $this->assertFalse($helper->start_default_countdown($page));
+        $helper->set_default_countdown($page, 30);
+        $this->assertTrue($helper->start_default_countdown($page));
+        $this->assertSame(1030, $helper->get_countdown_end($page));
+    }
+
+    /**
+     * With the automatic publication participants see the results once the submission is closed.
+     */
+    public function test_can_view_results_published_on_close(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $clock = $this->mock_clock_with_frozen(1000);
+
+        $mootimeter = $this->create_mootimeter();
+        $helper = new helper();
+        $page = $this->get_generator()->create_page(['instance' => $mootimeter->id]);
+        $helper->set_tool_config($page, 'autopublishresults', '1');
+        $helper->start_countdown($page, 30);
+        $this->assertFalse($helper->can_view_results($page, false));
+
+        $clock->bump(30);
+        $this->assertTrue($helper->can_view_results($page, false));
+    }
+
+    /**
+     * Resetting a course opens the submissions of all its pages.
+     */
+    public function test_open_submissions_in_course(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $mootimeter = $this->create_mootimeter();
+        $other = $this->create_mootimeter();
+        $helper = new helper();
+        $page = $this->get_generator()->create_page(['instance' => $mootimeter->id]);
+        $otherpage = $this->get_generator()->create_page(['instance' => $other->id]);
+        $helper->set_submission_open($page, false);
+        $helper->set_submission_open($otherpage, false);
+
+        $helper->open_submissions_in_course((int) $mootimeter->course);
+
+        $this->assertTrue($helper->is_submission_open($page));
+        $this->assertFalse($helper->is_submission_open($otherpage));
+    }
 }

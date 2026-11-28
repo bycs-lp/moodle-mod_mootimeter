@@ -8,7 +8,7 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
  * @author     Dr. Peter Mayer
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getStrings } from "@moodle/lms/core/stringUtils";
 import { ApiError, get } from "./api";
 import { displayError } from "./moodle";
@@ -56,8 +56,33 @@ function useCollection(component, path, deps) {
   return { items: collection.items, page, pageSize, totalPages, setPage };
 }
 __name(useCollection, "useCollection");
+function useCountdown(closesAt, offset, onExpired) {
+  const end = closesAt === null ? null : Date.parse(closesAt);
+  const remainingAt = /* @__PURE__ */ __name(() => end === null ? null : Math.max(0, Math.ceil((end - Date.now() - offset) / 1e3)), "remainingAt");
+  const [remaining, setRemaining] = useState(remainingAt);
+  const expired = useRef(onExpired);
+  expired.current = onExpired;
+  useEffect(() => {
+    setRemaining(remainingAt());
+    if (end === null) {
+      return void 0;
+    }
+    const timer = window.setInterval(() => {
+      const value = remainingAt();
+      setRemaining(value);
+      if (value === 0) {
+        window.clearInterval(timer);
+        expired.current();
+      }
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [end, offset]);
+  return remaining;
+}
+__name(useCountdown, "useCountdown");
 export {
   useCollection,
+  useCountdown,
   useResource,
   useStrings
 };

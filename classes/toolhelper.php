@@ -87,6 +87,56 @@ abstract class toolhelper extends helper {
     }
 
     /**
+     * Get the pages of the tool a user answered.
+     *
+     * @param int[] $pageids pages of this tool
+     * @param int $userid
+     * @return int[]
+     */
+    public function get_answered_pageids(array $pageids, int $userid): array {
+        global $DB;
+
+        if (!$pageids) {
+            return [];
+        }
+        [$insql, $params] = $DB->get_in_or_equal($pageids, SQL_PARAMS_NAMED);
+        $params['userid'] = $userid;
+        return array_map('intval', $DB->get_fieldset_sql(
+            "SELECT DISTINCT pageid FROM {" . $this->get_answer_table() . "} WHERE pageid $insql AND usermodified = :userid",
+            $params
+        ));
+    }
+
+    /**
+     * Get the pages of the tool a user answered correctly. Tools without correct answers return none.
+     *
+     * @param int[] $pageids pages of this tool
+     * @param int $userid
+     * @return int[]
+     */
+    public function get_correct_pageids(array $pageids, int $userid): array {
+        return [];
+    }
+
+    /**
+     * Whether the tool lets participants answer, in addition to the common submission state of the page.
+     *
+     * @param \stdClass $page
+     * @return bool
+     */
+    public function is_submission_open_tool(\stdClass $page): bool {
+        return true;
+    }
+
+    /**
+     * React on a moderator opening the submission of a page, e.g. by undoing a tool specific closing.
+     *
+     * @param \stdClass $page
+     */
+    public function hook_submission_opened(\stdClass $page): void {
+    }
+
+    /**
      * Get the results of a page for the CSV download.
      *
      * Each section is written as a header row followed by its rows, sections are separated by an empty row.
@@ -97,6 +147,38 @@ abstract class toolhelper extends helper {
      */
     public function export_results_csv(\stdClass $page, context_module $context): array {
         return [];
+    }
+
+    /**
+     * Whether the answers of a page are anonymous.
+     *
+     * @param \stdClass $page
+     * @return bool
+     */
+    public function is_anonymous(\stdClass $page): bool {
+        return !empty(self::get_tool_config($page, 'anonymousmode'));
+    }
+
+    /**
+     * Order the answers of an anonymous page so that neither the order nor the ids reveal when they were submitted.
+     *
+     * Otherwise the order could be matched with the completion times of the participants. The order is stable, so
+     * pagination still works.
+     *
+     * @param \stdClass $page
+     * @param array $items answers
+     * @param \Closure $idof returns the id of an answer
+     * @return array the answers in a pseudo-random order
+     */
+    public function order_anonymously(\stdClass $page, array $items, \Closure $idof): array {
+        $key = get_config('mod_mootimeter', 'anonymousorderkey');
+        if (!$key) {
+            $key = random_string(32);
+            set_config('anonymousorderkey', $key, 'mod_mootimeter');
+        }
+        $rank = fn($item): string => hash_hmac('sha256', $page->id . ':' . $idof($item), $key);
+        usort($items, fn($a, $b): int => strcmp($rank($a), $rank($b)));
+        return $items;
     }
 
     /**

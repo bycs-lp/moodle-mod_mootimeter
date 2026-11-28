@@ -92,7 +92,8 @@ class responses {
     #[route(
         method: ['GET'],
         title: 'List the responses of a page',
-        description: 'Only moderators can list the responses. In the anonymous mode the names are replaced by a placeholder.',
+        description: 'Only moderators can list the responses. In the anonymous mode the names are replaced by a placeholder, '
+            . 'the times are omitted and the requested sort order is ignored, so the order of submission stays hidden.',
         queryparams: [
             new \mod_mootimeter\route\parameters\query_page(),
             new \mod_mootimeter\route\parameters\query_pagesize(),
@@ -124,6 +125,11 @@ class responses {
             $responses = array_filter($responses, fn(array $item): bool => in_array($optionid, $item['optionids'], true));
         }
         $items = $tool->export_responses($mootimeterpage, $responses);
+        if ($tool->is_anonymous($mootimeterpage)) {
+            // The requested order is ignored, it could reveal the order of submission.
+            $items = $tool->order_anonymously($mootimeterpage, $items, fn(array $item): int => $item['id']);
+            $request = $request->withQueryParams(array_diff_key($request->getQueryParams(), ['sort' => true]));
+        }
 
         return new payload_response(
             payload: api_util::collection($request, $items, ['createdat' => 'createdAt', 'fullname' => 'fullName', 'id' => 'id']),
@@ -305,6 +311,7 @@ class responses {
             new \mod_mootimeter\route\response\unauthenticated_response(),
             new \mod_mootimeter\route\response\forbidden_response(),
             new \mod_mootimeter\route\response\not_found_response(),
+            new \mod_mootimeter\route\response\conflict_response(),
         ],
     )]
     #[scopeset(
@@ -321,7 +328,7 @@ class responses {
         \stdClass $mootimeterpage,
     ): ResponseInterface {
         api_util::require_sesskey($request);
-        $access = access::for_tool_page($mootimeterpage, static::TOOL);
+        $access = access::for_tool_page($mootimeterpage, static::TOOL)->require_submission_open_for_participants();
 
         static::get_tool()->delete_response($mootimeterpage, static::get_accessible_response($access, $request));
 

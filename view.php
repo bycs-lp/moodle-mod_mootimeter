@@ -25,6 +25,7 @@
 
 require(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/lib.php');
+require_once($CFG->libdir . '/completionlib.php');
 
 $id = optional_param('id', 0, PARAM_INT);
 $instanceid = optional_param('m', 0, PARAM_INT);
@@ -50,6 +51,7 @@ if ($pageid && !$DB->record_exists('mootimeter_pages', ['id' => $pageid, 'instan
 }
 
 mootimeter_trigger_event_course_module_viewed($moduleinstance, $context, $course);
+(new completion_info($course))->set_module_viewed($cm);
 
 $PAGE->set_url(new \core\url('/mod/mootimeter/view.php', array_filter(['id' => $cm->id, 'pageid' => $pageid])));
 $PAGE->set_title(format_string($moduleinstance->name));
@@ -74,5 +76,8 @@ echo $OUTPUT->render(new \mod_mootimeter\output\app(
     ismoderator: has_capability('mod/mootimeter:moderator', $context),
     isediting: $PAGE->user_is_editing(),
     refreshinterval: (int) get_config('mod_mootimeter', 'refreshinterval'),
+    groupoptions: \core\di::get(\mod_mootimeter\local\participation::class)->get_group_options(
+        \mod_mootimeter\local\access::for_cm($cm)
+    ),
 ));
 echo $OUTPUT->footer();
